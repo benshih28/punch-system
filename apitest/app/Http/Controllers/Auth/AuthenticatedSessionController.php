@@ -13,26 +13,37 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): Response
+    public function store(LoginRequest $request)
     {
+        // 確保使用者登入
         $request->authenticate();
 
-        $request->session()->regenerate();
+        $user = Auth::user();
 
-        return response()->noContent();
+        // 產生 Bearer Token
+        $token = $user->createToken('API Token')->plainTextToken;
+
+        return response()->json([
+            'message' => '登入成功',
+            'user' => $user,
+            'token' => $token
+        ], 200);
     }
 
     /**
      * Destroy an authenticated session.
      */
-    public function destroy(Request $request): Response
+    public function destroy(Request $request)
     {
-        Auth::guard('web')->logout();
+        $user = $request->user();
 
-        $request->session()->invalidate();
-
-        $request->session()->regenerateToken();
-
-        return response()->noContent();
+        if ($user) {
+            // 🔹 刪除所有 Token，讓這個使用者的 API Token 失效
+            $user->tokens()->delete();
+        }
+    
+        return response()->json([
+            'message' => 'Logged out successfully'
+        ], 200);
     }
 }

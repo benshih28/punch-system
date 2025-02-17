@@ -18,14 +18,18 @@ class RegisteredUserController extends Controller
      *
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function store(Request $request): Response
+    public function store(Request $request)
     {
+
+        // 驗證輸入
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+
+        // 建立使用者
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -34,8 +38,13 @@ class RegisteredUserController extends Controller
 
         event(new Registered($user));
 
-        Auth::login($user);
+        // 產生 API Token
+        $token = $user->createToken('API Token')->plainTextToken;
 
-        return response()->noContent();
+        // 返回 User + Token
+        return response()->json([
+            'user' => $user,
+            'token' => $token
+        ], 201);
     }
 }
