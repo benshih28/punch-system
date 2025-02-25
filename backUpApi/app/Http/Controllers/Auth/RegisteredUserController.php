@@ -24,6 +24,7 @@ class RegisteredUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'gender' => ['required', 'in:male,female'], // 限制只能是 male 或 female
         ]);
 
         $user = User::create([
