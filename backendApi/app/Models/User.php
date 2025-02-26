@@ -8,10 +8,11 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject; //假如Laravel版本太新
+use Spatie\Permission\Traits\HasRoles;// ✅ 引入 Spatie 的 HasRoles Trait
 class User extends Authenticatable implements JWTSubject  // 實作JWT
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasRoles,HasFactory, Notifiable; // ✅ 使用 Spatie 提供的 HasRoles Trait
 
     /**
      * The attributes that are mass assignable.
@@ -64,5 +65,16 @@ class User extends Authenticatable implements JWTSubject  // 實作JWT
     public function getJWTCustomClaims()
     {
         return [];
+    }
+
+
+        // ✅【Spatie 已經提供 `hasRole()` 方法，不需要再手動寫】
+
+    /**
+     * 檢查使用者是否擁有某個權限
+     */
+    public function hasPermission($permission)
+    {
+        return $this->hasPermissionTo($permission);
     }
 }
