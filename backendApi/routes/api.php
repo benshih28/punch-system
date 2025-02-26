@@ -8,13 +8,16 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\PunchController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserRoleController;
+use App\Http\Controllers\PunchCorrectionController;
 
 
 // ✅ 公開 API（不需要登入）
 Route::post('/register', [RegisteredUserController::class, 'store']);
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 
-// 
+// 人資看到所有申請資料
+
+// 個人的補登打卡紀錄表單(可以選擇查看日期範圍)
 
 
 // ✅ 需要登入 (`auth:api`) 的 API
@@ -34,8 +37,13 @@ Route::middleware('auth:api')->group(function () {
 
     // 🟢 查詢當前使用者打卡紀錄
     Route::get('/attendance/records', [PunchController::class, 'getAttendanceRecords']);
+    Route::get('/attendance/finalrecords', [PunchCorrectionController::class, 'getFinalAttendanceRecords']);
 
+    // 🟢 查詢當前使用者打卡紀錄
+    Route::get('/attendance/records', [PunchController::class, 'getAttendanceRecords']);
 
+    // 打卡補登請求
+    Route::post('/punch/correction', [PunchCorrectionController::class, 'store']);
 
 
     // ✅ 只有 HR & Admin 才能存取的 API
@@ -57,5 +65,11 @@ Route::middleware('auth:api')->group(function () {
             Route::get('/{userId}/roles', [UserRoleController::class, 'getUserRoles']);
             Route::get('/{userId}/permissions', [UserRoleController::class, 'getUserPermissions']);
         });
+
+        Route::put('/punch/correction/{id}/approve', [PunchCorrectionController::class, 'approve']);
+        Route::put('/punch/correction/{id}/reject', [PunchCorrectionController::class, 'reject']);
+
+        
+
     });
 });

@@ -70,11 +70,47 @@ class User extends Authenticatable implements JWTSubject  // 實作JWT
 
         // ✅【Spatie 已經提供 `hasRole()` 方法，不需要再手動寫】
 
-    /**
-     * 檢查使用者是否擁有某個權限
-     */
+    
+    // 檢查使用者是否擁有某個權限
     public function hasPermission($permission)
     {
         return $this->hasPermissionTo($permission);
     }
+
+    // 使用者擔任主管的部門 (1對1)
+    // public function Department()
+    // {
+    //     return $this->hasOne(Department::class, 'manager_id', 'id');
+    //     // return $this->belongsTo(Department::class, 'id', 'id');
+    // }
+
+    // 使用者所屬的職位 (1對多)
+    // public function positions()
+    // {
+    //     return $this->hasMany(Position::class, 'user_id', 'user_id');
+    // }
+
+    // 使用者的原始打卡記錄
+    public function punchIns()
+    {
+        return $this->hasMany(PunchIn::class);
+    }
+
+    public function punchOuts()
+    {
+        return $this->hasMany(PunchOut::class);
+    }
+
+    // 使用者的補登打卡記錄
+    public function punchCorrections()
+    {
+        return $this->hasMany(PunchCorrection::class);
+    }
+
+    // 使用者審核過的補登記錄（若需要查詢）
+    public function approvedCorrections()
+    {
+        return $this->hasMany(PunchCorrection::class, 'approved_by');
+    }
+    
 }
