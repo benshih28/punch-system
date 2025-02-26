@@ -1,3 +1,9 @@
+XAMPP的php.ini拿掉註解
+```bash
+extension=sodium
+```
+
+
 laravel clone下來後要在專案的bash
 ```bash
 composer install
