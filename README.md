@@ -3,6 +3,10 @@ XAMPP的php.ini拿掉註解
 extension=sodium
 ```
 
+ 設定 .env 檔案
+```bash
+cp .env.example .env
+```
 
 laravel clone下來後要在專案的bash
 ```bash
