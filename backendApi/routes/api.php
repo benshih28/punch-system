@@ -39,9 +39,6 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/attendance/records', [PunchController::class, 'getAttendanceRecords']);
     Route::get('/attendance/finalrecords', [PunchCorrectionController::class, 'getFinalAttendanceRecords']);
 
-    // 🟢 查詢當前使用者打卡紀錄
-    Route::get('/attendance/records', [PunchController::class, 'getAttendanceRecords']);
-
     // 打卡補登請求
     Route::post('/punch/correction', [PunchCorrectionController::class, 'store']);
 
