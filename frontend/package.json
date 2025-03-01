@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "npm i & vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -14,15 +14,27 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
     "@eslint/js": "^9.21.0",
+    "@mui/material": "^6.4.6",
+    "@mui/styled-engine-sc": "^6.4.6",
+    "@mui/x-date-pickers": "^7.27.1",
+    "@tanstack/react-table": "^8.21.2",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",
+    "axios": "^1.8.1",
+    "dayjs": "^1.11.13",
     "eslint": "^9.21.0",
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^15.15.0",
+    "immer": "^10.1.1",
+    "jotai-immer": "^0.4.1",
+    "react-hook-form": "^7.54.2",
+    "styled-components": "^6.1.15",
     "vite": "^6.2.0"
   }
 }
