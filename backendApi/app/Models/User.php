@@ -8,11 +8,11 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject; //假如Laravel版本太新
-use Spatie\Permission\Traits\HasRoles;// ✅ 引入 Spatie 的 HasRoles Trait
+use Spatie\Permission\Traits\HasRoles; // ✅ 引入 Spatie 的 HasRoles Trait
 class User extends Authenticatable implements JWTSubject  // 實作JWT
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasRoles,HasFactory, Notifiable; // ✅ 使用 Spatie 提供的 HasRoles Trait
+    use HasRoles, HasFactory, Notifiable; // ✅ 使用 Spatie 提供的 HasRoles Trait
 
     /**
      * The attributes that are mass assignable.
@@ -26,7 +26,7 @@ class User extends Authenticatable implements JWTSubject  // 實作JWT
         'gender', // 新增 gender 欄位
     ];
 
-    
+
     // 這裡是將 email 轉為小寫
     public function setEmailAttribute($value)
     {
@@ -68,7 +68,7 @@ class User extends Authenticatable implements JWTSubject  // 實作JWT
     }
 
 
-        // ✅【Spatie 已經提供 `hasRole()` 方法，不需要再手動寫】
+    // ✅【Spatie 已經提供 `hasRole()` 方法，不需要再手動寫】
 
     /**
      * 檢查使用者是否擁有某個權限
@@ -76,5 +76,12 @@ class User extends Authenticatable implements JWTSubject  // 實作JWT
     public function hasPermission($permission)
     {
         return $this->hasPermissionTo($permission);
+    }
+
+    
+    // 使用者擔任主管的部門 (1對1)
+    public function managedDepartment()
+    {
+        return $this->hasOne(Department::class, 'manager_id', 'id');
     }
 }
