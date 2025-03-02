@@ -16,32 +16,43 @@ class PositionController extends Controller
     }
 
 
-    // 取得特定部門的職位
-    public function getByDepartment($departmentId)
+    // 根據部門篩選職位
+    public function getByDepartment($name)
     {
-        $positions = Position::where('department_id', $departmentId)->get();
+        // 先找到部門
+        $department = Department::where('name', $name)->first();
 
-        if ($positions->isEmpty()) {
-            return response()->json(['message' => '該部門沒有職位'], 404);
+        if (!$department) {
+            return response()->json([
+                'message' => '找不到該部門',
+            ], 404);
         }
 
-        return response()->json($positions, 200);
+        // 取得該部門的所有職位
+        $positions = Position::where('department_id', $department->id)->get();
+
+        return response()->json([
+            'department' => $department->name,
+            'positions' => $positions
+        ], 200);
     }
 
     // 新增職位
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string',
-            'department_id' => 'required|exists:departments,id'
+            'name' => 'required|string|max:255|unique:positions, name',
         ]);
 
-        Position::create([
-            'department_id' => $request->department_id,
+        $position = Position::create([
+            'department_id' => null, //不綁定部門
             'name' => $request->name
         ]);
 
-        return response()->json(['message' => '職位新增成功'], 201);
+        return response()->json([
+            'message' => '職位新增成功',
+            'position' => $position
+        ], 201);
     }
 
     // 更新職位
