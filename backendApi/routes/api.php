@@ -11,13 +11,9 @@ use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\PositionController;
 
-
 // ✅ 公開 API（不需要登入）
 Route::post('/register', [RegisteredUserController::class, 'store']);
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
-
-// 
-
 
 // ✅ 需要登入 (`auth:api`) 的 API
 Route::middleware('auth:api')->group(function () {
@@ -38,18 +34,17 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/attendance/records', [PunchController::class, 'getAttendanceRecords']);
 
     // ✅ 只有 HR & Admin 才能存取的 API
-    Route::middleware(['auth:api', 'can:isHRorAdmin'])->group(function () {
+    Route::middleware(['can:isHRorAdmin'])->group(function () {
 
-        // 角色管理 API
+        // 🔹 角色管理 API
         Route::prefix('/roles')->group(function () {
-            Route::post('/', [RoleController::class, 'createRole']);
+            Route::post('/', [RoleController::class, 'createRole']); // ✅ 修正 `/roles` 前綴
             Route::get('/', [RoleController::class, 'getAllRoles']);
             Route::post('/{roleId}/assign/permissions', [RoleController::class, 'assignPermission']);
             Route::post('/{roleId}/revoke/permissions', [RoleController::class, 'revokePermission']);
         });
 
-
-        // 使用者角色管理 API
+        // 🔹 使用者角色管理 API
         Route::prefix('/users')->group(function () {
             Route::post('/{userId}/assign/roles', [UserRoleController::class, 'assignRoleToUser']);
             Route::post('/{userId}/revoke/roles', [UserRoleController::class, 'revokeRoleFromUser']);
@@ -57,19 +52,22 @@ Route::middleware('auth:api')->group(function () {
             Route::get('/{userId}/permissions', [UserRoleController::class, 'getUserPermissions']);
         });
 
-        // 新增部門
-        Route::post('/departments', [DepartmentController::class, 'store']);
-        // 獲取所有部門
-        Route::get('/departments', [DepartmentController::class, 'index']);
-        // 獲取特定部門
-        Route::get('/departments/{name}', [DepartmentController::class, 'show']);
+        // 🔹 部門 API
+        Route::prefix('/departments')->group(function () {
+            Route::get('/', [DepartmentController::class, 'index']); // 取得所有部門
+            Route::post('/', [DepartmentController::class, 'store']); // 新增部門
+            Route::patch('/{id}', [DepartmentController::class, 'update']); // 更新部門
+            Route::delete('/{id}', [DepartmentController::class, 'destroy']); // 刪除部門
+        });
 
-        // 新增指定部門職位
-        Route::post('/departments/{name}/positions', [PositionController::class, 'store']);
-        // 取得所有職位列表
-        Route::get('/positions', [PositionController::class, 'index']);
-        // 取得特定部門的所有職位
-        Route::get('/departments/{name}/positions', [PositionController::class, 'getPositionsByDepartment']);
-        
-    });
+        // 🔹 職位 API
+        Route::prefix('/positions')->group(function () {
+            Route::get('/', [PositionController::class, 'index']); // 取得所有職位
+            Route::get('/by/department/{departmentId}', [PositionController::class, 'getByDepartment']); // 根據部門篩選職位
+            Route::post('/', [PositionController::class, 'store']); // 新增職位
+            Route::patch('/{id}', [PositionController::class, 'update']); // 更新職位
+            Route::delete('/{id}', [PositionController::class, 'destroy']); // 刪除職位
+        });
+
+    }); // 🔹 關閉 `middleware(['can:isHRorAdmin'])` Group
 });
