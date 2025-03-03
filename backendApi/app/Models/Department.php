@@ -11,13 +11,7 @@ class Department extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'manager_id'];
-
-    // 取得部門的主管 (關聯到 users 表)
-    public function manager(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'manager_id', 'id');
-    }
+    protected $fillable = ['name'];
 
     // 部門下的所有職位 (1對多)
     public function positions(): HasMany
