@@ -50,10 +50,6 @@ class DepartmentController extends Controller
         return response()->json(['message' => '部門更新成功'], 200); // 200 OK
     }
 
-
-        return response()->json(['message' => '部門更新成功'], 200); // 200 OK
-    }
-
     // 刪除部門
     public function destroy($id)
     {
