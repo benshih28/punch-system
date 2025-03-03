@@ -19,7 +19,7 @@ class LeaveController extends Controller
     }
 
     // 申請請假
-    public function apply(LeaveApplyRequest $request): JsonResponse
+    public function leaveApply(LeaveApplyRequest $request): JsonResponse
     {
         $user = auth()->user();  // 透過JWT取得當前登入者
 
@@ -29,28 +29,40 @@ class LeaveController extends Controller
 
         $leave = $this->leaveService->applyLeave($data); // 交給Service處理申請邏輯
 
+        $leave->load('user');
+
         // 回傳成功
         return response()->json([
-            'success' => true,
+            'message' => '已送出申請',
             'leave_id' => $leave->id,
-        ]);
+            'leave_apply' => [
+                'user_id' => $leave->user_id,
+                'user_name' => $leave->user->name,
+                'leave_type' => $leave->leave_type,
+                'start_time' => $leave->start_time,
+                'end_time' => $leave->end_time,
+                'reason' => $leave->reason,
+                'status' => $leave->status,
+            ],
+        ], 201);  // 201 Created
+
     }
 
-    // 查詢我的請假紀錄
+    // 查詢個人請假紀錄
     public function index(): JsonResponse
     {
         $leaves = Leave::where('user_id', auth()->id())->get();
         return response()->json($leaves);
     }
 
-    // 修改請假
+    // 修改請假原因
     public function update(LeaveUpdateRequest $request, Leave $leave): JsonResponse
     {
         $this->leaveService->updateLeave($leave, $request->validated());
         return response()->json(['success' => true]);
     }
 
-    // 刪除請假
+    // 刪除請假申請
     public function delete(LeaveDeleteRequest $request, Leave $leave): JsonResponse
     {
         $leave->delete();

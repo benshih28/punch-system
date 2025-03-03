@@ -34,13 +34,13 @@ Route::middleware('auth:api')->group(function () {
     // 🟢 查詢當前使用者打卡紀錄
     Route::get('/attendance/records', [PunchController::class, 'getAttendanceRecords']);
 
-    // // 🟢 請假API
-    // Route::middleware('auth:api')->prefix('leaves')->group(function () {
-    //     Route::post('/apply', [LeaveController::class, 'apply']);
-    //     Route::get('/', [LeaveController::class, 'index']);
-    //     Route::post('/{leave}/update', [LeaveController::class, 'update']);
-    //     Route::delete('/{leave}', [LeaveController::class, 'delete']);
-    // });
+    // 🟢 請假API
+    Route::middleware('auth:api')->prefix('leaves')->group(function () {
+        Route::post('/apply', [LeaveController::class, 'leaveApply']);
+        Route::get('/records', [LeaveController::class, 'index']);
+        Route::post('/{leave}/update', [LeaveController::class, 'update']);
+        Route::delete('/{leave}', [LeaveController::class, 'delete']);
+    });
 
 
     // ✅ 只有 HR & Admin 才能存取的 API

@@ -10,16 +10,31 @@ class Leave extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'leave_type', 'start_time', 'end_time', 'leave_hours', 'reason', 'reject_reason', 'status'
+        'user_id',
+        'leave_type',
+        'start_time',
+        'end_time',
+        'leave_hours',
+        'reason',
+        'reject_reason',
+        'status'
     ];
 
     public const TYPES = [
-        'personal', 'sick', 'official', 'marriage',
-        'maternity', 'funeral', 'annual', 'menstrual',
+        'personal',
+        'sick',
+        'official',
+        'marriage',
+        'maternity',
+        'funeral',
+        'annual',
+        'menstrual',
     ];
 
     public const STATUSES = [
-        'pending', 'approved', 'rejected',
+        'pending',
+        'approved',
+        'rejected',
     ];
 
     /**
@@ -51,5 +66,10 @@ class Leave extends Model
             'rejected' => '已退回',
             default => '未知狀態',
         };
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }
