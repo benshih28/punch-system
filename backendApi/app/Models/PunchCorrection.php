@@ -14,9 +14,9 @@ class PunchCorrection extends Model
         'punch_time',
         'reason',
         'status',
+        'review_message',
         'approved_by',
         'approved_at',
-        'review_message',
     ];
 
     // 補登記錄所屬的使用者（申請人）
@@ -29,16 +29,5 @@ class PunchCorrection extends Model
     public function approver()
     {
         return $this->belongsTo(User::class, 'approved_by');
-    }
-
-    public static function boot()
-    {
-        parent::boot();
-
-        static::saving(function ($model) {
-            if ($model->status === 'rejected' && empty($model->review_message)) {
-                throw new \Exception('審核拒絕時，review_message 必填');
-            }
-        });
     }
 }

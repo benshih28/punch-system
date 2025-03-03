@@ -12,21 +12,28 @@ use App\Models\PunchOut;
 
 class PunchCorrectionController extends Controller
 {
+    // 強制回傳 JSON
+    public function __construct()
+    {
+        request()->headers->set('Accept', 'application/json');
+    }
+
+
     // 1️⃣ 提交補登請求
     public function store(Request $request)
     {
+        // 取得當前登入的使用者
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['message' => '未授權的請求'], 401);
+        }
+
         // 驗證輸入
         $validatedData = $request->validate([
             'correction_type' => 'required|in:punch_in,punch_out',
             'punch_time' => 'required|date_format:Y-m-d H:i:s', // 確保格式正確
             'reason' => 'required|string',
         ]);
-
-        // 取得當前登入的使用者
-        $user = Auth::user();
-        if (!$user) {
-            return response()->json(['message' => '未授權的請求'], 401);
-        }
 
         // 確保 `punch_time` 不在未來
         $punchTime = Carbon::parse($validatedData['punch_time']);
@@ -60,8 +67,6 @@ class PunchCorrectionController extends Controller
         ], 201);
     }
 
-
-
     // 2️⃣ 管理員審核（批准）
     public function approve(Request $request, $id)
     {
@@ -88,14 +93,6 @@ class PunchCorrectionController extends Controller
             'review_message' => $reviewMessage, // 儲存管理員的說明
         ]);
 
-        // 如果補登的是上班打卡 (punch_in)
-        // if ($correction->correction_type === 'punch_in') {
-        //     // 解析補登的 punch_time 並取得日期
-        //     $punchDate = $correction->punch_time->toDateString();
-
-
-        // }
-
         return response()->json([
             'message' => '補登已通過審核',
             'data' => $correction
@@ -106,11 +103,15 @@ class PunchCorrectionController extends Controller
     // 3️⃣ 管理員審核（拒絕）
     public function reject(Request $request, $id)
     {
-        $request->validate([
-            'review_message' => 'required|string|max:255' // 必須填寫拒絕原因
-        ], [
-            'review_message.required' => '請填寫拒絕原因'
-        ], 400);
+        // $request->validate([
+        //     'review_message' => 'required|string|max:255' // 必須填寫拒絕原因
+        // ]);
+
+        if (!$request->filled('review_message')) {
+            return response()->json([
+                'message' => '請填寫拒絕原因'
+            ], 400);
+        }
 
         $correction = PunchCorrection::findOrFail($id);
 
@@ -121,14 +122,44 @@ class PunchCorrectionController extends Controller
 
         $correction->update([
             'status' => 'rejected',
+            'review_message' => $request->review_message, // 儲存管理員的說明
             'approved_by' => Auth::id(),
             'approved_at' => now(),
-            'review_message' => $request->review_message, // 儲存管理員的說明
         ]);
 
         return response()->json([
             'message' => '補登請求已被拒絕',
             'data' => $correction
+        ], 200);
+    }
+
+    // 使用者可以查看自己的所有打卡補登紀錄(可選擇日期範圍)
+    public function getUserCorrections(Request $request)
+    {
+        // 確保使用者已登入
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['message' => '未授權的請求'], 401);
+        }
+
+        // 取得 Query 參數
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+
+        // 查詢使用者的補登紀錄
+        $query = PunchCorrection::where('user_id', $user->id);
+
+        // 若有提供開始 & 結束日期，則篩選日期範圍
+        if ($startDate && $endDate) {
+            $query->whereBetween('punch_time', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+        }
+
+        // 取得結果，依時間排序（最新的在最上面）
+        $corrections = $query->orderBy('punch_time', 'desc')->get();
+
+        return response()->json([
+            'message' => '成功獲取補登紀錄',
+            'data' => $corrections
         ], 200);
     }
 
@@ -151,5 +182,45 @@ class PunchCorrectionController extends Controller
         ]);
 
         return response()->json($records);
+    }
+
+    public function getAllCorrections(Request $request)
+    {
+        // 1️⃣ 確保使用者已登入
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['message' => '未授權的請求'], 401);
+        }
+
+        // 2️⃣ 確保使用者有 HR 或管理員權限
+        if (!$user->hasRole(['HR', 'admin'])) {
+            return response()->json(['message' => '您沒有權限查看所有補登紀錄'], 403);
+        }
+
+        // 3️⃣ 取得 Query 參數
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+        $userId = $request->query('user_id');
+
+        // 4️⃣ 建立查詢
+        $query = PunchCorrection::with('user'); // 讓結果包含使用者資訊
+
+        // 5️⃣ 如果有提供 `user_id`，則篩選特定使用者
+        if ($userId) {
+            $query->where('user_id', $userId);
+        }
+
+        // 6️⃣ 如果有提供 `start_date` 和 `end_date`，則篩選日期範圍
+        if ($startDate && $endDate) {
+            $query->whereBetween('punch_time', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+        }
+
+        // 7️⃣ 取得結果，依時間排序（最新的在最上面）
+        $corrections = $query->orderBy('punch_time', 'desc')->get();
+
+        return response()->json([
+            'message' => '成功獲取所有補登紀錄',
+            'data' => $corrections
+        ], 200);
     }
 }

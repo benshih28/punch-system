@@ -15,11 +15,6 @@ use App\Http\Controllers\PunchCorrectionController;
 Route::post('/register', [RegisteredUserController::class, 'store']);
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 
-// 人資看到所有申請資料
-
-// 個人的補登打卡紀錄表單(可以選擇查看日期範圍)
-
-
 // ✅ 需要登入 (`auth:api`) 的 API
 Route::middleware('auth:api')->group(function () {
 
@@ -34,6 +29,7 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/in', [PunchController::class, 'punchIn']);
         Route::post('/out', [PunchController::class, 'punchOut']);
         Route::post('/correction', [PunchCorrectionController::class, 'store']); // 打卡補登請求
+        Route::get('correction', [PunchCorrectionController::class, 'getUserCorrections']); // 個人的補登打卡紀錄表單(可以選擇查看日期範圍)
     });
 
     // 🟢 查詢當前使用者打卡紀錄
@@ -61,11 +57,13 @@ Route::middleware('auth:api')->group(function () {
             Route::get('/{userId}/roles', [UserRoleController::class, 'getUserRoles']);
             Route::get('/{userId}/permissions', [UserRoleController::class, 'getUserPermissions']);
         });
-
+        
+        // 打卡補登審核通過或未通過
         Route::put('/punch/correction/{id}/approve', [PunchCorrectionController::class, 'approve']);
         Route::put('/punch/correction/{id}/reject', [PunchCorrectionController::class, 'reject']);
 
-        
+        // 人資看到所有申請資料(可以選擇查看日期範圍)
+        Route::get('corrections', [PunchCorrectionController::class, 'getUserCorrections']); 
 
     });
 });
