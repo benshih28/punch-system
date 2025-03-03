@@ -38,7 +38,7 @@ function LoginPage() {
       >
         {/* Logo 圖片 */}
         <img
-          src="src/image/logo.png"
+          src="logo.png"
           alt="Dacall Logo"
           style={{ width: 140, display: "block", margin: "0 auto 20px" }}
         />
