@@ -11,13 +11,9 @@ use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\PositionController;
 
-
 // ✅ 公開 API（不需要登入）
 Route::post('/register', [RegisteredUserController::class, 'store']);
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
-
-// 
-
 
 // ✅ 需要登入 (`auth:api`) 的 API
 Route::middleware('auth:api')->group(function () {
@@ -38,18 +34,17 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/attendance/records', [PunchController::class, 'getAttendanceRecords']);
 
     // ✅ 只有 HR & Admin 才能存取的 API
-    Route::middleware(['auth:api', 'can:isHRorAdmin'])->group(function () {
+    Route::middleware(['can:isHRorAdmin'])->group(function () {
 
-        // 角色管理 API
+        // 🔹 角色管理 API
         Route::prefix('/roles')->group(function () {
-            Route::post('/', [RoleController::class, 'createRole']);
+            Route::post('/', [RoleController::class, 'createRole']); // ✅ 修正 `/roles` 前綴
             Route::get('/', [RoleController::class, 'getAllRoles']);
             Route::post('/{roleId}/assign/permissions', [RoleController::class, 'assignPermission']);
             Route::post('/{roleId}/revoke/permissions', [RoleController::class, 'revokePermission']);
         });
 
-
-        // 使用者角色管理 API
+        // 🔹 使用者角色管理 API
         Route::prefix('/users')->group(function () {
             Route::post('/{userId}/assign/roles', [UserRoleController::class, 'assignRoleToUser']);
             Route::post('/{userId}/revoke/roles', [UserRoleController::class, 'revokeRoleFromUser']);
@@ -74,6 +69,8 @@ Route::middleware('auth:api')->group(function () {
             Route::patch('/{id}', [PositionController::class, 'update']); // 更新職位
             Route::delete('/{id}', [PositionController::class, 'destroy']); // 刪除職位
         });
-        
-    });
+
+
+    }); // 🔹 關閉 `middleware(['can:isHRorAdmin'])` Group
 });
+
