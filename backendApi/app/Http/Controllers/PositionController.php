@@ -23,39 +23,29 @@ class PositionController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    // 在指定部門新增職位
-    public function store(Request $request, string $name): JsonResponse
+    // 新增職位
+    public function store(Request $request)
     {
-        // 先取得部門
-        $department = Department::where('name', $name)->first();
-
-        if (!$department) {
-            return response()->json([
-                'message' => '找不到該部門',
-            ], 404);
-        }
-
-        // 驗證請求資料
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
+        $request->validate([
+            'name' => 'required|string|max:255|unique:positions,name',
+            'department_id' => 'nullable|exists:departments,id'
         ]);
 
-        // 新增職位
         $position = Position::create([
-            'department_id' => $department->id,
-            'name' => $validated['name'],
+            'name' => $request->name,
+            'department_id' => $request->department_id //不綁定部門，可以是null
         ]);
 
         return response()->json([
-            'message' => '職位新增成功！',
+            'message' => '職位新增成功',
             'position' => $position
         ], 201);
     }
 
-    // 取得特定部門的所有職位
-    public function getPositionsByDepartment(string $name): JsonResponse
+    // 根據部門篩選職位
+    public function getByDepartment($name)
     {
-        // 先取得部門
+        // 先找到部門
         $department = Department::where('name', $name)->first();
 
         if (!$department) {
@@ -65,12 +55,38 @@ class PositionController extends Controller
         }
 
         // 取得該部門的所有職位
-        $positions = $department->positions()->get();
+        $positions = Position::where('department_id', $department->id)->get();
 
         return response()->json([
-            'message' => '成功獲取部門的所有職位',
             'department' => $department->name,
             'positions' => $positions
+        ], 200);
+    }
+
+    // 為部門指派職位
+    public function assignPositionToDepartment(Request $request, $name)
+    {
+        $department = Department::where('name', $name)->first();
+
+        if (!$department) {
+            return response()->json([
+                'message' => '找不到該部門',
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'id' => 'required|exists:positions,id'
+        ]);
+
+        // 取得職位
+        $position = Position::find($validated['id']);
+
+        // 更新職位的department_id
+        $position->department_id = $department->id;
+        $position->save();
+
+        return response()->json([
+            'message' => '職位已指派到部門'
         ], 200);
     }
 
@@ -79,7 +95,22 @@ class PositionController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $request->validate([
+            'name' => 'required|string|max:255|unique:positions,name',
+            'department_id' => 'nullable|exists:departments,id'
+        ]);
+
+        $position = Position::find($id);
+
+        if (!$position) {
+            return response()->json(['error' => '找不到職位'], 404);
+        }
+
+        $position->name = $request->name;
+        $position->department_id = $request->department_id;
+        $position->save();
+
+        return response()->json(['message' => '職位更新成功'], 200);
     }
 
     /**
@@ -87,6 +118,13 @@ class PositionController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $position = Position::find($id);
+
+        if (!$position) {
+            return response()->json(['error' => '找不到職位'], 404);
+        }
+
+        $position->delete();
+        return response()->json(['message' => '職位刪除成功'], 200);
     }
 }

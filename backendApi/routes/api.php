@@ -57,19 +57,23 @@ Route::middleware('auth:api')->group(function () {
             Route::get('/{userId}/permissions', [UserRoleController::class, 'getUserPermissions']);
         });
 
-        // 新增部門
-        Route::post('/departments', [DepartmentController::class, 'store']);
-        // 獲取所有部門
-        Route::get('/departments', [DepartmentController::class, 'index']);
-        // 獲取特定部門
-        Route::get('/departments/{name}', [DepartmentController::class, 'show']);
+        // 🔹 部門 API
+        Route::prefix('/departments')->group(function () {
+            Route::get('/', [DepartmentController::class, 'index']); // 取得所有部門
+            Route::post('/', [DepartmentController::class, 'store']); // 新增部門
+            Route::patch('/{id}', [DepartmentController::class, 'update']); // 更新部門
+            Route::delete('/{id}', [DepartmentController::class, 'destroy']); // 刪除部門
+        });
 
-        // 新增指定部門職位
-        Route::post('/departments/{name}/positions', [PositionController::class, 'store']);
-        // 取得所有職位列表
-        Route::get('/positions', [PositionController::class, 'index']);
-        // 取得特定部門的所有職位
-        Route::get('/departments/{name}/positions', [PositionController::class, 'getPositionsByDepartment']);
+        // 🔹 職位 API
+        Route::prefix('/positions')->group(function () {
+            Route::get('/', [PositionController::class, 'index']); // 取得所有職位
+            Route::get('/by/department/{name}', [PositionController::class, 'getByDepartment']); // 根據部門篩選職位
+            Route::post('/by/department/{name}', [PositionController::class, 'assignPositionToDepartment']); // 為部門指派職位
+            Route::post('/', [PositionController::class, 'store']); // 新增職位
+            Route::patch('/{id}', [PositionController::class, 'update']); // 更新職位
+            Route::delete('/{id}', [PositionController::class, 'destroy']); // 刪除職位
+        });
         
     });
 });

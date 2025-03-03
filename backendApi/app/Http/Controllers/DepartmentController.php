@@ -8,6 +8,18 @@ use App\Models\Department;
 
 class DepartmentController extends Controller
 {
+    // 取得所有部門
+    public function index()
+    {
+        $departments = Department::with('manager')->get(); // 取得所有部門，並帶出主管資訊
+
+        return response()->json([
+            'message' => '成功獲取所有部門',
+            'departments' => $departments
+        ], 200);
+    }
+
+    // 新增部門
     public function store(Request $request)
     {
         // 驗證請求資料
@@ -28,32 +40,29 @@ class DepartmentController extends Controller
         ], 201);
     }
 
-    // 取得所有部門
-    public function index()
+    // 更新部門
+    public function update(Request $request, $id)
     {
-        $departments = Department::with('manager')->get(); // 取得所有部門，並帶出主管資訊
+        $request->validate(['name' => 'required|string|unique:departments,name,' . $id]);
 
-        return response()->json([
-            'message' => '成功獲取所有部門',
-            'departments' => $departments
-        ], 200);
+        $department = Department::findOrFail($id);
+        $department->name = $request->name;
+        $department->save();
+
+        return response()->json(['message' => '部門更新成功'], 200); // 200 OK
     }
 
-
-    // 取得特定部門
-    public function show(string $name)
+    // 刪除部門
+    public function destroy($id)
     {
-        $department = Department::where('name', $name)->with('manager')->first();
-
+        $department = Department::find($id);
+        
         if (!$department) {
-            return response()->json([
-                'message' => '找不到該部門',
-            ], 404);
+            return response()->json(['error' => '找不到部門'], 404); // 404 Not Found
         }
 
-        return response()->json([
-            'message' => '成功獲取部門',
-            'department' => $department
-        ], 200);
+        $department->delete();
+        return response()->json(['message' => '部門刪除成功'], 200); // 200 OK
     }
+
 }
