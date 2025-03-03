@@ -63,7 +63,8 @@ Route::middleware('auth:api')->group(function () {
         // 🔹 職位 API
         Route::prefix('/positions')->group(function () {
             Route::get('/', [PositionController::class, 'index']); // 取得所有職位
-            Route::get('/by/department/{departmentId}', [PositionController::class, 'getByDepartment']); // 根據部門篩選職位
+            Route::get('/by/department/{name}', [PositionController::class, 'getByDepartment']); // 根據部門篩選職位
+            Route::post('/by/department/{name}', [PositionController::class, 'assignPositionToDepartment']); // 為部門指派職位
             Route::post('/', [PositionController::class, 'store']); // 新增職位
             Route::patch('/{id}', [PositionController::class, 'update']); // 更新職位
             Route::delete('/{id}', [PositionController::class, 'destroy']); // 刪除職位

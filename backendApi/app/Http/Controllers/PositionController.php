@@ -37,15 +37,43 @@ class PositionController extends Controller
         ], 200);
     }
 
+    // 為部門指派職位
+    public function assignPositionToDepartment(Request $request, $name)
+    {
+        $department = Department::where('name', $name)->first();
+
+        if (!$department) {
+            return response()->json([
+                'message' => '找不到該部門',
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'id' => 'required|exists:positions,id'
+        ]);
+
+        // 取得職位
+        $position = Position::find($validated['id']);
+
+        // 更新職位的department_id
+        $position->department_id = $department->id;
+        $position->save();
+
+        return response()->json([
+            'message' => '職位已指派到部門'
+        ], 200);
+    } 
+
     // 新增職位
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255|unique:positions, name',
+            'name' => 'required|string|max:255|unique:positions,name',
+            'department_id' => 'nullable|exists:departments,id'
         ]);
 
         $position = Position::create([
-            'department_id' => null, //不綁定部門
+            'department_id' => $request->department_id, //不綁定部門，可以是null
             'name' => $request->name
         ]);
 

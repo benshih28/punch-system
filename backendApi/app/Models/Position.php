@@ -10,7 +10,7 @@ class Position extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['department_id', 'name'];
+    protected $fillable = ['name', 'department_id'];
 
     // 這個職位所屬的部門 (1對1)
     public function department(): BelongsTo
