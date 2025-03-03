@@ -12,7 +12,7 @@ return new class extends Migration {
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->enum('correction_type', ['punch_in', 'punch_out']);
             $table->datetime('punch_time');
-            $table->text('reason')->nullable();
+            $table->text('reason')->nullable(false);
             $table->string('status')->default('pending');
             $table->text('review_message')->nullable();
             $table->foreignId('approved_by')->nullable()->constrained('users')->onDelete('set null');

@@ -77,19 +77,6 @@ class User extends Authenticatable implements JWTSubject  // 實作JWT
         return $this->hasPermissionTo($permission);
     }
 
-    // 使用者擔任主管的部門 (1對1)
-    // public function Department()
-    // {
-    //     return $this->hasOne(Department::class, 'manager_id', 'id');
-    //     // return $this->belongsTo(Department::class, 'id', 'id');
-    // }
-
-    // 使用者所屬的職位 (1對多)
-    // public function positions()
-    // {
-    //     return $this->hasMany(Position::class, 'user_id', 'user_id');
-    // }
-
     // 使用者的原始打卡記錄
     public function punchIns()
     {

@@ -33,14 +33,13 @@ Route::middleware('auth:api')->group(function () {
     Route::prefix('/punch')->group(function () {
         Route::post('/in', [PunchController::class, 'punchIn']);
         Route::post('/out', [PunchController::class, 'punchOut']);
+        Route::post('/correction', [PunchCorrectionController::class, 'store']); // 打卡補登請求
     });
 
     // 🟢 查詢當前使用者打卡紀錄
     Route::get('/attendance/records', [PunchController::class, 'getAttendanceRecords']);
     Route::get('/attendance/finalrecords', [PunchCorrectionController::class, 'getFinalAttendanceRecords']);
 
-    // 打卡補登請求
-    Route::post('/punch/correction', [PunchCorrectionController::class, 'store']);
 
 
     // ✅ 只有 HR & Admin 才能存取的 API

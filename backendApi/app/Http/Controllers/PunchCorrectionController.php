@@ -19,7 +19,7 @@ class PunchCorrectionController extends Controller
         $validatedData = $request->validate([
             'correction_type' => 'required|in:punch_in,punch_out',
             'punch_time' => 'required|date_format:Y-m-d H:i:s', // 確保格式正確
-            'reason' => 'nullable|string',
+            'reason' => 'required|string',
         ]);
 
         // 取得當前登入的使用者
@@ -77,28 +77,24 @@ class PunchCorrectionController extends Controller
             return response()->json(['message' => '此補登申請已被處理'], 400);
         }
 
+        // 設定預設的 review_message
+        $reviewMessage = $validatedData['review_message'] ?? '審核通過';
+
         // 更新補登申請的狀態
         $correction->update([
             'status' => 'approved',
             'approved_by' => Auth::id(),
             'approved_at' => now(),
-            'review_message' => $request->input('review_message'), // 儲存管理員的說明
+            'review_message' => $reviewMessage, // 儲存管理員的說明
         ]);
 
         // 如果補登的是上班打卡 (punch_in)
-        if ($correction->correction_type === 'punch_in') {
-            // 解析補登的 punch_time 並取得日期
-            $punchDate = $correction->punch_time->toDateString();
+        // if ($correction->correction_type === 'punch_in') {
+        //     // 解析補登的 punch_time 並取得日期
+        //     $punchDate = $correction->punch_time->toDateString();
 
-            // 呼叫預存程序，更新當天最晚的 punch_out
-            DB::statement('CALL ApprovePunchOut(?, ?)', [$correction->user_id, $punchDate]);
-            dd('Stored Procedure Executed');
 
-            return response()->json([
-                'message' => '補登申請已通過，已更新當天最晚的下班打卡紀錄',
-                'data' => $correction
-            ]);
-        }
+        // }
 
         return response()->json([
             'message' => '補登已通過審核',
@@ -112,7 +108,9 @@ class PunchCorrectionController extends Controller
     {
         $request->validate([
             'review_message' => 'required|string|max:255' // 必須填寫拒絕原因
-        ]);
+        ], [
+            'review_message.required' => '請填寫拒絕原因'
+        ], 400);
 
         $correction = PunchCorrection::findOrFail($id);
 
@@ -145,7 +143,7 @@ class PunchCorrectionController extends Controller
             return response()->json(['error' => '請提供 start_date 和 end_date'], 400);
         }
 
-        // 依序傳入 userId 7 次
+        // 呼叫 MySQL 預存程序
         $records = DB::select('CALL GetFinalAttendanceRecords(?,?,?)', [
             $userId,
             $startDate,
