@@ -1,13 +1,34 @@
 <?php
 
 return [
-    'paths' => ['api/*', 'sanctum/csrf-cookie'], // 允許 API 路徑
-    'allowed_methods' => ['*'], // 允許所有請求方法
-    'allowed_origins' => ['http://localhost:5173'], // 前端網址
-    'allowed_origins_patterns' => [],
-    'allowed_headers' => ['Authorization', 'Content-Type', 'X-Requested-With'],
-    'exposed_headers' => ['Authorization'], // 確保前端能讀取 Authorization 標頭
-    'max_age' => 0,
-    'supports_credentials' => true, // **允許攜帶憑證（重要！）**
-];
 
+    /*
+    |--------------------------------------------------------------------------
+    | Cross-Origin Resource Sharing (CORS) Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Here you may configure your settings for cross-origin resource sharing
+    | or "CORS". This determines what cross-origin operations may execute
+    | in web browsers. You are free to adjust these settings as needed.
+    |
+    | To learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+    |
+    */
+
+    'paths' => ['*'],
+
+    'allowed_methods' => ['*'],
+
+    'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:3000')],
+
+    'allowed_origins_patterns' => [],
+
+    'allowed_headers' => ['*'],
+
+    'exposed_headers' => [],
+
+    'max_age' => 0,
+
+    'supports_credentials' => true,
+
+];
