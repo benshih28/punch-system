@@ -70,5 +70,7 @@ Route::middleware('auth:api')->group(function () {
             Route::delete('/{id}', [PositionController::class, 'destroy']); // 刪除職位
         });
 
+
     }); // 🔹 關閉 `middleware(['can:isHRorAdmin'])` Group
 });
+

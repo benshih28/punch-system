@@ -67,12 +67,14 @@ class PositionController extends Controller
     // 新增職位
     public function store(Request $request)
     {
+
         $request->validate([
             'name' => 'required|string|max:255|unique:positions,name',
             'department_id' => 'nullable|exists:departments,id'
         ]);
 
         $position = Position::create([
+
             'department_id' => $request->department_id, //不綁定部門，可以是null
             'name' => $request->name
         ]);
@@ -91,11 +93,13 @@ class PositionController extends Controller
             'department_id' => 'required|exists:departments,id'
         ]);
 
+
         $position = Position::find($id);
 
         if (!$position) {
             return response()->json(['error' => '找不到職位'], 404);
         }
+
 
         $position->name = $request->name;
         $position->department_id = $request->department_id;
@@ -108,6 +112,7 @@ class PositionController extends Controller
     public function destroy($id)
     {
         $position = Position::find($id);
+
 
         if (!$position) {
             return response()->json(['error' => '找不到職位'], 404);

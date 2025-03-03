@@ -11,10 +11,14 @@ class DepartmentController extends Controller
     // 取得所有部門
     public function index()
     {
+
         return response()->json(Department::all(), 200);
     }
     
     
+
+
+
     // 新增部門
     public function store(Request $request)
     {
@@ -33,7 +37,6 @@ class DepartmentController extends Controller
     }
 
 
-
     // 更新部門
     public function update(Request $request, $id)
     {
@@ -43,9 +46,13 @@ class DepartmentController extends Controller
         $department->name = $request->name;
         $department->save();
 
+
         return response()->json(['message' => '部門更新成功'], 200); // 200 OK
     }
 
+
+        return response()->json(['message' => '部門更新成功'], 200); // 200 OK
+    }
 
     // 刪除部門
     public function destroy($id)
@@ -59,4 +66,5 @@ class DepartmentController extends Controller
         $department->delete();
         return response()->json(['message' => '部門刪除成功'], 200); // 200 OK
     }
+
 }
