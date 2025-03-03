@@ -17,7 +17,12 @@ import {
 import { Visibility, VisibilityOff, Email, Lock } from "@mui/icons-material";
 
 function LoginPage() {
-  const { register, handleSubmit, setError, formState: { errors } } = useForm();
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors },
+  } = useForm();
   const [, setAuth] = useAtom(authAtom); // 設定全域登入狀態
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -35,7 +40,9 @@ function LoginPage() {
       navigate("/punchin"); // 登入成功後跳轉
     } catch (error) {
       if (error.response && error.response.data) {
-        setError("email", { message: error.response.data.message || "登入失敗" });
+        setError("email", {
+          message: error.response.data.message || "登入失敗",
+        });
       } else {
         setError("email", { message: "無法連線至伺服器" });
       }
@@ -67,7 +74,7 @@ function LoginPage() {
       >
         {/* Logo */}
         <img
-          src="src/image/logo.png"
+          src="/logo.png"
           alt="Dacall Logo"
           style={{ width: 140, display: "block", margin: "0 auto 20px" }}
         />
@@ -84,7 +91,10 @@ function LoginPage() {
             margin="normal"
             label="請輸入 Email"
             variant="outlined"
-            {...register("email", { required: "Email 為必填", pattern: { value: /^\S+@\S+$/i, message: "Email 格式錯誤" } })}
+            {...register("email", {
+              required: "Email 為必填",
+              pattern: { value: /^\S+@\S+$/i, message: "Email 格式錯誤" },
+            })}
             error={!!errors.email}
             helperText={errors.email?.message}
             InputProps={{
@@ -102,7 +112,10 @@ function LoginPage() {
             label="請輸入密碼"
             variant="outlined"
             type={showPassword ? "text" : "password"}
-            {...register("password", { required: "密碼為必填", minLength: { value: 8, message: "密碼至少需 8 碼" } })}
+            {...register("password", {
+              required: "密碼為必填",
+              minLength: { value: 8, message: "密碼至少需 8 碼" },
+            })}
             error={!!errors.password}
             helperText={errors.password?.message}
             InputProps={{
@@ -113,7 +126,10 @@ function LoginPage() {
               ),
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                  <IconButton
+                    onClick={() => setShowPassword(!showPassword)}
+                    edge="end"
+                  >
                     {showPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>
@@ -122,7 +138,10 @@ function LoginPage() {
           />
 
           <Box textAlign="right" sx={{ mb: 2 }}>
-            <Link to="/ForgotPassword" style={{ fontSize: "14px", color: "#757575" }}>
+            <Link
+              to="/ForgotPassword"
+              style={{ fontSize: "14px", color: "#757575" }}
+            >
               忘記密碼
             </Link>
           </Box>
