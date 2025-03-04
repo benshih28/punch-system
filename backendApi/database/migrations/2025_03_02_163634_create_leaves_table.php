@@ -19,11 +19,12 @@ return new class extends Migration
             $table->dateTime('start_time');    // 開始時間
             $table->dateTime('end_time');      // 結束時間
             $table->float('leave_hours');      // 請假時數
-    
+
             $table->text('reason');                            // 事由
             $table->string('status', 20)->default('pending');  // 狀態
             $table->text('reject_reason');                     // 退回原因
-    
+            $table->string('attachment', 100)->nullable();     // UUID檔名
+
             $table->timestamps();  // created_at 和 updated_at
         });
     }

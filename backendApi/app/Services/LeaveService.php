@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Leave;
+use Illuminate\Support\Str;
 
 class LeaveService
 {
@@ -16,6 +17,21 @@ class LeaveService
     {
         $hours = $this->calculateHours($data['start_time'], $data['end_time']);
 
+        $attachmentPath = null;
+        if (isset($data['attachment']) && $data['attachment']->isValid()) {
+            $file = $data['attachment'];
+
+            // 取得原始檔名和副檔名
+            $originalName = $file->getClientOriginalName();
+            $extension = $file->getClientOriginalExtension();
+
+            // UUID檔名 + 副檔名
+            $filename = Str::uuid() . '.' . $extension;
+
+            // 存檔到attachments
+            $attachmentPath = $file->storeAs('attachments', $filename, 'public');
+        }
+
         return Leave::create([
             'user_id' => $data['user_id'],
             'leave_type' => $data['leave_type'],
@@ -24,6 +40,7 @@ class LeaveService
             'leave_hours' => $hours,   // 存小時數
             'reason' => $data['reason'] ?? '',
             'status' => 'pending',
+            'attachment' => $attachmentPath,
         ]);
     }
 

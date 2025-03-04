@@ -24,8 +24,12 @@ class LeaveController extends Controller
         $user = auth()->user();  // 透過JWT取得當前登入者
 
         $data = $request->validated(); // 先做欄位驗證，通過後再繼續
-
         $data['user_id'] = $user->id;  // user_id由後端自動補，不讓前端傳
+
+        // ✅ 把attachment傳進Service
+        if ($request->hasFile('attachment')) {
+            $data['attachment'] = $request->file('attachment');
+        }
 
         $leave = $this->leaveService->applyLeave($data); // 交給Service處理申請邏輯
 
@@ -43,29 +47,32 @@ class LeaveController extends Controller
                 'end_time' => $leave->end_time,
                 'reason' => $leave->reason,
                 'status' => $leave->status,
+                'attachment' => $leave->attachment
+                    ? asset('storage/' . $leave->attachment)
+                    : null,
             ],
         ], 201);  // 201 Created
 
     }
 
     // 查詢個人請假紀錄
-    public function index(): JsonResponse
-    {
-        $leaves = Leave::where('user_id', auth()->id())->get();
-        return response()->json($leaves);
-    }
+    // public function leaveRecords(): JsonResponse
+    // {
+    //     $leaves = Leave::where('user_id', auth()->id())->get();
+    //     return response()->json($leaves);
+    // }
 
-    // 修改請假原因
-    public function update(LeaveUpdateRequest $request, Leave $leave): JsonResponse
-    {
-        $this->leaveService->updateLeave($leave, $request->validated());
-        return response()->json(['success' => true]);
-    }
+    // // 修改請假原因
+    // public function update(LeaveUpdateRequest $request, Leave $leave): JsonResponse
+    // {
+    //     $this->leaveService->updateLeave($leave, $request->validated());
+    //     return response()->json(['success' => true]);
+    // }
 
-    // 刪除請假申請
-    public function delete(LeaveDeleteRequest $request, Leave $leave): JsonResponse
-    {
-        $leave->delete();
-        return response()->json(['success' => true]);
-    }
+    // // 刪除請假申請
+    // public function delete(LeaveDeleteRequest $request, Leave $leave): JsonResponse
+    // {
+    //     $leave->delete();
+    //     return response()->json(['success' => true]);
+    // }
 }

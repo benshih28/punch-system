@@ -9,6 +9,7 @@ use App\Http\Controllers\PunchController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\LeaveController;
+use App\Http\Controllers\LeaveTypeController;
 
 
 // ✅ 公開 API（不需要登入）
@@ -36,10 +37,18 @@ Route::middleware('auth:api')->group(function () {
 
     // 🟢 請假API
     Route::middleware('auth:api')->prefix('leaves')->group(function () {
+        // 1. 假別選單API
+        Route::get('/leavetype', [LeaveTypeController::class, 'getLeaveTypes']);
+        // 2. 狀態選單API
+        Route::get('/leavestatus', [LeaveTypeController::class, 'getLeaveStatus']);
+
+        // 1.請假申請API
         Route::post('/apply', [LeaveController::class, 'leaveApply']);
-        Route::get('/records', [LeaveController::class, 'index']);
-        Route::post('/{leave}/update', [LeaveController::class, 'update']);
-        Route::delete('/{leave}', [LeaveController::class, 'delete']);
+        // 2. 查詢請假紀錄
+        Route::get('/records', [LeaveController::class, 'leaveRecords']);
+
+        // Route::post('/{leave}/update', [LeaveController::class, 'update']);
+        // Route::delete('/{leave}', [LeaveController::class, 'delete']);
     });
 
 

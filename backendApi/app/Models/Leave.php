@@ -17,10 +17,11 @@ class Leave extends Model
         'leave_hours',
         'reason',
         'reject_reason',
-        'status'
+        'status',
+        'attachment',
     ];
 
-    public const TYPES = [
+    public const LEAVE_TYPE = [
         'personal',
         'sick',
         'official',
@@ -36,37 +37,6 @@ class Leave extends Model
         'approved',
         'rejected',
     ];
-
-    /**
-     * 假別對應中文
-     */
-    public static function typeLabel($type)
-    {
-        return match ($type) {
-            'personal' => '事假',
-            'sick' => '病假',
-            'official' => '公假',
-            'marriage' => '婚假',
-            'maternity' => '產假',
-            'funeral' => '喪假',
-            'annual' => '特休假',
-            'menstrual' => '生理假',
-            default => '未知假別',
-        };
-    }
-
-    /**
-     * 狀態對應中文
-     */
-    public static function statusLabel($status)
-    {
-        return match ($status) {
-            'pending' => '待審核',
-            'approved' => '已審核',
-            'rejected' => '已退回',
-            default => '未知狀態',
-        };
-    }
 
     public function user()
     {
