@@ -1,20 +1,20 @@
-import { Navigate, Outlet } from "react-router-dom"; // 引入 `Navigate` 來進行頁面導向，`Outlet` 用於嵌套路由
-import { useAtom } from "jotai"; // 從 Jotai 狀態管理庫引入 `useAtom`
-import { authAtom } from "../state/authAtom"; // 引入 `authAtom`，存放認證狀態
+import { Navigate } from "react-router-dom"; // 引入 `Navigate`，用於未認證時跳轉至登入頁面
+import { useAtom } from "jotai"; // 從 Jotai 狀態管理庫引入 `useAtom`，用來讀取 `authAtom` 的狀態
+import { authAtom } from "../state/authAtom"; // 引入 `authAtom`，用於管理使用者的認證狀態
 
-// 受保護路由 (ProtectedRoute) 組件
+// `ProtectedRoute` 是一個高階元件 (HOC)，用來保護內部的子元件
 const ProtectedRoute = ({ children }) => {
-  // 從 `authAtom` 取得 `auth` 狀態
+  // 透過 `useAtom` 取得 `authAtom` 內的認證狀態
   const [auth] = useAtom(authAtom);
 
-  // 檢查使用者是否已登入
-  // 1. 如果 `auth` 存在且 `auth.isAuthenticated` 為 true，代表已登入
-  // 2. 如果 `auth` 為 `null`，則從 `localStorage` 檢查是否有 `token` (這是為了處理頁面重新整理時的登入狀態)
-  const isAuthenticated = auth?.isAuthenticated || !!localStorage.getItem("token");
+  // 檢查是否已認證：
+  // - 如果 `auth.access_token` 存在，代表使用者已登入
+  // - 如果 `localStorage` 中有 `auth`，則視為已登入（確保即使重新整理也能保持登入狀態）
+  const isAuthenticated = !!auth?.access_token || !!localStorage.getItem("auth");
 
-  // 如果已登入，則顯示 `children` (即受保護的內容)
-  // 如果未登入，則導向 `/login` 頁面，並使用 `replace` 屬性防止回退到受保護頁面
+  // 如果已認證，則顯示 `children`（即受保護的頁面）
+  // 如果未認證，則導向至 `/login` 登入頁面
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
-export default ProtectedRoute; // 導出 `ProtectedRoute` 讓其他組件使用
+export default ProtectedRoute; // 匯出 `ProtectedRoute` 供其他元件使用
