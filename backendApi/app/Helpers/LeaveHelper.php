@@ -4,7 +4,31 @@ namespace App\Helpers;
 
 class LeaveHelper
 {
-    // 後端已翻譯中文
+    // 取得所有假別清單
+    public static function allLeaveTypes(): array
+    {
+        return [
+            ['key' => 'personal', 'label' => self::typeLabel('personal')],
+            ['key' => 'sick', 'label' => self::typeLabel('sick')],
+            ['key' => 'official', 'label' => self::typeLabel('official')],
+            ['key' => 'marriage', 'label' => self::typeLabel('marriage')],
+            ['key' => 'maternity', 'label' => self::typeLabel('maternity')],
+            ['key' => 'funeral', 'label' => self::typeLabel('funeral')],
+            ['key' => 'annual', 'label' => self::typeLabel('annual')],
+            ['key' => 'menstrual', 'label' => self::typeLabel('menstrual')],
+        ];
+    }
+
+    // 取得所有狀態清單
+    public static function allLeaveStatuses(): array
+    {
+        return [
+            ['key' => 'pending', 'label' => self::statusLabel('pending')],
+            ['key' => 'approved', 'label' => self::statusLabel('approved')],
+            ['key' => 'rejected', 'label' => self::statusLabel('rejected')],
+        ];
+    }
+    
     // 假別對應中文
     public static function typeLabel($type)
     {
@@ -31,30 +55,5 @@ class LeaveHelper
             'rejected' => '已退回',
             default => '未知狀態',
         };
-    }
-
-    // 取得所有假別清單
-    public static function allLeaveTypes(): array
-    {
-        return [
-            ['key' => 'personal', 'label' => self::typeLabel('personal')],
-            ['key' => 'sick', 'label' => self::typeLabel('sick')],
-            ['key' => 'official', 'label' => self::typeLabel('official')],
-            ['key' => 'marriage', 'label' => self::typeLabel('marriage')],
-            ['key' => 'maternity', 'label' => self::typeLabel('maternity')],
-            ['key' => 'funeral', 'label' => self::typeLabel('funeral')],
-            ['key' => 'annual', 'label' => self::typeLabel('annual')],
-            ['key' => 'menstrual', 'label' => self::typeLabel('menstrual')],
-        ];
-    }
-
-    // 取得所有狀態清單
-    public static function allLeaveStatuses(): array
-    {
-        return [
-            ['key' => 'pending', 'label' => self::statusLabel('pending')],
-            ['key' => 'approved', 'label' => self::statusLabel('approved')],
-            ['key' => 'rejected', 'label' => self::statusLabel('rejected')],
-        ];
     }
 }

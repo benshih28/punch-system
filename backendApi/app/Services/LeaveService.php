@@ -28,7 +28,7 @@ class LeaveService
             // UUID檔名 + 副檔名
             $filename = Str::uuid() . '.' . $extension;
 
-            // 存檔到attachments
+            // 存檔到backendAPI/public/storage/attachments
             $attachmentPath = $file->storeAs('attachments', $filename, 'public');
         }
 
@@ -100,7 +100,7 @@ class LeaveService
         return round($hours, 2);
     }
 
-    // 查詢個人請假紀錄清單
+    // 查詢請假紀錄清單
     public function getLeaveList(int $userId, array $filters)
     {
         $user = Leave::with('user')  // 順便帶user

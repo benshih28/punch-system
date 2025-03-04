@@ -93,7 +93,7 @@ class LeaveController extends Controller
         return response()->json([
             'message' => '查詢成功',
             'records' => $records,
-        ]);
+        ], 201);
     }
 
     // // 修改請假原因
