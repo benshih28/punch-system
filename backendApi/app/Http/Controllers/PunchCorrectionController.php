@@ -8,7 +8,6 @@ use App\Models\PunchCorrection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
-use App\Models\PunchOut;
 
 class PunchCorrectionController extends Controller
 {
@@ -154,8 +153,11 @@ class PunchCorrectionController extends Controller
             $query->whereBetween('punch_time', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
         }
 
-        // 取得結果，依時間排序（最新的在最上面）
-        $corrections = $query->orderBy('punch_time', 'desc')->get();
+        // 先按照 `status = 'pending'` 排序，然後再按照 `punch_time` 由新到舊排序
+        $corrections = $query
+            ->orderByRaw("CASE WHEN status = 'pending' THEN 1 ELSE 2 END") // 讓 'pending' 的資料排在最前面
+            ->orderBy('punch_time', 'desc') // 再按照 `punch_time` 由新到舊排序
+            ->get();
 
         return response()->json([
             'message' => '成功獲取補登紀錄',
@@ -192,31 +194,15 @@ class PunchCorrectionController extends Controller
             return response()->json(['message' => '未授權的請求'], 401);
         }
 
-        // 2️⃣ 確保使用者有 HR 或管理員權限
-        if (!$user->hasRole(['HR', 'admin'])) {
-            return response()->json(['message' => '您沒有權限查看所有補登紀錄'], 403);
-        }
-
         // 3️⃣ 取得 Query 參數
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
-        $userId = $request->query('user_id');
 
-        // 4️⃣ 建立查詢
-        $query = PunchCorrection::with('user'); // 讓結果包含使用者資訊
-
-        // 5️⃣ 如果有提供 `user_id`，則篩選特定使用者
-        if ($userId) {
-            $query->where('user_id', $userId);
-        }
-
-        // 6️⃣ 如果有提供 `start_date` 和 `end_date`，則篩選日期範圍
-        if ($startDate && $endDate) {
-            $query->whereBetween('punch_time', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
-        }
-
-        // 7️⃣ 取得結果，依時間排序（最新的在最上面）
-        $corrections = $query->orderBy('punch_time', 'desc')->get();
+        // 4️⃣ 呼叫 MySQL 預存程序
+        $corrections = DB::select('CALL GetAllCorrections(?, ?)', [
+            $startDate ?: null,   // 如果沒傳 start_date，則傳 NULL
+            $endDate ?: null      // 如果沒傳 end_date，則傳 NULL
+        ]);
 
         return response()->json([
             'message' => '成功獲取所有補登紀錄',

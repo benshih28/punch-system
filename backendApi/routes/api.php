@@ -33,14 +33,13 @@ Route::middleware('auth:api')->group(function () {
     });
 
     // 🟢 查詢當前使用者打卡紀錄
-    Route::get('/attendance/records', [PunchController::class, 'getAttendanceRecords']);
     Route::get('/attendance/finalrecords', [PunchCorrectionController::class, 'getFinalAttendanceRecords']);
 
 
 
     // ✅ 只有 HR & Admin 才能存取的 API
     Route::middleware(['auth:api', 'can:isHRorAdmin'])->group(function () {
-        
+
         // 角色管理 API
         Route::prefix('/roles')->group(function () {
             Route::post('/', [RoleController::class, 'createRole']);
@@ -48,8 +47,8 @@ Route::middleware('auth:api')->group(function () {
             Route::post('/{roleId}/assign/permissions', [RoleController::class, 'assignPermission']);
             Route::post('/{roleId}/revoke/permissions', [RoleController::class, 'revokePermission']);
         });
-        
-        
+
+
         // 使用者角色管理 API
         Route::prefix('/users')->group(function () {
             Route::post('/{userId}/assign/roles', [UserRoleController::class, 'assignRoleToUser']);
@@ -57,13 +56,13 @@ Route::middleware('auth:api')->group(function () {
             Route::get('/{userId}/roles', [UserRoleController::class, 'getUserRoles']);
             Route::get('/{userId}/permissions', [UserRoleController::class, 'getUserPermissions']);
         });
-        
+
         // 打卡補登審核通過或未通過
         Route::put('/punch/correction/{id}/approve', [PunchCorrectionController::class, 'approve']);
         Route::put('/punch/correction/{id}/reject', [PunchCorrectionController::class, 'reject']);
 
         // 人資看到所有申請資料(可以選擇查看日期範圍)
-        Route::get('corrections', [PunchCorrectionController::class, 'getUserCorrections']); 
+        Route::get('/corrections', [PunchCorrectionController::class, 'getAllCorrections']);
 
     });
 });
