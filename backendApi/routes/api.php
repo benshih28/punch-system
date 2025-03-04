@@ -48,8 +48,8 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/apply', [LeaveController::class, 'leaveApply']);
         // 2. 查詢請假紀錄
         Route::get('/records', [LeaveController::class, 'leaveRecords']);
-
-        // Route::post('/{leave}/update', [LeaveController::class, 'update']);
+        // 3. 修改請假申請
+         Route::post('/{leave}/update', [LeaveController::class, 'update']);
         // Route::delete('/{leave}', [LeaveController::class, 'delete']);
     });
 

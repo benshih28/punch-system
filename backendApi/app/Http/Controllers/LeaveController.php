@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\LeaveApplyRequest;
+use App\Http\Requests\LeaveListRequest;
 use App\Http\Requests\LeaveUpdateRequest;
 use App\Http\Requests\LeaveDeleteRequest;
 use App\Models\Leave;
@@ -56,11 +57,44 @@ class LeaveController extends Controller
     }
 
     // 查詢個人請假紀錄
-    // public function leaveRecords(): JsonResponse
-    // {
-    //     $leaves = Leave::where('user_id', auth()->id())->get();
-    //     return response()->json($leaves);
-    // }
+    public function leaveRecords(LeaveListRequest $request): JsonResponse
+    {
+        $user = auth()->user();  // 取得登入者
+
+        $filters = $request->validated();
+
+        $leaves = $this->leaveService->getLeaveList($user->id, $filters);  // 撈清單
+
+        // 如果完全沒資料，回傳"查無資料"
+        if ($leaves->isEmpty()) {
+            return response()->json([
+                'message' => '查無資料，請重新選擇日期區間或是假別',
+                'records' => [],
+            ], 200);
+        }
+
+        // 格式化回傳，變成你想要的格式
+        $records = $leaves->map(function ($leave) {
+            return [
+                'leave_id' => $leave->id,
+                'user_id' => $leave->user_id,
+                'user_name' => $leave->user->name,
+                'leave_type' => $leave->leave_type,
+                'start_time' => $leave->start_time,
+                'end_time' => $leave->end_time,
+                'reason' => $leave->reason,
+                'status' => $leave->status,
+                'attachment' => $leave->attachment
+                    ? asset('storage/' . $leave->attachment)
+                    : null,
+            ];
+        });
+
+        return response()->json([
+            'message' => '查詢成功',
+            'records' => $records,
+        ]);
+    }
 
     // // 修改請假原因
     // public function update(LeaveUpdateRequest $request, Leave $leave): JsonResponse

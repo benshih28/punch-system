@@ -99,4 +99,32 @@ class LeaveService
 
         return round($hours, 2);
     }
+
+    // 查詢個人請假紀錄清單
+    public function getLeaveList(int $userId, array $filters)
+    {
+        $user = Leave::with('user')  // 順便帶user
+            ->where('user_id', $userId);
+
+        if (!empty($filters['start_date']) && !empty($filters['end_date'])) {
+            $user->where(function ($query) use ($filters) {
+                $query->whereBetween('start_time', [$filters['start_date'] . ' 00:00:00', $filters['end_date'] . ' 23:59:59'])
+                    ->orWhereBetween('end_time', [$filters['start_date'] . ' 00:00:00', $filters['end_date'] . ' 23:59:59'])
+                    ->orWhere(function ($query) use ($filters) {
+                        $query->where('start_time', '<=', $filters['start_date'] . ' 00:00:00')
+                            ->where('end_time', '>=', $filters['end_date'] . ' 23:59:59');
+                    });
+            });
+        }
+
+        if (!empty($filters['leave_type'])) {
+            $user->where('leave_type', $filters['leave_type']);
+        }
+
+        if (!empty($filters['status'])) {
+            $user->where('status', $filters['status']);
+        }
+
+        return $user->orderBy('start_time', 'desc')->get();  // 回傳Collection
+    }
 }
