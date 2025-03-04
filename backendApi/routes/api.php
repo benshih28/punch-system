@@ -29,7 +29,7 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/in', [PunchController::class, 'punchIn']);
         Route::post('/out', [PunchController::class, 'punchOut']);
         Route::post('/correction', [PunchCorrectionController::class, 'store']); // 打卡補登請求
-        Route::get('correction', [PunchCorrectionController::class, 'getUserCorrections']); // 個人的補登打卡紀錄表單(可以選擇查看日期範圍)
+        Route::get('/correction', [PunchCorrectionController::class, 'getUserCorrections']); // 個人的補登打卡紀錄表單(可以選擇查看日期範圍)
     });
 
     // 🟢 查詢當前使用者打卡紀錄
