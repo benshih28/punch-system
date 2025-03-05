@@ -38,6 +38,8 @@ class LeaveController extends Controller
             $leave = $this->leaveService->applyLeave($data); // 交給Service處理申請邏輯
             $leave->load('user');                            // 帶出user關聯資料
 
+            Log::info('申請請假', ['user_id' => $user->id, 'filters' => $filters]);
+
             // ✅ 成功回傳
             return response()->json([
                 'message' => '申請成功，假單已送出',
@@ -62,51 +64,109 @@ class LeaveController extends Controller
     // 2. 查詢請假紀錄（帶角色權限判斷）
     public function leaveRecords(LeaveListRequest $request): JsonResponse
     {
-        $user = auth()->user();
-        $filters = $request->validated();
+        try {
+            $user = auth()->user();
+            $filters = $request->validated();
 
-        $leaves = $this->leaveService->getLeaveList($user, $filters);
+            Log::info('查詢請假紀錄', ['user_id' => $user->id, 'filters' => $filters]);
 
-        if ($leaves->isEmpty()) {
+            $leaves = $this->leaveService->getLeaveList($user, $filters);
+
+            if ($leaves->isEmpty()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => '查無資料，請重新選擇日期區間或是假別',
+                    'records' => [],
+                ], 200);
+            }
+
             return response()->json([
-                'message' => '查無資料，請重新選擇日期區間或是假別',
-                'records' => [],
+                'status' => 'success',
+                'message' => '查詢成功',
+                'records' => $leaves->map(fn($leave) => $this->formatLeave($leave)),
             ], 200);
-        }
+        } catch (\Exception $e) {
+            Log::error('查詢請假紀錄失敗', [
+                'user_id' => auth()->user()->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
-        return response()->json([
-            'message' => '查詢成功',
-            'records' => $leaves->map(fn($leave) => $this->formatLeave($leave))
-        ], 200);
+            return response()->json([
+                'status' => 'error',
+                'message' => app()->isLocal() ? $e->getMessage() : '系統發生錯誤，請稍後再試',
+            ], 500);
+        }
     }
 
     // 3. 修改請假原因功能
     // 3-1. 單筆查詢（帶角色權限判斷）
     public function showLeave(int $id): JsonResponse
     {
-        $user = auth()->user();
-        $leave = $this->leaveService->getSingleLeave($user, $id);
+        try {
+            $user = auth()->user();
 
-        if (!$leave) {
-            return response()->json(['message' => '查無此假單'], 403);
+            Log::info('單筆請假查詢', ['user_id' => $user->id, 'leave_id' => $id]);
+
+            $leave = $this->leaveService->getSingleLeave($user, $id);
+
+            if (!$leave) {
+                return response()->json(['message' => '查無此假單'], 403);
+            }
+
+            return response()->json([
+                'message' => '查詢成功',
+                'leave' => $this->formatLeave($leave),
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('單筆請假查詢失敗', [
+                'user_id' => auth()->user()->id,
+                'leave_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'status' => 'error',
+                'message' => app()->isLocal() ? $e->getMessage() : '系統發生錯誤，請稍後再試',
+            ], 500);
         }
-
-        return response()->json($this->formatLeave($leave));
     }
 
     // 3-2. 更新請假單（帶角色權限判斷）
     public function updateLeave(LeaveUpdateRequest $request, int $id): JsonResponse
     {
-        $user = auth()->user();
-        $leave = $this->leaveService->getSingleLeave($user, $id);
+        try {
+            $user = auth()->user();
 
-        if (!$leave) {
-            return response()->json(['message' => '查無此假單'], 403);
+            Log::info('更新請假單', [
+                'user_id' => $user->id,
+                'leave_id' => $id,
+                'data' => $request->all(),
+            ]);
+
+            $leave = $this->leaveService->getSingleLeave($user, $id);
+
+            if (!$leave) {
+                return response()->json(['message' => '查無此假單'], 403);
+            }
+
+            $this->leaveService->updateLeave($leave, $request->validated());
+
+            return response()->json(['message' => '假單更新成功'], 200);
+
+        } catch (\Exception $e) {
+            Log::error('更新請假單失敗', [
+                'user_id' => auth()->user()->id,
+                'leave_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => app()->isLocal() ? $e->getMessage() : '系統發生錯誤，請稍後再試',
+            ], 500);
         }
-
-        $this->leaveService->updateLeave($leave, $request->validated());
-
-        return response()->json(['message' => '假單更新成功']);
     }
 
     // ✅ 資料格式統一，讓回傳結果都長一樣
