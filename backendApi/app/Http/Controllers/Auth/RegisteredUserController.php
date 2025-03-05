@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Employee;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -47,11 +48,20 @@ class RegisteredUserController extends Controller
             'gender' => $request->gender, //  確保性別存入
         ]);
 
+
+
+        // 🔹 自動建立員工資料（`pending` 狀態，等待 HR 審核）
+        $employee = Employee::create([
+            'user_id' => $user->id,
+            'status' => 'pending', // 預設狀態為待審核
+        ]);
+
         event(new Registered($user));
 
         return response()->json([
             'message' => 'User successfully registered. Please log in.',
-            'user' => $user
+            'user' => $user,
+            'employee' => $employee,
         ], 201);
     }
 }
