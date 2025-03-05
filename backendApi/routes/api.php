@@ -11,6 +11,7 @@ use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\UserController;
 
 // ✅ 忘記密碼 API
 Route::post('/forgot/password', [ForgotPasswordController::class, 'forgotPassword']);
@@ -30,6 +31,9 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/user', function (Request $request) {
         return response()->json($request->user());
     });
+
+    // 🟢 更新使用者個人資料
+    Route::post('/user/update/profile', [UserController::class, 'updateProfile']);
 
     // 🟢 打卡 API
     Route::prefix('/punch')->group(function () {
