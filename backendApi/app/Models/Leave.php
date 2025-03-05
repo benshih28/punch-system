@@ -21,17 +21,6 @@ class Leave extends Model
         'attachment',
     ];
 
-    public const LEAVE_TYPE = [
-        'personal',
-        'sick',
-        'official',
-        'marriage',
-        'maternity',
-        'funeral',
-        'annual',
-        'menstrual',
-    ];
-
     public const STATUSES = [
         'pending',
         'approved',

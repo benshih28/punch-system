@@ -45,14 +45,16 @@ Route::middleware('auth:api')->group(function () {
 
     // 🟢 查詢當前使用者打卡紀錄
     Route::get('/attendance/records', [PunchController::class, 'getAttendanceRecords']);
+    Route::get('/attendance/finalrecords', [PunchCorrectionController::class, 'getFinalAttendanceRecords']);
 
     // 🟢 請假功能
     Route::middleware('auth:api')->prefix('leaves')->group(function () {
-        // 1. 假別選單API
-        Route::get('/leavetype', [LeaveTypeController::class, 'getLeaveTypes']);
-        // 2. 狀態選單API
+        // 1. 新增假別API
+        Route::post('/leavetypes', [LeaveTypeController::class, 'leaveTypesAdd']);
+        // 2. 假別選單API
+        Route::get('/leavetypes', [LeaveTypeController::class, 'leaveTypesAdd']);
+        // 3. 狀態選單API
         Route::get('/leavestatus', [LeaveTypeController::class, 'getLeaveStatus']);
-    Route::get('/attendance/finalrecords', [PunchCorrectionController::class, 'getFinalAttendanceRecords']);
 
         // 1.請假申請API
         Route::post('/apply', [LeaveController::class, 'leaveApply']);
