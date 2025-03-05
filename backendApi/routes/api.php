@@ -11,7 +11,11 @@ use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 
+
+// ✅ 忘記密碼 API
+Route::post('/forgot/password', [ForgotPasswordController::class, 'forgotPassword']);
 
 // ✅ 公開 API（不需要登入）
 Route::post('/register', [RegisteredUserController::class, 'store']);
