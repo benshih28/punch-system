@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');  // 員工ID
 
-            $table->string('leave_type', 20);  // 假別
+            $table->foreignId('leave_type_id')->after('id')->constrained('leave_types');
             $table->dateTime('start_time');    // 開始時間
             $table->dateTime('end_time');      // 結束時間
             $table->float('leave_hours');      // 請假時數

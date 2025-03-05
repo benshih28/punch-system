@@ -12,8 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('leaves', function (Blueprint $table) {
-            //
-            $table->string('attachment')->nullable()->after('status');  // 存檔名或路徑
+            $table->foreignId('leave_type_id')->constrained('leave_types');
         });
     }
 
@@ -24,7 +23,6 @@ return new class extends Migration
     {
         Schema::table('leaves', function (Blueprint $table) {
             //
-            $table->dropColumn('attachment');
         });
     }
 };
