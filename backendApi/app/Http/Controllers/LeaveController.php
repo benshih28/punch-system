@@ -6,9 +6,9 @@ use App\Http\Requests\LeaveApplyRequest;
 use App\Http\Requests\LeaveListRequest;
 use App\Http\Requests\LeaveUpdateRequest;
 use App\Http\Requests\LeaveDeleteRequest;
-use App\Models\Leave;
 use App\Services\LeaveService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 
 class LeaveController extends Controller
 {
@@ -30,17 +30,33 @@ class LeaveController extends Controller
         // ✅ 把attachment傳進Service
         if ($request->hasFile('attachment')) {
             $data['attachment'] = $request->file('attachment');
+        } else {
+            $data['attachment'] = null;  // 保底，避免Service收到空資料
         }
 
-        $leave = $this->leaveService->applyLeave($data); // 交給Service處理申請邏輯
-        $leave->load('user');                            // 帶出user關聯資料
+        try {
+            $leave = $this->leaveService->applyLeave($data); // 交給Service處理申請邏輯
+            $leave->load('user');                            // 帶出user關聯資料
 
-        // 用統一格式回傳成功
-        return response()->json([
-            'message' => '申請成功，假單已送出',
-            'leave' => $this->formatLeave($leave),
-        ], 200);
+            // ✅ 成功回傳
+            return response()->json([
+                'message' => '申請成功，假單已送出',
+                'leave' => $this->formatLeave($leave),
+            ], 200);
+        } catch (\Exception $e) {
+            // 📝 Log完整錯誤資訊
+            Log::error('【請假申請失敗】', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
+            // ❗回傳錯誤訊息
+            return response()->json([
+                'message' => '申請失敗，請稍後再試或聯繫管理員',
+                'error' => env('APP_DEBUG') ? $e->getMessage() : null,  // 本機才吐錯，正式不顯示細節
+            ], 500);
+        }
     }
 
     // 2. 查詢請假紀錄（帶角色權限判斷）

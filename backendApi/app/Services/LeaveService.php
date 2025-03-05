@@ -20,8 +20,7 @@ class LeaveService
         if (isset($data['attachment']) && $data['attachment']->isValid()) {
             $file = $data['attachment'];
 
-            // 取得原始檔名和副檔名
-            $originalName = $file->getClientOriginalName();
+            // 取得副檔名
             $extension = $file->getClientOriginalExtension();
 
             // UUID檔名 + 副檔名
