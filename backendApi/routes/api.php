@@ -12,6 +12,7 @@ use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\PunchCorrectionController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\PositionController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 
 
@@ -91,5 +92,23 @@ Route::middleware('auth:api')->group(function () {
             Route::delete('/{id}', [PositionController::class, 'destroy']); // 刪除職位
         });
 
+
+        //人員管理 API
+        Route::prefix('/employees')->group(function () {
+            Route::get('/', [EmployeeController::class, 'index']); // 取得所有員工
+            Route::post('/', [EmployeeController::class, 'store']); // 註冊員工
+            Route::patch('/{id}/review', [EmployeeController::class, 'reviewEmployee']); // HR 審核
+            Route::patch('/{id}/assign', [EmployeeController::class, 'assignDepartmentAndPosition']); // 分配職位 & 部門
+            Route::delete('/{id}', [EmployeeController::class, 'destroy']); // 刪除員工
+            Route::get('/{id}/manager', [EmployeeController::class, 'getEmployeeManager']); // 查詢主管
+        });
+
+
     });
+
+    Route::middleware(['auth:api', 'isManager'])->group(function () {
+        Route::get('/my/employees', [EmployeeController::class, 'getMyEmployees']); // 主管查詢自己管理的員工
+    });
+
+
 });
