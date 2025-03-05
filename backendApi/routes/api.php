@@ -37,7 +37,7 @@ Route::middleware('auth:api')->group(function () {
     // 🟢 查詢當前使用者打卡紀錄
     Route::get('/attendance/records', [PunchController::class, 'getAttendanceRecords']);
 
-    // 🟢 請假API
+    // 🟢 請假功能
     Route::middleware('auth:api')->prefix('leaves')->group(function () {
         // 1. 假別選單API
         Route::get('/leavetype', [LeaveTypeController::class, 'getLeaveTypes']);
@@ -46,10 +46,16 @@ Route::middleware('auth:api')->group(function () {
 
         // 1.請假申請API
         Route::post('/apply', [LeaveController::class, 'leaveApply']);
-        // 2. 查詢請假紀錄
+        // 2. 查詢請假紀錄API
         Route::get('/records', [LeaveController::class, 'leaveRecords']);
+        
         // 3. 修改請假申請
-         Route::post('/{leave}/update', [LeaveController::class, 'update']);
+        // 3-1. 查詢單筆紀錄API
+         Route::post('/{id}', [LeaveController::class, 'showLeave']);
+        // 3-2. 修改API
+         Route::put('/{id}', [LeaveController::class, 'updateLeave']);
+        
+         // 4. 刪除請假申請
         // Route::delete('/{leave}', [LeaveController::class, 'delete']);
     });
 

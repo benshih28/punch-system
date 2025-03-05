@@ -19,7 +19,7 @@ class LeaveController extends Controller
         $this->leaveService = $leaveService;
     }
 
-    // 申請請假
+    // 1. 申請請假
     public function leaveApply(LeaveApplyRequest $request): JsonResponse
     {
         $user = auth()->user();  // 透過JWT取得當前登入者
@@ -33,39 +33,24 @@ class LeaveController extends Controller
         }
 
         $leave = $this->leaveService->applyLeave($data); // 交給Service處理申請邏輯
+        $leave->load('user');                            // 帶出user關聯資料
 
-        $leave->load('user');
-
-        // 回傳成功
+        // 用統一格式回傳成功
         return response()->json([
-            'message' => '已送出申請',
-            'leave_id' => $leave->id,
-            'leave_apply' => [
-                'user_id' => $leave->user_id,
-                'user_name' => $leave->user->name,
-                'leave_type' => $leave->leave_type,
-                'start_time' => $leave->start_time,
-                'end_time' => $leave->end_time,
-                'reason' => $leave->reason,
-                'status' => $leave->status,
-                'attachment' => $leave->attachment
-                    ? asset('storage/' . $leave->attachment)
-                    : null,
-            ],
-        ], 201);  // 201 Created
+            'message' => '申請成功，假單已送出',
+            'leave' => $this->formatLeave($leave),
+        ], 200);
 
     }
 
-    // 查詢個人請假紀錄
+    // 2. 查詢請假紀錄（帶角色權限判斷）
     public function leaveRecords(LeaveListRequest $request): JsonResponse
     {
-        $user = auth()->user();  // 取得登入者
-
+        $user = auth()->user();
         $filters = $request->validated();
 
-        $leaves = $this->leaveService->getLeaveList($user->id, $filters);  // 撈清單
+        $leaves = $this->leaveService->getLeaveList($user, $filters);
 
-        // 如果完全沒資料，回傳"查無資料"
         if ($leaves->isEmpty()) {
             return response()->json([
                 'message' => '查無資料，請重新選擇日期區間或是假別',
@@ -73,37 +58,58 @@ class LeaveController extends Controller
             ], 200);
         }
 
-        // 格式化回傳，變成你想要的格式
-        $records = $leaves->map(function ($leave) {
-            return [
-                'leave_id' => $leave->id,
-                'user_id' => $leave->user_id,
-                'user_name' => $leave->user->name,
-                'leave_type' => $leave->leave_type,
-                'start_time' => $leave->start_time,
-                'end_time' => $leave->end_time,
-                'reason' => $leave->reason,
-                'status' => $leave->status,
-                'attachment' => $leave->attachment
-                    ? asset('storage/' . $leave->attachment)
-                    : null,
-            ];
-        });
-
         return response()->json([
             'message' => '查詢成功',
-            'records' => $records,
-        ], 201);
+            'records' => $leaves->map(fn($leave) => $this->formatLeave($leave))
+        ], 200);
     }
 
-    // // 修改請假原因
-    // public function update(LeaveUpdateRequest $request, Leave $leave): JsonResponse
-    // {
-    //     $this->leaveService->updateLeave($leave, $request->validated());
-    //     return response()->json(['success' => true]);
-    // }
+    // 3. 修改請假原因功能
+    // 3-1. 單筆查詢（帶角色權限判斷）
+    public function showLeave(int $id): JsonResponse
+    {
+        $user = auth()->user();
+        $leave = $this->leaveService->getSingleLeave($user, $id);
 
-    // // 刪除請假申請
+        if (!$leave) {
+            return response()->json(['message' => '查無此假單'], 403);
+        }
+
+        return response()->json($this->formatLeave($leave));
+    }
+
+    // 3-2. 更新請假單（帶角色權限判斷）
+    public function updateLeave(LeaveUpdateRequest $request, int $id): JsonResponse
+    {
+        $user = auth()->user();
+        $leave = $this->leaveService->getSingleLeave($user, $id);
+
+        if (!$leave) {
+            return response()->json(['message' => '查無此假單'], 403);
+        }
+
+        $this->leaveService->updateLeave($leave, $request->validated());
+
+        return response()->json(['message' => '假單更新成功']);
+    }
+
+    // ✅ 資料格式統一，讓回傳結果都長一樣
+    private function formatLeave($leave): array
+    {
+        return [
+            'leave_id' => $leave->id,
+            'user_id' => $leave->user_id,
+            'user_name' => $leave->user->name,
+            'leave_type' => $leave->leave_type,
+            'start_time' => $leave->start_time,
+            'end_time' => $leave->end_time,
+            'reason' => $leave->reason,
+            'status' => $leave->status,
+            'attachment' => $leave->attachment ? asset('storage/' . $leave->attachment) : null,
+        ];
+    }
+
+    // 4. 刪除請假申請
     // public function delete(LeaveDeleteRequest $request, Leave $leave): JsonResponse
     // {
     //     $leave->delete();

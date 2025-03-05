@@ -4,15 +4,14 @@ namespace App\Services;
 
 use App\Models\Leave;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Collection;
 
 class LeaveService
 {
     const WORK_HOURS_PER_DAY = 8;  // 每天上班時數
 
-    /**
-     * 申請請假
-     * 根據前端送來的資料，算好請假時數，然後寫入資料庫
-     */
+    //  1. 申請請假
+    // 根據前端送來的資料，算好請假時數，然後寫入資料庫
     public function applyLeave(array $data): Leave
     {
         $hours = $this->calculateHours($data['start_time'], $data['end_time']);
@@ -44,9 +43,7 @@ class LeaveService
         ]);
     }
 
-    /**
-     * 計算跨天請假時數 (支援單日、跨日)
-     */
+    // 計算跨天請假時數 (支援單日、跨日)
     private function calculateHours(string $startTime, string $endTime): float
     {
         $start = strtotime($startTime);
@@ -70,9 +67,8 @@ class LeaveService
         return round($firstDayHours + $lastDayHours + $middleDaysHours, 2);
     }
 
-    /**
-     * 計算單天請假時數 (考慮上下班時間)
-     */
+
+    // 計算單天請假時數 (考慮上下班時間)
     private function calculateOneDayHours(string $start, string $end): float
     {
         $startTime = strtotime($start);
@@ -100,31 +96,68 @@ class LeaveService
         return round($hours, 2);
     }
 
-    // 查詢請假紀錄清單
-    public function getLeaveList(int $userId, array $filters)
-    {
-        $user = Leave::with('user')  // 順便帶user
-            ->where('user_id', $userId);
 
+    // 2. 查詢請假清單（帶角色權限）
+    public function getLeaveList($user, array $filters): Collection
+    {
+        $query = Leave::with('user');
+
+        // 員工只能查自己，主管查部門，HR查全部
+        if ($user->role === 'employee') {
+            $query->where('user_id', $user->id);
+        } elseif ($user->role === 'supervisor') {
+            $query->whereHas('user', fn($q) => $q->where('department_id', $user->department_id));
+        } elseif ($user->role === 'hr') {
+            // HR可以看全部
+        }
+
+        $this->applyFilters($query, $filters);
+
+        return $query->orderBy('start_time', 'desc')->get();
+    }
+
+    // 3. 查單筆（帶角色權限）
+    public function getSingleLeave($user, int $id): ?Leave
+    {
+        $query = Leave::with('user')->where('id', $id);
+
+        if ($user->role === 'employee') {
+            $query->where('user_id', $user->id);
+        } elseif ($user->role === 'supervisor') {
+            $query->whereHas('user', fn($q) => $q->where('department_id', $user->department_id));
+        } elseif ($user->role === 'hr') {
+            // HR看全部
+        }
+
+        return $query->first();
+    }
+
+    // 4. 更新資料
+    public function updateLeave(Leave $leave, array $data): bool
+    {
+        return $leave->update($data);
+    }
+
+    // 統一查詢結果及修改格式
+    private function applyFilters($query, array $filters): void
+    {
         if (!empty($filters['start_date']) && !empty($filters['end_date'])) {
-            $user->where(function ($query) use ($filters) {
-                $query->whereBetween('start_time', [$filters['start_date'] . ' 00:00:00', $filters['end_date'] . ' 23:59:59'])
+            $query->where(function ($q) use ($filters) {
+                $q->whereBetween('start_time', [$filters['start_date'] . ' 00:00:00', $filters['end_date'] . ' 23:59:59'])
                     ->orWhereBetween('end_time', [$filters['start_date'] . ' 00:00:00', $filters['end_date'] . ' 23:59:59'])
-                    ->orWhere(function ($query) use ($filters) {
-                        $query->where('start_time', '<=', $filters['start_date'] . ' 00:00:00')
+                    ->orWhere(function ($q) use ($filters) {
+                        $q->where('start_time', '<=', $filters['start_date'] . ' 00:00:00')
                             ->where('end_time', '>=', $filters['end_date'] . ' 23:59:59');
                     });
             });
         }
 
         if (!empty($filters['leave_type'])) {
-            $user->where('leave_type', $filters['leave_type']);
+            $query->where('leave_type', $filters['leave_type']);
         }
 
         if (!empty($filters['status'])) {
-            $user->where('status', $filters['status']);
+            $query->where('status', $filters['status']);
         }
-
-        return $user->orderBy('start_time', 'desc')->get();  // 回傳Collection
     }
 }
