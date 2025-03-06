@@ -50,10 +50,12 @@ Route::middleware('auth:api')->group(function () {
     // 🟢 請假功能
     Route::middleware('auth:api')->prefix('leaves')->group(function () {
         // 1. 新增假別API
-        Route::post('/leavetypes', [LeaveTypeController::class, 'leaveTypesAdd']);
-        // 2. 假別選單API
+        Route::post('/leavetypes/add', [LeaveTypeController::class, 'leaveTypesAdd']);
+        // 2. 刪除假別API
+        Route::post('/leavetypes/destroy', [LeaveTypeController::class, 'leaveTypesDestroy']);
+        // 3. 假別選單API(放下拉式選單內)
         Route::get('/leavetypes', [LeaveTypeController::class, 'leaveTypesAdd']);
-        // 3. 狀態選單API
+        // 4. 狀態選單API
         Route::get('/leavestatus', [LeaveTypeController::class, 'getLeaveStatus']);
 
         // 1.請假申請API
@@ -61,11 +63,11 @@ Route::middleware('auth:api')->group(function () {
         // 2. 查詢請假紀錄API
         Route::get('/records', [LeaveController::class, 'leaveRecords']);
         // 3-1. 查詢單筆紀錄API
-         Route::post('/{id}', [LeaveController::class, 'showLeave']);
+        Route::post('/{id}', [LeaveController::class, 'showLeave']);
         // 3-2. 修改API
-         Route::put('/{id}', [LeaveController::class, 'updateLeave']);
-        
-         // 4. 刪除請假申請
+        Route::put('/{id}', [LeaveController::class, 'updateLeave']);
+
+        // 4. 刪除請假申請
         // Route::delete('/{leave}', [LeaveController::class, 'delete']);
     });
 
@@ -127,14 +129,10 @@ Route::middleware('auth:api')->group(function () {
             Route::delete('/{id}', [EmployeeController::class, 'destroy']); // 刪除員工
             Route::get('/{id}/manager', [EmployeeController::class, 'getEmployeeManager']); // 查詢主管
         });
-
-
     });
 
-    
+
     Route::middleware(['auth:api', 'isManager'])->group(function () {
         Route::get('/my/employees', [EmployeeController::class, 'getMyEmployees']); // 主管查詢自己管理的員工
     });
-
-
 });
