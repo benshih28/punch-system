@@ -30,7 +30,7 @@ class LeaveHelper
     }
     
     // 假別對應中文
-    public static function typeLabel($type)
+    public static function typeLabel(string $type): string
     {
         return match ($type) {
             'personal' => '事假',
@@ -41,19 +41,17 @@ class LeaveHelper
             'funeral' => '喪假',
             'annual' => '特休假',
             'menstrual' => '生理假',
-            default => '未知假別',
         };
     }
 
 
     // 狀態對應中文
-    public static function statusLabel($status)
+    public static function statusLabel(string $status): string
     {
         return match ($status) {
-            'pending' => '待審核',
-            'approved' => '已審核',
+            'pending' => '審核中',
+            'approved' => '已通過',
             'rejected' => '已退回',
-            default => '未知狀態',
         };
     }
 }

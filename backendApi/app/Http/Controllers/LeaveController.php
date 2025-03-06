@@ -29,9 +29,7 @@ class LeaveController extends Controller
 
         // ✅ 把attachment傳進Service
         if ($request->hasFile('attachment')) {
-            $data['attachment'] = $request->file('attachment');
-        } else {
-            $data['attachment'] = null;  // 保底，避免Service收到空資料
+            $data['attachment'] = $request->file('attachment') ?? null;
         }
 
         try {
@@ -70,18 +68,16 @@ class LeaveController extends Controller
 
             Log::info('查詢請假紀錄', ['user_id' => $user->id, 'filters' => $filters]);
 
-            $leaves = $this->leaveService->getLeaveList($user, $filters);
+            $leaves = $this->leaveService->getLeaveList($user, $filters)->paginate(8); // 每頁顯示8筆
 
             if ($leaves->isEmpty()) {
                 return response()->json([
-                    'status' => 'success',
-                    'message' => '查無資料，請重新選擇日期區間或是假別',
+                    'message' => '查無符合條件的資料',
                     'records' => [],
                 ], 200);
             }
 
             return response()->json([
-                'status' => 'success',
                 'message' => '查詢成功',
                 'records' => $leaves->map(fn($leave) => $this->formatLeave($leave)),
             ], 200);
@@ -93,7 +89,6 @@ class LeaveController extends Controller
             ]);
 
             return response()->json([
-                'status' => 'error',
                 'message' => app()->isLocal() ? $e->getMessage() : '系統發生錯誤，請稍後再試',
             ], 500);
         }
@@ -111,7 +106,7 @@ class LeaveController extends Controller
             $leave = $this->leaveService->getSingleLeave($user, $id);
 
             if (!$leave) {
-                return response()->json(['message' => '查無此假單'], 403);
+                return response()->json(['message' => '查無此假單或無權限查看'], 403);
             }
 
             return response()->json([
@@ -126,7 +121,6 @@ class LeaveController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
             return response()->json([
-                'status' => 'error',
                 'message' => app()->isLocal() ? $e->getMessage() : '系統發生錯誤，請稍後再試',
             ], 500);
         }
@@ -153,7 +147,6 @@ class LeaveController extends Controller
             $this->leaveService->updateLeave($leave, $request->validated());
 
             return response()->json(['message' => '假單更新成功'], 200);
-
         } catch (\Exception $e) {
             Log::error('更新請假單失敗', [
                 'user_id' => auth()->user()->id,
@@ -163,7 +156,6 @@ class LeaveController extends Controller
             ]);
 
             return response()->json([
-                'status' => 'error',
                 'message' => app()->isLocal() ? $e->getMessage() : '系統發生錯誤，請稍後再試',
             ], 500);
         }
@@ -186,9 +178,39 @@ class LeaveController extends Controller
     }
 
     // 4. 刪除請假申請
-    // public function delete(LeaveDeleteRequest $request, Leave $leave): JsonResponse
-    // {
-    //     $leave->delete();
-    //     return response()->json(['success' => true]);
-    // }
+    public function leaveApplyDelete(int $id): JsonResponse
+    {
+        try {
+            $user = auth()->user();  // 取得當前登入的使用者
+
+            // 確認該請假申請是否存在
+            $leave = $this->leaveService->getSingleLeave($user, $id);
+            if (!$leave) {
+                // 如果請假申請不存在或用戶沒有權限查看，則返回錯誤訊息
+                return response()->json(['message' => '查無此假單或無權限刪除'], 403);
+            }
+
+            // 刪除請假申請
+            $leave->delete();
+
+            // 記錄刪除操作的日誌
+            Log::info('刪除請假申請', ['user_id' => $user->id, 'leave_id' => $id]);
+
+            // 成功刪除後的回應
+            return response()->json(['message' => '假單刪除成功'], 200);
+        } catch (\Exception $e) {
+            // 異常處理，記錄錯誤
+            Log::error('刪除請假申請失敗', [
+                'user_id' => auth()->user()->id,
+                'leave_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            // 回傳錯誤訊息
+            return response()->json([
+                'message' => app()->isLocal() ? $e->getMessage() : '系統發生錯誤，請稍後再試',
+            ], 500);
+        }
+    }
 }

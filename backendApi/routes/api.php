@@ -53,10 +53,12 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/leavetypes/add', [LeaveTypeController::class, 'leaveTypesAdd']);
         // 2. 刪除假別API
         Route::post('/leavetypes/destroy', [LeaveTypeController::class, 'leaveTypesDestroy']);
-        // 3. 假別選單API(放下拉式選單內)
-        Route::get('/leavetypes', [LeaveTypeController::class, 'leaveTypesAdd']);
-        // 4. 狀態選單API
-        Route::get('/leavestatus', [LeaveTypeController::class, 'getLeaveStatus']);
+        // 3. 修改假別API
+
+        // 4. 假別選單API (放下拉式選單內)
+        Route::get('/leavetypes', [LeaveTypeController::class, 'getleaveTypes']);
+        // 5. 狀態選單API (放下拉式選單內)
+        Route::get('/leavestatus', [LeaveTypeController::class, 'getleaveStatus']);
 
         // 1.請假申請API
         Route::post('/apply', [LeaveController::class, 'leaveApply']);
@@ -66,9 +68,8 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/{id}', [LeaveController::class, 'showLeave']);
         // 3-2. 修改API
         Route::put('/{id}', [LeaveController::class, 'updateLeave']);
-
         // 4. 刪除請假申請
-        // Route::delete('/{leave}', [LeaveController::class, 'delete']);
+        Route::delete('/{leave}', [LeaveController::class, 'delete']);
     });
 
 
