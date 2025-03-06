@@ -199,7 +199,7 @@ class PunchCorrectionController extends Controller
         $endDate = $request->query('end_date');
 
         // 4️⃣ 呼叫 MySQL 預存程序
-        $corrections = DB::select('CALL GetAllCorrections(?, ?)', [
+        $corrections = DB::select('CALL GetAllPunchCorrections(?, ?)', [
             $startDate ?: null,   // 如果沒傳 start_date，則傳 NULL
             $endDate ?: null      // 如果沒傳 end_date，則傳 NULL
         ]);
