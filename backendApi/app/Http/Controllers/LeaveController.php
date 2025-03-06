@@ -29,14 +29,14 @@ class LeaveController extends Controller
 
         // ✅ 把attachment傳進Service
         if ($request->hasFile('attachment')) {
-            $data['attachment'] = $request->file('attachment') ?? null;
+            $data['attachment'] = $request->file('attachment');
         }
 
         try {
             $leave = $this->leaveService->applyLeave($data); // 交給Service處理申請邏輯
             $leave->load('user');                            // 帶出user關聯資料
 
-            Log::info('申請請假', ['user_id' => $user->id, 'filters' => $filters]);
+            Log::info('申請請假', ['user_id' => $user->id]);
 
             // ✅ 成功回傳
             return response()->json([
@@ -55,7 +55,7 @@ class LeaveController extends Controller
             return response()->json([
                 'message' => '申請失敗，請稍後再試或聯繫管理員',
                 'error' => env('APP_DEBUG') ? $e->getMessage() : null,  // 本機才吐錯，正式不顯示細節
-            ], 500);
+            ], 400);
         }
     }
 
@@ -161,22 +161,6 @@ class LeaveController extends Controller
         }
     }
 
-    // ✅ 資料格式統一，讓回傳結果都長一樣
-    private function formatLeave($leave): array
-    {
-        return [
-            'leave_id' => $leave->id,
-            'user_id' => $leave->user_id,
-            'user_name' => $leave->user->name,
-            'leave_type' => $leave->leave_type,
-            'start_time' => $leave->start_time,
-            'end_time' => $leave->end_time,
-            'reason' => $leave->reason,
-            'status' => $leave->status,
-            'attachment' => $leave->attachment ? asset('storage/' . $leave->attachment) : null,
-        ];
-    }
-
     // 4. 刪除請假申請
     public function leaveApplyDelete(int $id): JsonResponse
     {
@@ -212,5 +196,38 @@ class LeaveController extends Controller
                 'message' => app()->isLocal() ? $e->getMessage() : '系統發生錯誤，請稍後再試',
             ], 500);
         }
+    }
+
+    // 5. 取得特殊假別剩餘小時數
+    public function getRemainingLeaveHours($leaveTypeId)
+    {
+        try {
+            $user = auth()->user(); // 取得當前用戶
+            $remainingHours = $this->leaveService->getRemainingLeaveHours($leaveTypeId, $user->id);
+
+            return response()->json([
+                'remaining_hours' => $remainingHours,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], $e->getCode() ?: 500);
+        }
+    }
+
+    // ✅ 資料格式統一，讓回傳結果都長一樣
+    private function formatLeave($leave): array
+    {
+        return [
+            'leave_id' => $leave->id,
+            'user_id' => $leave->user_id,
+            'user_name' => $leave->user->name,
+            'leave_type' => $leave->leave_type,
+            'start_time' => $leave->start_time,
+            'end_time' => $leave->end_time,
+            'reason' => $leave->reason,
+            'status' => $leave->status,
+            'attachment' => $leave->attachment ? asset('storage/' . $leave->attachment) : null,
+        ];
     }
 }

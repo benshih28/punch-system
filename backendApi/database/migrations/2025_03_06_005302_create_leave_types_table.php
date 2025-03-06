@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name')->unique();
             $table->string('description')->unique(); // 填入假別中文
-            $table->float('remaining_leave_hours')->nullable(); // 儲存剩餘假別小時數
+            $table->integer('total_hours')->nullable(); // 每年總可用小時數
             $table->timestamps();
         });
     }

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('leave_type_id')->constrained('leave_types')->onDelete('cascade');
             $table->dateTime('start_time');    // 開始時間
             $table->dateTime('end_time');      // 結束時間
-            $table->float('leave_hours');      // 請假時數
+            $table->integer('leave_hours');      // 請假時數
 
             $table->text('reason');                            // 事由
             $table->string('status', 20)->default('pending');  // 狀態

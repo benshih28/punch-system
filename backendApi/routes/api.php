@@ -59,6 +59,9 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/leavetypes', [LeaveTypeController::class, 'getleaveTypes']);
         // 5. 狀態選單API (放下拉式選單內)
         Route::get('/leavestatus', [LeaveTypeController::class, 'getleaveStatus']);
+        // 6. 取得特殊假別剩餘小時數
+        Route::get('/remaininghours', [LeaveController::class, 'getRemainingLeaveHours']);
+
 
         // 1.請假申請API
         Route::post('/apply', [LeaveController::class, 'leaveApply']);
@@ -66,7 +69,7 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/records', [LeaveController::class, 'leaveRecords']);
         // 3-1. 查詢單筆紀錄API
         Route::post('/{id}', [LeaveController::class, 'showLeave']);
-        // 3-2. 修改API
+        // 3-2. 修改請假API
         Route::put('/{id}', [LeaveController::class, 'updateLeave']);
         // 4. 刪除請假申請
         Route::delete('/{leave}', [LeaveController::class, 'delete']);

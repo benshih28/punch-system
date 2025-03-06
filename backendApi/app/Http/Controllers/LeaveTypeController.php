@@ -20,7 +20,7 @@ class LeaveTypeController extends Controller
         $leaveType = LeaveType::create([
             'name' => $validated['name'],
             'description' => $validated['description'],
-            'remaining_leave_hours' => $validated['remaining_leave_hours']
+            'total_hours' => $validated['total_hours']
         ]);
 
         // 回傳新增結果
@@ -50,7 +50,7 @@ class LeaveTypeController extends Controller
         $leaveType->update([
             'name' => $validated['name'],
             'description' => $validated['description'],
-            'remaining_leave_hours' => $validated['remaining_leave_hours']
+            'total_hours' => $validated['total_hours']
         ]);
 
         return response()->json([
