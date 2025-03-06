@@ -6,13 +6,12 @@ use App\Helpers\LeaveHelper;
 use Illuminate\Http\Request;
 use App\Models\LeaveType;
 use App\Http\Requests\LeaveTypeCreateRequest;
+use Illuminate\Http\JsonResponse;
 
 class LeaveTypeController extends Controller
 {
-    /**
-     * 新增假別 (新增自訂假別或填充預設假別)，把預設弄掉
-     */
-    public function addLeaveType(LeaveTypeCreateRequest $request): JsonResponse
+    // 1. 新增假別 
+    public function addLeaveTypes(LeaveTypeCreateRequest $request): JsonResponse
     {
         // 驗證輸入資料
         $validated = $request->validated();
@@ -21,6 +20,7 @@ class LeaveTypeController extends Controller
         $leaveType = LeaveType::create([
             'name' => $validated['name'],
             'description' => $validated['description'],
+            'remaining_leave_hours' => $validated['remaining_leave_hours']
         ]);
 
         // 回傳新增結果
@@ -30,30 +30,39 @@ class LeaveTypeController extends Controller
         ], 201);
     }
 
-
     // 2. 刪除假別
-    public function leaveTypesDestroy($id)
+    public function destroyLeaveTypes($id)
     {
         $leaveType = LeaveType::find($id);
 
-        // 如果該假別不存在，返回 404 錯誤
-        if (!$leaveType) {
-            return response()->json(['message' => '假別未找到'], 404);
-        }
-
-        // 如果是預設假別，則不能刪除
-        if ($leaveType->is_system_default) {
-            return response()->json(['message' => '預設假別無法刪除'], 403);
-        }
-
-        // 自訂假別可刪除
         $leaveType->delete();
+
         return response()->json(['message' => '假別刪除成功'], 200);
+    }
+
+    // 3. 修改假別
+    public function updateLeaveTypes($id, LeaveTypeCreateRequest $request)
+    {
+        $leaveType = LeaveType::find($id);
+
+        $validated = $request->validated();
+
+        $leaveType->update([
+            'name' => $validated['name'],
+            'description' => $validated['description'],
+            'remaining_leave_hours' => $validated['remaining_leave_hours']
+        ]);
+
+        return response()->json([
+            'message' => '假別更新成功',
+            'leave_type' => $leaveType,
+        ], 200);
     }
 
     // 4. 所有假別(放在下拉式選單)
     public function getleaveTypes()
     {
+        // 取得所有假別（來自 LeaveHelper）
         $leaveTypes = LeaveType::all();
         return response()->json($leaveTypes);
     }

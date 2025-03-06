@@ -50,11 +50,11 @@ Route::middleware('auth:api')->group(function () {
     // 🟢 請假功能
     Route::middleware('auth:api')->prefix('leaves')->group(function () {
         // 1. 新增假別API
-        Route::post('/leavetypes/add', [LeaveTypeController::class, 'leaveTypesAdd']);
+        Route::post('/type/add', [LeaveTypeController::class, 'addLeaveTypes']);
         // 2. 刪除假別API
-        Route::post('/leavetypes/destroy', [LeaveTypeController::class, 'leaveTypesDestroy']);
+        Route::post('/type/destroy/{id}', [LeaveTypeController::class, 'destroyLeaveTypes']);
         // 3. 修改假別API
-
+        Route::post('/type/update/{id}', [LeaveTypeController::class, 'updateLeaveTypes']);
         // 4. 假別選單API (放下拉式選單內)
         Route::get('/leavetypes', [LeaveTypeController::class, 'getleaveTypes']);
         // 5. 狀態選單API (放下拉式選單內)

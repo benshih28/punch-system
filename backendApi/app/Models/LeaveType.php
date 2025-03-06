@@ -10,7 +10,7 @@ class LeaveType extends Model
     use HasFactory;
 
     // 允許批量填充的欄位
-    protected $fillable = ['id', 'name', 'description'];
+    protected $fillable = ['id', 'name', 'description', 'remaining_leave_hours'];
 
     // 定義和 leaves 表的關聯（假設 leaves 有 leave_type_id）
     public function leaves()
