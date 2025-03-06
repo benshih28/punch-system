@@ -12,6 +12,7 @@ class DepartmentController extends Controller
     public function index()
     {
         $departments = Department::with('name')->get(); // 取得所有部門，並帶出主管資訊
+        $departments = Department::all(); // 取得所有部門
 
         return response()->json([
             'message' => '成功獲取所有部門',
