@@ -83,20 +83,37 @@ class LeaveService
         $query = Leave::with('user')->where('id', $id);
 
         if ($user->role === 'employee') {
+            // 員工只能查詢自己的假單
             $query->where('user_id', $user->id);
         } elseif ($user->role === 'supervisor') {
+            // 主管可以查詢同部門員工的假單
             $query->whereHas('user', fn($q) => $q->where('department_id', $user->department_id));
         } elseif ($user->role === 'hr') {
-            // HR看全部
+            // HR可以查詢所有的假單
+            // 這裡返回所有假單
         }
 
         return $query->first();
     }
 
-    // 4. 更新請假申請
-    public function updateLeave(Leave $leave, array $data): bool
+    // 4. 更新單筆紀錄
+    public function updateLeave(Leave $leave, array $data): Leave
     {
-        return $leave->update($data);
+        // 計算請假小時數
+        $hours = $this->calculateHours($data['start_time'], $data['end_time']);
+
+        // 開始更新假單資料
+        $leave->update([
+            'leave_type_id' => $data['leave_type'],  // 更新假別
+            'start_time' => $data['start_time'],     // 更新開始時間
+            'end_time' => $data['end_time'],         // 更新結束時間
+            'leave_hours' => $hours,                 // 計算並更新請假小時數
+            'reason' => $data['reason'] ?? $leave->reason,  // 如果沒有傳入reason，則保留原來的
+            'status' => $data['status'] ?? $leave->status,  // 如果沒有傳入status，則保留原來的
+            'attachment' => $data['attachment'] ?? $leave->attachment,  // 更新附件路徑，若無則保留原來的
+        ]);
+
+        return $leave;
     }
 
     // 5. 計算跨天請假時數 (支援單日、跨日)
@@ -152,7 +169,7 @@ class LeaveService
         return round($hours, 2);
     }
 
-    // 7. 計算剩餘小時數
+    // 7. 計算特殊假別剩餘小時數
     public function getRemainingLeaveHours($leaveTypeId, $userId)
     {
         // 獲取該假別的總小時數

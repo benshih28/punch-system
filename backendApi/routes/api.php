@@ -69,10 +69,10 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/records', [LeaveController::class, 'leaveRecords']);
         // 3-1. 查詢單筆紀錄API
         Route::post('/{id}', [LeaveController::class, 'showLeave']);
-        // 3-2. 修改請假API
+        // 3-2. 修改請假申請API
         Route::put('/{id}', [LeaveController::class, 'updateLeave']);
         // 4. 刪除請假申請
-        Route::delete('/{leave}', [LeaveController::class, 'delete']);
+        Route::delete('/{id}', [LeaveController::class, 'leaveApplyDelete']);
     });
 
 

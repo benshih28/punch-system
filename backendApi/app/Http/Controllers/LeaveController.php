@@ -103,6 +103,7 @@ class LeaveController extends Controller
 
             Log::info('單筆請假查詢', ['user_id' => $user->id, 'leave_id' => $id]);
 
+            // 查單筆
             $leave = $this->leaveService->getSingleLeave($user, $id);
 
             if (!$leave) {
@@ -126,7 +127,7 @@ class LeaveController extends Controller
         }
     }
 
-    // 3-2. 更新請假單（帶角色權限判斷）
+    // 3-2. 修改請假申請
     public function updateLeave(LeaveUpdateRequest $request, int $id): JsonResponse
     {
         try {
@@ -138,15 +139,20 @@ class LeaveController extends Controller
                 'data' => $request->all(),
             ]);
 
+            // 先查單筆
             $leave = $this->leaveService->getSingleLeave($user, $id);
 
             if (!$leave) {
                 return response()->json(['message' => '查無此假單'], 403);
             }
 
-            $this->leaveService->updateLeave($leave, $request->validated());
+            // 呼叫服務層更新假單
+            $updatedLeave = $this->leaveService->updateLeave($leave, $request->validated());
 
-            return response()->json(['message' => '假單更新成功'], 200);
+            return response()->json([
+                'message' => '假單更新成功',
+                'leave' => $this->formatLeave($updatedLeave),
+            ], 200);
         } catch (\Exception $e) {
             Log::error('更新請假單失敗', [
                 'user_id' => auth()->user()->id,
@@ -167,12 +173,8 @@ class LeaveController extends Controller
         try {
             $user = auth()->user();  // 取得當前登入的使用者
 
-            // 確認該請假申請是否存在
+            // 先查單筆
             $leave = $this->leaveService->getSingleLeave($user, $id);
-            if (!$leave) {
-                // 如果請假申請不存在或用戶沒有權限查看，則返回錯誤訊息
-                return response()->json(['message' => '查無此假單或無權限刪除'], 403);
-            }
 
             // 刪除請假申請
             $leave->delete();
