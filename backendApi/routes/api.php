@@ -68,7 +68,7 @@ Route::middleware('auth:api')->group(function () {
         // 2. 查詢請假紀錄API
         Route::get('/records', [LeaveController::class, 'leaveRecords']);
         // 3-1. 查詢單筆紀錄API
-        Route::post('/{id}', [LeaveController::class, 'showLeave']);
+        Route::get('/{id}', [LeaveController::class, 'showLeave']);
         // 3-2. 修改請假申請API
         Route::put('/{id}', [LeaveController::class, 'updateLeave']);
         // 4. 刪除請假申請
