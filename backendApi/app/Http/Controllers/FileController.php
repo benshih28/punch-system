@@ -1,0 +1,82 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use App\Models\File;
+use Illuminate\Support\Facades\Storage;
+
+class FileController extends Controller
+{
+    // 上傳大頭貼 avatar
+    public function uploadAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
+
+        // 取得上傳的副檔名
+        $extension = $request->file('avatar')->getClientOriginalExtension();
+        $filename = 'avatar_' . Auth::id() . '.' . $extension;
+
+        // 存放到 `storage/app/public/avatars/`
+        $path = $request->file('avatar')->storeAs('avatars', $filename, 'public');
+
+        // ✅ 更新或新增大頭貼記錄
+        File::updateOrCreate(
+            ['user_id' => Auth::id(), 'leave_id' => null], // 搜尋條件
+            ['avatar' => $filename] // 更新的值
+        );
+
+        return response()->json([
+            'message' => '大頭貼更新成功',
+            'url' => Storage::url("avatars/" . $filename)
+        ]);
+    }
+
+    // 取得大頭貼
+    public function getAvatar()
+    {
+        // $file = File::where('user_id', Auth::id())->first();
+        $file = File::where('user_id', Auth::id())
+            ->whereNotNull('avatar') // 確保 avatar 不是 NULL
+            ->first();
+
+        return response()->json([
+            // 'avatar_url' => $file ? Storage::url("avatars/" . $file->avatar) : asset('default-avatar.png')
+            'avatar_url' => $file && $file->avatar
+                ? Storage::url("avatars/" . $file->avatar) 
+                : null // 如NULL，則回傳 NULL
+        ]);
+    }
+
+
+
+    // // 上傳請假附件 leave_attachment
+    // public function uploadLeaveAttachment(Request $request, $leave_id)
+    // {
+    //     $request->validate([
+    //         'leave_attachment' => 'required|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:2048',
+    //     ]);
+
+    //     // 設定檔案名稱
+    //     $filename = 'leave_' . Auth::id() . '_' . time() . '.' . $request->file('leave_attachment')->getClientOriginalExtension();
+
+    //     // 只使用一個 `$path`，確保存入 `storage/app/public/leave_attachments/`
+    //     $path = $request->file('leave_attachment')->storeAs('leave_attachments', $filename, 'public');
+
+    //     // 新增請假附件記錄
+    //     $file = File::create([
+    //         'user_id' => Auth::id(),
+    //         'leave_id' => $leave_id,
+    //         'leave_attachment' => $filename
+    //     ]);
+
+    //     return response()->json([
+    //         'message' => '請假附件上傳成功',
+    //         'url' => Storage::url("leave_attachments/" . $file->leave_attachment)
+    //     ]);
+    // }
+
+}
