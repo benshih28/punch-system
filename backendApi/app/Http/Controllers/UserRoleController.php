@@ -43,6 +43,13 @@ class UserRoleController extends Controller
     public function getUserPermissions($userId)
     {
         $user = User::findOrFail($userId);
-        return response()->json(['permissions' => $user->getPermissionNames()]);
+        
+        // 確保使用者直接擁有的 `permissions` + 繼承自 `roles` 的 `permissions`
+        $permissions = $user->getAllPermissions()->pluck('name');
+
+        return response()->json([
+            'user' => $user->name,
+            'permissions' => $permissions
+        ]);
     }
 }
