@@ -15,6 +15,7 @@ use App\Http\Controllers\PositionController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\FileController;
+use App\Http\Controllers\UserController;
 
 
 // ✅ 忘記密碼 API
@@ -33,8 +34,11 @@ Route::middleware('auth:api')->group(function () {
         return response()->json($request->user());
     });
 
+    // 🟢 更新使用者個人資料(大頭貼、更改新密碼)
+    Route::post('/user/update/profile', [UserController::class, 'updateProfile']);
+
     // 🟢 大頭貼
-    Route::post('/upload/avatar', [FileController::class, 'uploadAvatar'])->middleware('auth');
+    // Route::post('/upload/avatar', [FileController::class, 'uploadAvatar'])->middleware('auth');
     Route::get('/avatar', [FileController::class, 'getAvatar'])->middleware('auth');
 
     // 🟢 打卡 API
