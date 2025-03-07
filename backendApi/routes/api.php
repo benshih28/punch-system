@@ -52,6 +52,8 @@ Route::middleware('auth:api')->group(function () {
         Route::prefix('/roles')->group(function () {
             Route::post('/', [RoleController::class, 'createRole']);
             Route::get('/', [RoleController::class, 'getAllRoles']);
+            Route::post('/permission', [RoleController::class, 'createPermission']);
+            Route::delete('/permission', [RoleController::class, 'deletePermission']);
             Route::post('/{roleId}/assign/permissions', [RoleController::class, 'assignPermission']);
             Route::post('/{roleId}/revoke/permissions', [RoleController::class, 'revokePermission']);
         });
