@@ -10,6 +10,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\LeaveTypeController;
+use App\Http\Controllers\LeaveRuleController;
 
 use App\Http\Controllers\PunchCorrectionController;
 use App\Http\Controllers\DepartmentController;
@@ -88,7 +89,16 @@ Route::middleware('auth:api')->group(function () {
         Route::put('/{id}', [LeaveController::class, 'updateLeave']);
         // 4. 刪除請假申請
         Route::delete('/{id}', [LeaveController::class, 'leaveApplyDelete']);
-        // 5. 取得特殊假別剩餘小時數
+        
+        // 1. 增加假別規則
+        Route::post('/rules', [LeaveRuleController::class, 'index']);
+        // 2. 修改假別規則
+        Route::put('/rules/{id}', [LeaveRuleController::class, 'update']);
+        // 3. 取得假別規則
+        Route::get('/leave-rules', [LeaveRuleController::class, 'index']);
+        // 4. 刪除假別規則
+        Route::delete('/leave-rules/{id}', [LeaveRuleController::class, 'destroy']);
+        // 5. 取得假別剩餘小時數
         Route::get('/remaininghours', [LeaveController::class, 'getRemainingLeaveHours']);
     });
 
