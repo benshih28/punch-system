@@ -16,6 +16,7 @@ use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\FileController;
 
 
 // ✅ 忘記密碼 API
@@ -34,6 +35,10 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/user', function (Request $request) {
         return response()->json($request->user());
     });
+
+    // 🟢 大頭貼
+    Route::post('/upload/avatar', [FileController::class, 'uploadAvatar'])->middleware('auth');
+    Route::get('/avatar', [FileController::class, 'getAvatar'])->middleware('auth');
 
     // 🟢 打卡 API
     Route::prefix('/punch')->group(function () {
