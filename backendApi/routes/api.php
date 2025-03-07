@@ -60,19 +60,12 @@ Route::middleware('auth:api')->group(function () {
             Route::post('/', [RoleController::class, 'createRole']);
             // 取得所有角色
             Route::get('/', [RoleController::class, 'getAllRoles']);
-<<<<<<< Updated upstream
-            Route::post('/permission', [RoleController::class, 'createPermission']);
-            Route::delete('/permission', [RoleController::class, 'deletePermission']);
-            Route::post('/{roleId}/assign/permissions', [RoleController::class, 'assignPermission']);
-            Route::post('/{roleId}/revoke/permissions', [RoleController::class, 'revokePermission']);
-=======
             // 指派 `permissions` 給角色
             Route::patch('/{role}/permissions', [RoleController::class, 'assignPermission']);
             // 移除 `permissions`
             Route::delete('/{role}/permissions', [RoleController::class, 'revokePermission']);
             // 取得角色permissions
             Route::get('/{role}/permissions', [RoleController::class, 'getRolePermissions']); 
->>>>>>> Stashed changes
         });
 
     // 使用者角色管理 API (只處理「使用者」)
