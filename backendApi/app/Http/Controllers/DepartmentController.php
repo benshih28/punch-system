@@ -11,7 +11,7 @@ class DepartmentController extends Controller
     // 取得所有部門
     public function index()
     {
-        $departments = Department::with('manager')->get(); // 取得所有部門，並帶出主管資訊
+        $departments = Department::all(); // 取得所有部門
 
         return response()->json([
             'message' => '成功獲取所有部門',
@@ -25,7 +25,6 @@ class DepartmentController extends Controller
         // 驗證請求資料
         $request->validate([
             'name' => 'required|string|unique:departments,name|max:255',
-            'manager_id' => 'nullable|exists:users,id', // nullable允許為空值，確保manager_id存在於users表
         ]);
 
         // 建立部門

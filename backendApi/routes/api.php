@@ -14,6 +14,7 @@ use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\FileController;
 
 
 
@@ -37,7 +38,11 @@ Route::middleware('auth:api')->group(function () {
         return response()->json($request->user());
     });
 
-    // 打卡 API
+    // 🟢 大頭貼
+    Route::post('/upload/avatar', [FileController::class, 'uploadAvatar'])->middleware('auth');
+    Route::get('/avatar', [FileController::class, 'getAvatar'])->middleware('auth');
+
+    // 🟢 打卡 API
     Route::prefix('/punch')->group(function () {
         Route::post('/in', [PunchController::class, 'punchIn']);
         Route::post('/out', [PunchController::class, 'punchOut']);
