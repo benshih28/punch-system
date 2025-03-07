@@ -61,7 +61,7 @@ class LeaveController extends Controller
         }
     }
 
-    // 2. 查詢請假紀錄（帶角色權限判斷）
+    // 2. 查詢請假紀錄
     public function leaveRecords(LeaveListRequest $request): JsonResponse
     {
         try {
@@ -97,7 +97,7 @@ class LeaveController extends Controller
     }
 
     // 3. 修改請假原因功能
-    // 3-1. 單筆查詢（帶角色權限判斷）
+    // 3-1. 單筆查詢
     public function showLeave(int $id): JsonResponse
     {
         try {

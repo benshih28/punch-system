@@ -91,13 +91,13 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('/{id}', [LeaveController::class, 'leaveApplyDelete']);
         
         // 1. 增加假別規則
-        Route::post('/rules', [LeaveRuleController::class, 'index']);
+        Route::post('/types/rules', [LeaveRuleController::class, 'addLeaveRule']);
         // 2. 修改假別規則
-        Route::put('/rules/{id}', [LeaveRuleController::class, 'update']);
+        Route::patch('/types/rules/{id}', [LeaveRuleController::class, 'updateLeaveRule']);
         // 3. 取得假別規則
-        Route::get('/leave-rules', [LeaveRuleController::class, 'index']);
+        Route::get('/types/rules', [LeaveRuleController::class, 'getLeaveRules']);
         // 4. 刪除假別規則
-        Route::delete('/leave-rules/{id}', [LeaveRuleController::class, 'destroy']);
+        Route::delete('/types/rules/{id}', [LeaveRuleController::class, 'destroyLeaveRule']);
         // 5. 取得假別剩餘小時數
         Route::get('/remaininghours', [LeaveController::class, 'getRemainingLeaveHours']);
     });

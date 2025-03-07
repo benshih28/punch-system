@@ -2,56 +2,66 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\LeaveRuleRequest;
 use App\Models\LeaveResetRule;
-use App\Services\LeaveResetService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
 class LeaveRuleController extends Controller
 {
-    //
-    protected $leaveResetService;   // ✅ 宣告service
-
-    public function __construct(LeaveResetService $leaveResetService)
+    // ✅ 新增
+    public function addLeaveRule(Request $request): JsonResponse
     {
-        $this->leaveResetService = $leaveResetService;  // ✅ 注入進來
+        $validated = $request->validate([
+            'leave_type_id' => 'required|exists:leave_types,id',
+            'rule_type' => 'required|in:yearly,monthly',
+            'rule_value' => 'nullable|string|max:20',
+        ]);
+
+        $rule = LeaveResetRule::create($validated);
+
+        return response()->json([
+            'message' => '新增成功',
+            'rule' => $rule,
+        ], 201);
     }
-    
-    public function index(): JsonResponse
+
+    // ✅ 修改
+    public function updateLeaveRule(Request $request, $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'leave_type_id' => 'required|exists:leave_types,id',
+            'rule_type' => 'required|in:yearly,monthly',
+            'rule_value' => 'nullable|string|max:20',
+        ]);
+
+        $rule = LeaveResetRule::findOrFail($id);
+        $rule->update($validated);
+
+        return response()->json([
+            'message' => '更新成功',
+            'rule' => $rule,
+        ], 200);
+    }
+
+    // ✅ 查詢全部規則 (list)
+    public function getLeaveRules(): JsonResponse
     {
         $rules = LeaveResetRule::with('leaveType')->get();
 
-        return response()->json($rules);
-    }
-
-    public function store(LeaveRuleRequest $request): JsonResponse
-    {
-        $rule = LeaveResetRule::create($request->validated());
-
         return response()->json([
-            'message' => '請假規則新增成功',
-            'rule' => $rule,
-        ]);
+            'message' => '取得所有請假規則成功',
+            'rules' => $rules,
+        ], 200);
     }
 
-    public function update(LeaveRuleRequest $request, $id): JsonResponse
-    {
-        $rule = LeaveResetRule::findOrFail($id);
-        $rule->update($request->validated());
-
-        return response()->json([
-            'message' => '請假規則更新成功',
-            'rule' => $rule,
-        ]);
-    }
-
-    public function destroy($id): JsonResponse
+    // ✅ 刪除
+    public function destroyLeaveRule($id): JsonResponse
     {
         $rule = LeaveResetRule::findOrFail($id);
         $rule->delete();
 
-        return response()->json(['message' => '請假規則刪除成功']);
+        return response()->json([
+            'message' => '刪除成功',
+        ], 200);
     }
-
 }

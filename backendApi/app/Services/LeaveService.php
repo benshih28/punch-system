@@ -7,10 +7,18 @@ use App\Models\LeaveType;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Collection;
 use App\Models\File;
+use App\Http\Requests\LeaveListRequest;
+use Illuminate\Http\JsonResponse;
 
 
 class LeaveService
 {
+    protected $leaveService;
+
+    public function __construct($leaveService)
+    {
+        $this->leaveService = $leaveService;
+    }
     const WORK_HOURS_PER_DAY = 8;  // 每天上班時數
 
     //  1. 申請請假
@@ -50,8 +58,9 @@ class LeaveService
             $attachmentPath = $file->storeAs('attachments', $filename, 'public');
 
             $fileRecord = File::create([
-                'leave_attachment' => $attachmentPath,
+                'user_id' => $user->id,
                 'leave_id' => $leave->id,
+                'leave_attachment' => $attachmentPath,
             ]);
 
             // 把 files 的 id 存回 leaves 的 attachment_id
@@ -61,20 +70,44 @@ class LeaveService
         return $leave;
     }
 
-    // 2. 查詢請假清單（帶角色權限）
-    public function getLeaveList($user, array $filters): Collection
+    // 2. 查詢請假清單
+    public function leaveRecords(LeaveListRequest $request): JsonResponse
     {
-        $query = Leave::with('user');
+        $user = auth()->user();  // 取得登入者
 
-        // 員工只能查自己，主管查部門，HR查全部
-        if ($user->role === 'employee') {
-            $query->where('user_id', $user->id);
-        } elseif ($user->role === 'manager') {
-            $query->whereHas('user', fn($q) => $q->where('department_id', $user->department_id));
-        } elseif ($user->role === 'hr')
-            $this->applyFilters($query, $filters);
+        $filters = $request->validated();
 
-        return $query->orderBy('start_time', 'desc')->get();
+        $leaves = $this->leaveService->getLeaveList($user->id, $filters);  // 撈清單
+
+        // 如果完全沒資料，回傳"查無資料"
+        if ($leaves->isEmpty()) {
+            return response()->json([
+                'message' => '查無資料，請重新選擇日期區間或是假別',
+                'records' => [],
+            ], 200);
+        }
+
+        // 格式化回傳，變成你想要的格式
+        $records = $leaves->map(function ($leave) {
+            return [
+                'leave_id' => $leave->id,
+                'user_id' => $leave->user_id,
+                'user_name' => $leave->user->name,
+                'leave_type' => $leave->leave_type,
+                'start_time' => $leave->start_time,
+                'end_time' => $leave->end_time,
+                'reason' => $leave->reason,
+                'status' => $leave->status,
+                'attachment' => $leave->attachment
+                    ? asset('storage/' . $leave->attachment)
+                    : null,
+            ];
+        });
+
+        return response()->json([
+            'message' => '查詢成功',
+            'records' => $records,
+        ]);
     }
 
     // 3. 查單筆（帶角色權限）

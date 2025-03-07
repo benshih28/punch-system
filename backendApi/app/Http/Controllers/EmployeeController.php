@@ -115,18 +115,4 @@ class EmployeeController extends Controller
 
         return response()->json($employees);
     }
-
-    public function registerEmployee(Request $request, EmployeeService $service)
-    {
-        // 1️⃣ 先建立employee（這裡沒變）
-        $employee = $service->createEmployee($request->all());
-
-        // 2️⃣ 呼叫預存程序，讓DB幫我們自動補profile（這行是重點）
-        $service->triggerAddEmployeeProfile($employee->id);  // 👈 這行是關鍵
-
-        return response()->json([
-            'message' => '員工註冊成功',
-            'employee' => $employee->load('profile'),  // 註冊完就帶profile一起回去
-        ]);
-    }
 }
