@@ -66,12 +66,9 @@ class LeaveService
         // 員工只能查自己，主管查部門，HR查全部
         if ($user->role === 'employee') {
             $query->where('user_id', $user->id);
-        } elseif ($user->role === 'supervisor') {
+        } elseif ($user->role === 'manager') {
             $query->whereHas('user', fn($q) => $q->where('department_id', $user->department_id));
-        } elseif ($user->role === 'hr') {
-            // HR可以看全部
-        }
-
+        } elseif ($user->role === 'hr') 
         $this->applyFilters($query, $filters);
 
         return $query->orderBy('start_time', 'desc')->get();
@@ -85,7 +82,7 @@ class LeaveService
         if ($user->role === 'employee') {
             // 員工只能查詢自己的假單
             $query->where('user_id', $user->id);
-        } elseif ($user->role === 'supervisor') {
+        } elseif ($user->role === 'manager') {
             // 主管可以查詢同部門員工的假單
             $query->whereHas('user', fn($q) => $q->where('department_id', $user->department_id));
         } elseif ($user->role === 'hr') {

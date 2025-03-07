@@ -50,19 +50,16 @@ Route::middleware('auth:api')->group(function () {
     // 🟢 請假功能
     Route::middleware('auth:api')->prefix('leaves')->group(function () {
         // 1. 新增假別API
-        Route::post('/type/add', [LeaveTypeController::class, 'addLeaveTypes']);
+        Route::post('/types/add', [LeaveTypeController::class, 'addLeaveTypes']);
         // 2. 刪除假別API
-        Route::post('/type/destroy/{id}', [LeaveTypeController::class, 'destroyLeaveTypes']);
+        Route::delete('/types/{id}', [LeaveTypeController::class, 'destroyLeaveTypes']);
         // 3. 修改假別API
-        Route::post('/type/update/{id}', [LeaveTypeController::class, 'updateLeaveTypes']);
+        Route::put('/types/update/{id}', [LeaveTypeController::class, 'updateLeaveTypes']);
         // 4. 假別選單API (放下拉式選單內)
-        Route::get('/leavetypes', [LeaveTypeController::class, 'getleaveTypes']);
+        Route::get('/types', [LeaveTypeController::class, 'getleaveTypes']);
         // 5. 狀態選單API (放下拉式選單內)
-        Route::get('/leavestatus', [LeaveTypeController::class, 'getleaveStatus']);
-        // 6. 取得特殊假別剩餘小時數
-        Route::get('/remaininghours', [LeaveController::class, 'getRemainingLeaveHours']);
-
-
+        Route::get('/status', [LeaveTypeController::class, 'getleaveStatus']);
+                
         // 1.請假申請API
         Route::post('/apply', [LeaveController::class, 'leaveApply']);
         // 2. 查詢請假紀錄API
@@ -73,6 +70,8 @@ Route::middleware('auth:api')->group(function () {
         Route::put('/{id}', [LeaveController::class, 'updateLeave']);
         // 4. 刪除請假申請
         Route::delete('/{id}', [LeaveController::class, 'leaveApplyDelete']);
+        // 5. 取得特殊假別剩餘小時數
+        Route::get('/remaininghours', [LeaveController::class, 'getRemainingLeaveHours']);
     });
 
 

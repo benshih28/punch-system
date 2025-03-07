@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\LeaveType;
 use App\Http\Requests\LeaveTypeCreateRequest;
 use Illuminate\Http\JsonResponse;
+use App\Http\Requests\LeaveTypeUpdateRequest;
 
 class LeaveTypeController extends Controller
 {
@@ -20,8 +21,8 @@ class LeaveTypeController extends Controller
         $leaveType = LeaveType::create([
             'name' => $validated['name'],
             'description' => $validated['description'],
-            'total_hours' => $validated['total_hours']
-        ]);
+            'total_hours' => $validated['total_hours'] ?? null
+        ]);        
 
         // 回傳新增結果
         return response()->json([
@@ -41,7 +42,7 @@ class LeaveTypeController extends Controller
     }
 
     // 3. 修改假別
-    public function updateLeaveTypes($id, LeaveTypeCreateRequest $request)
+    public function updateLeaveTypes($id, LeaveTypeUpdateRequest $request)
     {
         $leaveType = LeaveType::find($id);
 
@@ -50,8 +51,8 @@ class LeaveTypeController extends Controller
         $leaveType->update([
             'name' => $validated['name'],
             'description' => $validated['description'],
-            'total_hours' => $validated['total_hours']
-        ]);
+            'total_hours' => $validated['total_hours'] ?? null,
+        ]);  
 
         return response()->json([
             'message' => '假別更新成功',
@@ -62,7 +63,7 @@ class LeaveTypeController extends Controller
     // 4. 所有假別(放在下拉式選單)
     public function getleaveTypes()
     {
-        // 取得所有假別（來自 LeaveHelper）
+        // 取得所有假別
         $leaveTypes = LeaveType::all();
         return response()->json($leaveTypes);
     }

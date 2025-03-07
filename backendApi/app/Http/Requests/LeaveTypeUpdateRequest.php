@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class LeaveTypeCreateRequest extends FormRequest
+class LeaveTypeUpdateRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,9 +22,9 @@ class LeaveTypeCreateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:100|unique:leave_types,name', // 假別名稱唯一
-            'description' => 'required|string|max:255', // 假別中文
-            'total_hours' => 'nullable|integer|min:0',  //不是必填，並且驗證它是數字，且不小於 0
+            'name' => 'required|string|max:100|unique:leave_types,name,' . $this->route('id'),
+            'description' => 'required|string|max:255',
+            'total_hours' => 'nullable|integer|min:0',
         ];
     }
 }
