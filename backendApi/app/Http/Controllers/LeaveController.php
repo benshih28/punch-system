@@ -21,11 +21,13 @@ class LeaveController extends Controller
 
     // 1. 申請請假
     public function leaveApply(LeaveApplyRequest $request): JsonResponse
-    {
+    {   
+        Log::info('leaveApply進來了', $request->all());
+
         $user = auth()->user();  // 透過JWT取得當前登入者
 
         $data = $request->validated(); // 先做欄位驗證，通過後再繼續
-        $data['user_id'] = $user->id;  // user_id由後端自動補，不讓前端傳
+        $data['user_id'] = auth()->user()->id;  // user_id由後端自動補，不讓前端傳
 
         // ✅ 把attachment傳進Service
         if ($request->hasFile('attachment')) {
@@ -36,7 +38,7 @@ class LeaveController extends Controller
             $leave = $this->leaveService->applyLeave($data); // 交給Service處理申請邏輯
             $leave->load('user');                            // 帶出user關聯資料
 
-            Log::info('申請請假', ['user_id' => $user->id]);
+            Log::info('申請成功', ['leave_id' => $leave->id]);
 
             // ✅ 成功回傳
             return response()->json([

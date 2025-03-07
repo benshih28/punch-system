@@ -11,7 +11,7 @@ class Leave extends Model
 
     protected $fillable = [
         'user_id',
-        'leave_type',
+        'leave_type_id',
         'start_time',
         'end_time',
         'leave_hours',
@@ -30,5 +30,10 @@ class Leave extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function files()
+    {
+        return $this->hasMany(File::class);
     }
 }

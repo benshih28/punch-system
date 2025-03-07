@@ -6,6 +6,7 @@ use App\Models\Leave;
 use App\Models\LeaveType;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Collection;
+use App\Models\File;
 
 
 class LeaveService
@@ -16,46 +17,48 @@ class LeaveService
     // 根據前端送來的資料，算好請假時數，然後寫入資料庫
     public function applyLeave(array $data): Leave
     {
-        $user = auth()->user(); // 獲取當前用戶
-        $leaveTypeId = $data['leave_type_id']; // 獲取假別類型
-        $leaveHours = $data['leave_hours']; // 獲取請假小時數
+        $user = auth()->user();
 
-        // 取得剩餘假別小時數
-        $remainingHours = $this->getRemainingLeaveHours($leaveTypeId, $user->id);
-
-        // 檢查剩餘小時數是否足夠
-        if ($remainingHours < $leaveHours) {
-            throw new \Exception('剩餘小時數不足', 400);
-        }
-
-        // 計算請假時間的總小時數
+        // 1️⃣ 先計算這次請假有幾小時
+        $leaveTypeId = $data['leave_type']; // 注意這裡
         $hours = $this->calculateHours($data['start_time'], $data['end_time']);
 
-        // 處理附件上傳
-        $attachmentPath = null;
+        // 2️⃣ 拿到這個假別的總時數
+        $remainingHours = $this->getRemainingLeaveHours($leaveTypeId, $user->id);
+
+        // 3️⃣ 判斷剩餘時數夠不夠
+        if (!is_null($remainingHours) && $remainingHours < $hours) {
+            throw new \Exception("剩餘時數不足，僅剩 {$remainingHours} 小時", 400);
+        }
+
+        // 4️⃣ 真的可以請，建立假單
+        $leave = Leave::create([
+            'user_id' => $user->id,
+            'leave_type_id' => $data['leave_type'],
+            'start_time' => $data['start_time'],
+            'end_time' => $data['end_time'],
+            'leave_hours' => $hours,
+            'reason' => $data['reason'] ?? '',
+            'status' => 'pending',
+        ]);
+
+        // 5️⃣ 處理附件
         if (!empty($data['attachment']) && $data['attachment']->isValid()) {
             $file = $data['attachment'];
 
-            // 取得副檔名
-            $extension = $file->getClientOriginalExtension();
-
-            // UUID檔名 + 副檔名
-            $filename = Str::uuid() . '.' . $extension;
-
-            // 存檔到backendAPI/storage/app/public/attachments
+            $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
             $attachmentPath = $file->storeAs('attachments', $filename, 'public');
+
+            $fileRecord = File::create([
+                'leave_attachment' => $attachmentPath,
+                'leave_id' => $leave->id,
+            ]);
+
+            // 把 files 的 id 存回 leaves 的 attachment_id
+            $leave->update(['attachment' => $fileRecord->id]);
         }
 
-        return Leave::create([
-            'user_id' => $user->id, // 使用者 ID，避免從資料中傳入
-            'leave_type_id' => $leaveTypeId, // 假別類型 ID
-            'start_time' => $data['start_time'],
-            'end_time' => $data['end_time'],
-            'leave_hours' => $hours,   // 存小時數
-            'reason' => $data['reason'] ?? '', // 默認為空字串
-            'status' => 'pending', // 預設為待審核
-            'attachment' => $attachmentPath, // 儲存附件路徑
-        ]);
+        return $leave;
     }
 
     // 2. 查詢請假清單（帶角色權限）
@@ -68,8 +71,8 @@ class LeaveService
             $query->where('user_id', $user->id);
         } elseif ($user->role === 'manager') {
             $query->whereHas('user', fn($q) => $q->where('department_id', $user->department_id));
-        } elseif ($user->role === 'hr') 
-        $this->applyFilters($query, $filters);
+        } elseif ($user->role === 'hr')
+            $this->applyFilters($query, $filters);
 
         return $query->orderBy('start_time', 'desc')->get();
     }
@@ -171,12 +174,18 @@ class LeaveService
     {
         // 獲取該假別的總小時數
         $leaveType = LeaveType::find($leaveTypeId);
+
+        if (is_null($leaveType->total_hours)) {
+            return null;  // 用null當作「不需要檢查上限」
+        }
+
         $totalHours = $leaveType->total_hours;
 
         // 計算該使用者已請的總小時數
         $usedHours = Leave::where('user_id', $userId)
             ->where('leave_type_id', $leaveTypeId)
-            ->sum('leave_hours');  // 聚合已請的總小時數
+            ->where('status', 'approved')  // 只算批准的
+            ->sum('leave_hours');
 
         // 計算剩餘小時數
         $remainingHours = $totalHours - $usedHours;
