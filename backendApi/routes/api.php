@@ -42,8 +42,8 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/upload/avatar', [FileController::class, 'uploadAvatar'])->middleware('auth');
     Route::get('/avatar', [FileController::class, 'getAvatar'])->middleware('auth');
 
-    // 🟢 打卡 API
-    Route::prefix('/punch')->group(function () {
+     // 🟢 打卡 API (基於 `punch_in`、`punch_out` 權限)
+     Route::prefix('/punch')->middleware(['can:punch_in', 'can:punch_out','can:request_correction',,'can:view_attendance'])->group(function () {
         Route::post('/in', [PunchController::class, 'punchIn']);
         Route::post('/out', [PunchController::class, 'punchOut']);
         // 打卡補登請求
@@ -57,10 +57,10 @@ Route::middleware('auth:api')->group(function () {
 
 
 
-    //  只有 HR & Admin 才能存取的 API
-    Route::middleware(['auth:api', 'can:isHRorAdmin'])->group(function () {
-
-        Route::prefix('/roles')->group(function () {
+    // 需要登入 (`auth:api`) 的 API
+    Route::middleware('auth:api')->group(function () {
+        
+        Route::middleware('can:manage_roles')->prefix('/roles')->group(function () {
             // 建立角色
             Route::post('/', [RoleController::class, 'createRole']);
             // 取得所有角色
