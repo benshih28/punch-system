@@ -251,6 +251,7 @@ class LeaveService
     private function applyFilters($query, array $filters): void
     {
         if (!empty($filters['start_date']) && !empty($filters['end_date'])) {
+            Log::info('日期篩選條件', ['start_date' => $filters['start_date'], 'end_date' => $filters['end_date']]);
             $query->where(function ($q) use ($filters) {
                 $q->whereBetween('start_time', [$filters['start_date'] . ' 00:00:00', $filters['end_date'] . ' 23:59:59'])
                     ->orWhereBetween('end_time', [$filters['start_date'] . ' 00:00:00', $filters['end_date'] . ' 23:59:59'])

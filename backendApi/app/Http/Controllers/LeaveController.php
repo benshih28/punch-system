@@ -148,13 +148,14 @@ class LeaveController extends Controller
     // 4. HR查詢全公司請假紀錄
     public function viewCompanyLeaveRecords(LeaveListRequest $request): JsonResponse
     {
-        
         try {
             $filters = $request->validated();
             Log::info('接收到的篩選條件', ['filters' => $filters]);
 
             // ✅ 查詢所有請假紀錄，使用分頁
             $leaves = $this->leaveService->getCompanyLeaveList($filters, 15);
+
+            Log::info('查詢結果', ['total' => $leaves->total(), 'data' => $leaves->items()]);
 
             return response()->json([
                 'message' => '查詢成功',
