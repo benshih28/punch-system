@@ -87,7 +87,7 @@ Route::middleware('auth:api')->group(function () {
 
     // -------------------------------------假別 & 假規 API---------------------------------  
     
-    // 🟢 假別 & 審核狀態
+    // 🟢 假別 & 審核狀態 (管理員專用)
     Route::middleware('auth:api')->prefix('leaves')->group(function () {
         // 1. 新增假別API
         Route::post('/types/add', [LeaveTypeController::class, 'addLeaveTypes']);

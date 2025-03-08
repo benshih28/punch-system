@@ -19,6 +19,8 @@ class LeaveTypeUpdateRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
+    
+    // 修改假別格式驗證
     public function rules(): array
     {
         return [
