@@ -23,49 +23,49 @@ class LeaveController extends Controller
     }
 
     // 1. 申請請假
-    public function leaveApply(LeaveApplyRequest $request): JsonResponse
-    {
-        Log::info('leaveApply進來了', $request->all());
+    public function requestLeave(LeaveApplyRequest $request): JsonResponse
+{
+    try {
+        // 1️⃣ 透過 JWT 取得當前登入者
+        $user = auth()->user();
 
-        $user = auth()->user();  // 透過JWT取得當前登入者
+        // 2️⃣ **資料驗證**
+        $data = $request->validated();
+        $data['user_id'] = $user->id; // 由後端自動填入 `user_id`
 
-        $data = $request->validated(); // 先做欄位驗證，通過後再繼續
-        $data['user_id'] = auth()->user()->id;  // user_id由後端自動補，不讓前端傳
-
-        // ✅ 把attachment傳進Service
+        // 3️⃣ **處理附件** (確保 `attachment` 傳到 Service 層)
         if ($request->hasFile('attachment')) {
             $data['attachment'] = $request->file('attachment');
         }
 
-        try {
-            $leave = $this->leaveService->applyLeave($data); // 交給Service處理申請邏輯
-            $leave->load('user');                            // 帶出user關聯資料
+        // 4️⃣ **呼叫 Service 層處理請假**
+        $leave = $this->leaveService->applyLeave($data);
+        $leave->load('user'); // **順便帶出 `user` 資料**
 
-            Log::info('申請成功', ['leave_id' => $leave->id]);
+        // 6️⃣ **回傳成功資訊**
+        return response()->json([
+            'message' => '申請成功，假單已送出',
+            'leave' => $this->formatLeave($leave),
+        ], 201); // **201 Created：表示成功建立新資源**
 
-            // ✅ 成功回傳
-            return response()->json([
-                'message' => '申請成功，假單已送出',
-                'leave' => $this->formatLeave($leave),
-            ], 200);
-        } catch (\Exception $e) {
-            // 📝 Log完整錯誤資訊
-            Log::error('【請假申請失敗】', [
-                'user_id' => $user->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+    } catch (\Throwable $e) { // ❗ 改用 `Throwable` 可捕獲所有錯誤 (Exception + Error)
+        // 7️⃣ **記錄錯誤日誌**
+        Log::error('❌ 請假申請失敗', [
+            'user_id' => $user->id ?? null,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ]);
 
-            // ❗回傳錯誤訊息
-            return response()->json([
-                'message' => '申請失敗，請稍後再試或聯繫管理員',
-                'error' => env('APP_DEBUG') ? $e->getMessage() : null,  // 本機才吐錯，正式不顯示細節
-            ], 400);
-        }
+        // 8️⃣ **回傳錯誤資訊**
+        return response()->json([
+            'message' => '申請失敗，請稍後再試或聯繫管理員',
+            'error' => app()->isLocal() ? $e->getMessage() : null, // **本機開發環境才回傳錯誤**
+        ], 500); // **500 Internal Server Error**
     }
+}
 
     // 2. 查詢個人請假紀錄
-    public function personalLeaveList(LeaveListRequest $request): JsonResponse
+    public function viewMyLeaveRecords(LeaveListRequest $request): JsonResponse
     {
         try {
             $user = auth()->user();
@@ -100,14 +100,10 @@ class LeaveController extends Controller
     }
 
     // 3. 查詢「部門」請假紀錄（限主管 & HR）
-    public function departmentLeaveRecords(LeaveListRequest $request): JsonResponse
+    public function viewDepartmentLeaveRecords(LeaveListRequest $request): JsonResponse
     {
         try {
             $user = auth()->user();
-
-            if (!$user->hasPermission('view_department_leaves')) {
-                return response()->json(['message' => '您無權查詢部門請假紀錄'], 403);
-            }
 
             $filters = $request->validated();
             Log::info('查詢部門請假紀錄', ['user_id' => $user->id, 'filters' => $filters]);
@@ -119,7 +115,7 @@ class LeaveController extends Controller
                 return response()->json([
                     'message' => '查無符合條件的請假紀錄',
                     'records' => [],
-                ], 200);
+                ], 204);
             }
 
             return response()->json([
@@ -140,14 +136,10 @@ class LeaveController extends Controller
     }
 
     // 3. HR查詢全公司請假紀錄
-    public function companyLeaveRecords(LeaveListRequest $request): JsonResponse
+    public function viewCompanyLeaveRecords(LeaveListRequest $request): JsonResponse
     {
         try {
             $user = auth()->user();
-
-            if (!$user->hasPermission('view_company_leaves')) {
-                return response()->json(['message' => '您無權查詢全公司請假紀錄'], 403);
-            }
 
             $filters = $request->validated();
             Log::info('查詢全公司請假紀錄', ['user_id' => $user->id, 'filters' => $filters]);
@@ -219,7 +211,7 @@ class LeaveController extends Controller
     }
 
     // 4. 刪除請假申請
-    public function leaveApplyDelete(int $id): JsonResponse
+    public function deleteLeave(int $id): JsonResponse
     {
         try {
             $user = auth()->user();  // 取得當前登入的使用者

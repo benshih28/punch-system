@@ -5,6 +5,8 @@ namespace App\Providers;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
+use Spatie\Permission\Models\Permission;
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
