@@ -41,21 +41,30 @@ Route::middleware('auth:api')->group(function () {
     // 🟢 大頭貼
     Route::post('/upload/avatar', [FileController::class, 'uploadAvatar'])->middleware('auth');
     Route::get('/avatar', [FileController::class, 'getAvatar'])->middleware('auth');
+// 🟢 打卡 API  
+Route::prefix('/punch')->group(function () {
+    // ✅ 需要 `punch_in` 權限
+    Route::post('/in', [PunchController::class, 'punchIn'])->middleware('can:punch_in');
+    
+    // ✅ 需要 `punch_out` 權限
+    Route::post('/out', [PunchController::class, 'punchOut'])->middleware('can:punch_out');
+    
+    // ✅ 需要 `request_correction` 權限才能補登打卡
+    Route::post('/correction', [PunchCorrectionController::class, 'store'])->middleware('can:request_correction'); 
+    
+    // ✅ 需要 `view_corrections` 權限才能查看自己的補登紀錄
+    Route::get('/correction', [PunchCorrectionController::class, 'getUserCorrections'])->middleware('can:view_corrections'); 
+});
 
-     // 🟢 打卡 API (基於 `punch_in`、`punch_out` 權限)
-     Route::prefix('/punch')->middleware(['can:punch_in', 'can:punch_out','can:request_correction',,'can:view_attendance'])->group(function () {
-        Route::post('/in', [PunchController::class, 'punchIn']);
-        Route::post('/out', [PunchController::class, 'punchOut']);
-        // 打卡補登請求
-        Route::post('/correction', [PunchCorrectionController::class, 'store']); 
-        // 個人的補登打卡紀錄表單(可以選擇查看日期範圍)
-        Route::get('/correction', [PunchCorrectionController::class, 'getUserCorrections']); 
-    });
+// ✅ 查詢當前使用者的打卡紀錄 (需要 `view_attendance` 權限)
+Route::get('/attendance/finalrecords', [PunchCorrectionController::class, 'getFinalAttendanceRecords'])->middleware('can:view_attendance');
 
-    // 查詢當前使用者打卡紀錄
-    Route::get('/attendance/finalrecords', [PunchCorrectionController::class, 'getFinalAttendanceRecords']);
+// ✅ 打卡補登審核 (需要 `approve_correction` 權限)
+Route::put('/punch/correction/{id}/approve', [PunchCorrectionController::class, 'approve'])->middleware('can:approve_correction');
+Route::put('/punch/correction/{id}/reject', [PunchCorrectionController::class, 'reject'])->middleware('can:approve_correction');
 
-
+// ✅ 人資查看所有補打卡申請 (需要 `view_all_corrections` 權限)
+Route::get('/corrections', [PunchCorrectionController::class, 'getAllCorrections'])->middleware('can:view_all_corrections');
 
     // 需要登入 (`auth:api`) 的 API
     Route::middleware('auth:api')->group(function () {
@@ -97,12 +106,7 @@ Route::middleware('auth:api')->group(function () {
     });
 
 
-        // 打卡補登審核通過或未通過
-        Route::put('/punch/correction/{id}/approve', [PunchCorrectionController::class, 'approve']);
-        Route::put('/punch/correction/{id}/reject', [PunchCorrectionController::class, 'reject']);
-
-        // 人資看到所有申請資料(可以選擇查看日期範圍)
-        Route::get('/corrections', [PunchCorrectionController::class, 'getAllCorrections']);
+ 
 
 
         // 🔹 部門 API
