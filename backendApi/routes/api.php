@@ -85,7 +85,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/corrections', [PunchCorrectionController::class, 'getAllCorrections'])->middleware('can:view_all_corrections');
 
 
-    // -------------------------------------請假 API---------------------------------  
+    // -------------------------------------假別 & 假規 API---------------------------------  
     // 🟢 假別
     Route::middleware('auth:api')->prefix('leaves')->group(function () {
         // 1. 新增假別API
@@ -262,7 +262,6 @@ Route::middleware('auth:api')->group(function () {
 
 
     // -------------------------------------請假功能------------------------------
-    // 請假 API
     Route::prefix('/leave')->group(function () {
         // 員工可以申請請假（需要 `request_leave` 權限）
         Route::post('/request', [LeaveController::class, 'requestLeave'])->middleware('can:request_leave');
