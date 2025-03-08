@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\File;
 use Illuminate\Support\Facades\Storage;
+// use Illuminate\Support\Facades\Log;
+// use App\Http\Controllers\Controller;
 
 class FileController extends Controller
 {
@@ -17,10 +19,20 @@ class FileController extends Controller
         ]);
 
         // 取得上傳的副檔名
-        $extension = $request->file('avatar')->getClientOriginalExtension();
-        $filename = 'avatar_' . Auth::id() . '.' . $extension;
+        // $extension = $request->file('avatar')->getClientOriginalExtension();
+        $hash = hash('sha256', Auth::id() . time()); // 產生雜湊值
+        $filename = 'avatar_' . Auth::id() . '.' . $hash;
 
-        // 存放到 `storage/app/public/avatars/`
+        // 取得目前的 `avatar` 記錄
+        $file = File::where('user_id', Auth::id())->whereNull('leave_id')->first();
+        $oldFilename = $file ? $file->avatar : null;
+
+        // 刪除舊的大頭貼
+        if ($oldFilename && Storage::disk('public')->exists("avatars/{$oldFilename}")) {
+            Storage::disk('public')->delete("avatars/{$oldFilename}");
+        }
+
+        // 存放到 storage/app/public/avatars/
         $path = $request->file('avatar')->storeAs('avatars', $filename, 'public');
 
         // ✅ 更新或新增大頭貼記錄
@@ -28,6 +40,10 @@ class FileController extends Controller
             ['user_id' => Auth::id(), 'leave_id' => null], // 搜尋條件
             ['avatar' => $filename] // 更新的值
         );
+
+        // **新增 DEBUG LOG**
+        // Log::info("Avatar uploaded: " . $filename);
+        // Log::info("Storage URL: " . Storage::url("avatars/" . $filename));
 
         return response()->json([
             'message' => '大頭貼更新成功',

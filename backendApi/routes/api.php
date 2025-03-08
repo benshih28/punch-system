@@ -15,6 +15,7 @@ use App\Http\Controllers\PositionController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\FileController;
+use App\Http\Controllers\UserController;
 
 
 
@@ -37,6 +38,11 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/user', function (Request $request) {
         return response()->json($request->user());
     });
+
+
+    // 🟢 更新使用者個人資料(大頭貼、更改新密碼)
+    Route::post('/user/update/profile', [UserController::class, 'updateProfile']);
+
 
 
     //  限制 HR 審核通過的員工才能更換與獲取大頭貼
