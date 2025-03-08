@@ -86,6 +86,7 @@ Route::middleware('auth:api')->group(function () {
 
 
     // -------------------------------------假別 & 假規 API---------------------------------  
+    
     // 🟢 假別
     Route::middleware('auth:api')->prefix('leaves')->group(function () {
         // 1. 新增假別API
@@ -108,12 +109,7 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/types/rules', [LeaveRuleController::class, 'getLeaveRules']);
         // 4. 刪除假別規則
         Route::delete('/types/rules/{id}', [LeaveRuleController::class, 'destroyLeaveRule']);
-        // 5. 取得假別剩餘小時數
-        Route::get('/remaininghours', [LeaveController::class, 'getRemainingLeaveHours']);
     });
-
-
-
 
     // -------------------------------------角色與權限--------------------------------
 
@@ -261,7 +257,7 @@ Route::middleware('auth:api')->group(function () {
     });
 
 
-    // -------------------------------------請假功能------------------------------
+    // -------------------------------------請假功能 API------------------------------
     Route::prefix('/leave')->group(function () {
         // 員工可以申請請假（需要 `request_leave` 權限）
         Route::post('/request', [LeaveController::class, 'requestLeave'])->middleware('can:request_leave');

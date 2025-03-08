@@ -24,7 +24,7 @@ class LeaveController extends Controller
         $this->leaveService = $leaveService;
     }
 
-    // 1. 申請請假
+    // 1. 員工申請請假
     public function requestLeave(LeaveApplyRequest $request): JsonResponse
     {
         try {
@@ -66,7 +66,7 @@ class LeaveController extends Controller
         }
     }
 
-    // 2. 查詢個人請假紀錄
+    // 2. 查詢個人請假紀錄 (員工)
     public function viewMyLeaveRecords(LeaveListRequest $request): JsonResponse
     {
         try {
@@ -101,7 +101,7 @@ class LeaveController extends Controller
         }
     }
 
-    // 3. 查詢「部門」請假紀錄（限主管 & HR）
+    // 3. 查詢「部門」請假紀錄（主管 & HR）
     public function viewDepartmentLeaveRecords(Request $request): JsonResponse
     {
         try {
@@ -145,7 +145,7 @@ class LeaveController extends Controller
         }
     }
 
-    // 4. HR查詢全公司請假紀錄
+    // 4. 查詢「全公司」請假紀錄 (HR)
     public function viewCompanyLeaveRecords(Request $request): JsonResponse
     {
         try {
@@ -176,7 +176,7 @@ class LeaveController extends Controller
         }
     }
 
-    // 5. 修改請假申請
+    // 5. 修改請假申請 (HR、員工)
     public function updateLeave(LeaveUpdateRequest $request, int $id): JsonResponse
     {
         try {
@@ -215,7 +215,7 @@ class LeaveController extends Controller
         }
     }
 
-    // 6. 刪除請假申請
+    // 6. 刪除請假申請 (HR、員工)
     public function deleteLeave(int $id): JsonResponse
     {
         try {
@@ -267,7 +267,7 @@ class LeaveController extends Controller
         }
     }
 
-    // 7. 取得特殊假別剩餘小時數
+    // 7. 取得特殊假別剩餘小時數 (計算假夠不夠扣)
     public function getRemainingLeaveHours($leaveTypeId)
     {
         try {
@@ -284,7 +284,7 @@ class LeaveController extends Controller
         }
     }
 
-    // ✅ 資料格式統一，讓回傳結果都長一樣
+    // 8. 資料格式統一，讓回傳結果都長一樣 ✅
     private function formatLeave($leave): array
     {
         return [

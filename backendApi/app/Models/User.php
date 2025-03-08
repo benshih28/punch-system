@@ -100,11 +100,13 @@ class User extends Authenticatable implements JWTSubject  // 實作JWT
         return $this->hasMany(PunchCorrection::class, 'approved_by');
     }
 
+    // 查詢請假紀錄
     public function employee()
     {
         return $this->hasOne(Employee::class);
     }
-
+    
+    // 修改請假紀錄
     public function leaves()
     {
         return $this->hasMany(Leave::class, 'user_id');

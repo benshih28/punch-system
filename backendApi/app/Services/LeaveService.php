@@ -12,7 +12,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
-
 class LeaveService
 {
     const WORK_HOURS_PER_DAY = 8;  // 每天上班時數
@@ -66,7 +65,7 @@ class LeaveService
         return $leave;
     }
 
-    // 2. 查詢全部請假紀錄
+    // 2. 查詢個人全部請假紀錄
     public function getLeaveList($user, array $filters)
     {
         $query = Leave::with('user')->where('user_id', $user->id);
@@ -272,3 +271,4 @@ class LeaveService
         }
     }
 }
+
