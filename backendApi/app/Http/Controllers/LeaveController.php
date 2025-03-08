@@ -9,6 +9,7 @@ use App\Http\Requests\LeaveDeleteRequest;
 use App\Services\LeaveService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use App\Models\Leave;
 
 class LeaveController extends Controller
 {
@@ -21,7 +22,7 @@ class LeaveController extends Controller
 
     // 1. 申請請假
     public function leaveApply(LeaveApplyRequest $request): JsonResponse
-    {   
+    {
         Log::info('leaveApply進來了', $request->all());
 
         $user = auth()->user();  // 透過JWT取得當前登入者
@@ -61,8 +62,8 @@ class LeaveController extends Controller
         }
     }
 
-    // 2. 查詢請假紀錄
-    public function leaveRecords(LeaveListRequest $request): JsonResponse
+    // 2. 查詢個人請假紀錄
+    public function personalLeaveList(LeaveListRequest $request): JsonResponse
     {
         try {
             $user = auth()->user();
@@ -70,7 +71,7 @@ class LeaveController extends Controller
 
             Log::info('查詢請假紀錄', ['user_id' => $user->id, 'filters' => $filters]);
 
-            $leaves = $this->leaveService->getLeaveList($user, $filters)->paginate(8); // 每頁顯示8筆
+            $leaves = $this->leaveService->getLeaveList($user, $filters);
 
             if ($leaves->isEmpty()) {
                 return response()->json([
@@ -96,60 +97,109 @@ class LeaveController extends Controller
         }
     }
 
-    // 3. 修改請假原因功能
-    // 3-1. 單筆查詢
-    public function showLeave(int $id): JsonResponse
+    // 3. 查詢「部門」請假紀錄（限主管 & HR）
+    public function departmentLeaveRecords(LeaveListRequest $request): JsonResponse
     {
         try {
             $user = auth()->user();
 
-            Log::info('單筆請假查詢', ['user_id' => $user->id, 'leave_id' => $id]);
+            if (!$user->hasPermission('view_department_leaves')) {
+                return response()->json(['message' => '您無權查詢部門請假紀錄'], 403);
+            }
 
-            // 查單筆
-            $leave = $this->leaveService->getSingleLeave($user, $id);
+            $filters = $request->validated();
+            Log::info('查詢部門請假紀錄', ['user_id' => $user->id, 'filters' => $filters]);
 
-            if (!$leave) {
-                return response()->json(['message' => '查無此假單或無權限查看'], 403);
+            // 只查詢 **同部門** 的請假紀錄
+            $leaves = $this->leaveService->getDepartmentLeaveList($user, $filters);
+
+            if ($leaves->isEmpty()) {
+                return response()->json([
+                    'message' => '查無符合條件的請假紀錄',
+                    'records' => [],
+                ], 200);
             }
 
             return response()->json([
                 'message' => '查詢成功',
-                'leave' => $this->formatLeave($leave),
+                'records' => $leaves->map(fn($leave) => $this->formatLeave($leave)),
             ], 200);
         } catch (\Exception $e) {
-            Log::error('單筆請假查詢失敗', [
+            Log::error('部門請假查詢失敗', [
                 'user_id' => auth()->user()->id,
-                'leave_id' => $id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
+
             return response()->json([
                 'message' => app()->isLocal() ? $e->getMessage() : '系統發生錯誤，請稍後再試',
             ], 500);
         }
     }
 
-    // 3-2. 修改請假申請
-    public function updateLeave(LeaveUpdateRequest $request, int $id): JsonResponse
+    // 3. HR查詢全公司請假紀錄
+    public function companyLeaveRecords(LeaveListRequest $request): JsonResponse
     {
         try {
             $user = auth()->user();
 
-            Log::info('更新請假單', [
-                'user_id' => $user->id,
-                'leave_id' => $id,
-                'data' => $request->all(),
+            if (!$user->hasPermission('view_company_leaves')) {
+                return response()->json(['message' => '您無權查詢全公司請假紀錄'], 403);
+            }
+
+            $filters = $request->validated();
+            Log::info('查詢全公司請假紀錄', ['user_id' => $user->id, 'filters' => $filters]);
+
+            // 查詢 **所有人** 的請假紀錄
+            $leaves = $this->leaveService->getCompanyLeaveList($filters)->paginate(15);
+
+            if ($leaves->isEmpty()) {
+                return response()->json([
+                    'message' => '查無符合條件的請假紀錄',
+                    'records' => [],
+                ], 200);
+            }
+
+            return response()->json([
+                'message' => '查詢成功',
+                'records' => $leaves->map(fn($leave) => $this->formatLeave($leave)),
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('全公司請假查詢失敗', [
+                'user_id' => auth()->user()->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
+            return response()->json([
+                'message' => app()->isLocal() ? $e->getMessage() : '系統發生錯誤，請稍後再試',
+            ], 500);
+        }
+    }
+
+    // 4. 修改請假申請
+    public function updateLeave(LeaveUpdateRequest $request, int $id): JsonResponse
+    {
+        dd($request->all()); // 👀 先檢查這裡
+
+        try {
+            $user = auth()->user();
+
             // 先查單筆
-            $leave = $this->leaveService->getSingleLeave($user, $id);
+            $leave = Leave::where('id', $id)
+                ->where('user_id', $user->id)
+                ->first();
+
+                dd($leave);
 
             if (!$leave) {
-                return response()->json(['message' => '查無此假單'], 403);
+                return response()->json(['message' => '查無此假單或您無權限修改'], 403);
             }
 
             // 呼叫服務層更新假單
             $updatedLeave = $this->leaveService->updateLeave($leave, $request->validated());
+
+            dd($updatedLeave->toArray()); // 👀 檢查更新後的資料
 
             return response()->json([
                 'message' => '假單更新成功',
@@ -226,7 +276,7 @@ class LeaveController extends Controller
             'leave_id' => $leave->id,
             'user_id' => $leave->user_id,
             'user_name' => $leave->user->name,
-            'leave_type' => $leave->leave_type,
+            'leave_type' => optional($leave->leaveType)->name, // 確保讀取關聯名稱
             'start_time' => $leave->start_time,
             'end_time' => $leave->end_time,
             'reason' => $leave->reason,

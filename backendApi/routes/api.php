@@ -78,16 +78,18 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/types', [LeaveTypeController::class, 'getleaveTypes']);
         // 5. 狀態選單API (放下拉式選單內)
         Route::get('/status', [LeaveTypeController::class, 'getleaveStatus']);
-                
+
         // 1.請假申請API
         Route::post('/apply', [LeaveController::class, 'leaveApply']);
-        // 2. 查詢請假紀錄API
-        Route::get('/records', [LeaveController::class, 'leaveRecords']);
-        // 3-1. 查詢單筆紀錄API
-        Route::get('/{id}', [LeaveController::class, 'showLeave']);
-        // 3-2. 修改請假申請API
-        Route::put('/{id}', [LeaveController::class, 'updateLeave']);
-        // 4. 刪除請假申請
+        // 2. 查詢個人請假紀錄API
+        Route::get('/records', [LeaveController::class, 'personalLeaveList']);        
+        // 3. 修改請假申請API
+        Route::patch('/records/{id}', [LeaveController::class, 'updateLeave']);
+        // 4. 查詢「部門」請假紀錄
+        Route::get('/department', [LeaveController::class, 'departmentLeaveRecords']);
+        // 5. 查詢全公司請假紀錄（限HR）
+        Route::get('/company', [LeaveController::class, 'companyLeaveRecords']);
+        // 6. 刪除請假申請
         Route::delete('/{id}', [LeaveController::class, 'leaveApplyDelete']);
         
         // 1. 增加假別規則

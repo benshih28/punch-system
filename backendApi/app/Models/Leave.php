@@ -36,4 +36,9 @@ class Leave extends Model
     {
         return $this->hasMany(File::class);
     }
+
+    public function leaveType()
+    {
+        return $this->belongsTo(LeaveType::class, 'leave_type_id');
+    }
 }

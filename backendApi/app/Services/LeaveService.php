@@ -13,12 +13,6 @@ use Illuminate\Http\JsonResponse;
 
 class LeaveService
 {
-    protected $leaveService;
-
-    public function __construct($leaveService)
-    {
-        $this->leaveService = $leaveService;
-    }
     const WORK_HOURS_PER_DAY = 8;  // 每天上班時數
 
     //  1. 申請請假
@@ -70,80 +64,59 @@ class LeaveService
         return $leave;
     }
 
-    // 2. 查詢請假清單
-    public function leaveRecords(LeaveListRequest $request): JsonResponse
+    // 2. 查詢全部請假紀錄
+    public function getLeaveList($user, array $filters)
     {
-        $user = auth()->user();  // 取得登入者
+        $query = Leave::with('user')->where('user_id', $user->id);
+        $this->applyFilters($query, $filters);
 
-        $filters = $request->validated();
-
-        $leaves = $this->leaveService->getLeaveList($user->id, $filters);  // 撈清單
-
-        // 如果完全沒資料，回傳"查無資料"
-        if ($leaves->isEmpty()) {
-            return response()->json([
-                'message' => '查無資料，請重新選擇日期區間或是假別',
-                'records' => [],
-            ], 200);
-        }
-
-        // 格式化回傳，變成你想要的格式
-        $records = $leaves->map(function ($leave) {
-            return [
-                'leave_id' => $leave->id,
-                'user_id' => $leave->user_id,
-                'user_name' => $leave->user->name,
-                'leave_type' => $leave->leave_type,
-                'start_time' => $leave->start_time,
-                'end_time' => $leave->end_time,
-                'reason' => $leave->reason,
-                'status' => $leave->status,
-                'attachment' => $leave->attachment
-                    ? asset('storage/' . $leave->attachment)
-                    : null,
-            ];
-        });
-
-        return response()->json([
-            'message' => '查詢成功',
-            'records' => $records,
-        ]);
+        return $query->orderBy('start_time', 'desc')->paginate(8);
     }
 
-    // 3. 查單筆（帶角色權限）
-    public function getSingleLeave($user, int $id): ?Leave
+    // 3. 查詢「部門」請假紀錄（主管 & HR）
+    public function getDepartmentLeaveList($user, array $filters): Collection
     {
-        $query = Leave::with('user')->where('id', $id);
+        $query = Leave::with('user')
+            ->whereHas('user', fn($q) => $q->where('department_id', $user->department_id));
 
-        if ($user->role === 'employee') {
-            // 員工只能查詢自己的假單
-            $query->where('user_id', $user->id);
-        } elseif ($user->role === 'manager') {
-            // 主管可以查詢同部門員工的假單
-            $query->whereHas('user', fn($q) => $q->where('department_id', $user->department_id));
-        } elseif ($user->role === 'hr') {
-            // HR可以查詢所有的假單
-            // 這裡返回所有假單
-        }
+        $this->applyFilters($query, $filters);
 
-        return $query->first();
+        return $query->orderBy('start_time', 'desc')->paginate(8);
     }
 
-    // 4. 更新單筆紀錄
+    // 4. 查詢「全公司」請假紀錄（HR）
+    public function getCompanyLeaveList(array $filters): Collection
+    {
+        $query = Leave::with('user');
+        $this->applyFilters($query, $filters);
+
+        return $query->orderBy('start_time', 'desc')->get();
+    }
+
+    // 5. 更新單筆紀錄
     public function updateLeave(Leave $leave, array $data): Leave
     {
         // 計算請假小時數
         $hours = $this->calculateHours($data['start_time'], $data['end_time']);
 
+        // 📌 確保 attachment 正確處理
+        if (!empty($data['attachment']) && $data['attachment']->isValid()) {
+            $file = $data['attachment'];
+            $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $attachmentPath = $file->storeAs('attachments', $filename, 'public');
+        } else {
+            $attachmentPath = $leave->attachment; // 沒上傳則保留原來的
+        }
+
         // 開始更新假單資料
         $leave->update([
-            'leave_type_id' => $data['leave_type'],  // 更新假別
-            'start_time' => $data['start_time'],     // 更新開始時間
-            'end_time' => $data['end_time'],         // 更新結束時間
-            'leave_hours' => $hours,                 // 計算並更新請假小時數
-            'reason' => $data['reason'] ?? $leave->reason,  // 如果沒有傳入reason，則保留原來的
-            'status' => $data['status'] ?? $leave->status,  // 如果沒有傳入status，則保留原來的
-            'attachment' => $data['attachment'] ?? $leave->attachment,  // 更新附件路徑，若無則保留原來的
+            'leave_type_id' => $data['leave_type'],
+            'start_time' => $data['start_time'],
+            'end_time' => $data['end_time'],
+            'leave_hours' => $hours,
+            'reason' => $data['reason'] ?? $leave->reason,
+            'status' => $data['status'] ?? $leave->status,
+            'attachment' => $attachmentPath,  // ✅ 修正 attachment 儲存
         ]);
 
         return $leave;
@@ -241,7 +214,7 @@ class LeaveService
         }
 
         if (!empty($filters['leave_type'])) {
-            $query->where('leave_type', $filters['leave_type']);
+            $query->where('leave_type_id', $filters['leave_type']);
         }
 
         if (!empty($filters['status'])) {
