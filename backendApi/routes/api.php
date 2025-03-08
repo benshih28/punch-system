@@ -19,6 +19,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Log;
 
 
 
@@ -97,22 +98,22 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/types', [LeaveTypeController::class, 'getleaveTypes']);
         // 5. 狀態選單API (放下拉式選單內)
         Route::get('/status', [LeaveTypeController::class, 'getleaveStatus']);
-    
-    // // 🟢 請假
-    //     // 1.請假申請API
-    //     Route::post('/apply', [LeaveController::class, 'leaveApply']);
-    //     // 2. 查詢個人請假紀錄API
-    //     Route::get('/records', [LeaveController::class, 'personalLeaveList']);        
-    //     // 3. 修改請假申請API
-    //     Route::post('/records/{id}', [LeaveController::class, 'updateLeave']);
-    //     // 4. 查詢「部門」請假紀錄
-    //     Route::get('/department', [LeaveController::class, 'departmentLeaveRecords']);
-    //     // 5. 查詢全公司請假紀錄（限HR）
-    //     Route::get('/company', [LeaveController::class, 'companyLeaveRecords']);
-    //     // 6. 刪除請假申請
-    //     Route::delete('/{id}', [LeaveController::class, 'leaveApplyDelete']);
-        
-    // 🟢 假規
+
+        // // 🟢 請假
+        //     // 1.請假申請API
+        //     Route::post('/apply', [LeaveController::class, 'leaveApply']);
+        //     // 2. 查詢個人請假紀錄API
+        //     Route::get('/records', [LeaveController::class, 'personalLeaveList']);        
+        //     // 3. 修改請假申請API
+        //     Route::post('/records/{id}', [LeaveController::class, 'updateLeave']);
+        //     // 4. 查詢「部門」請假紀錄
+        //     Route::get('/department', [LeaveController::class, 'departmentLeaveRecords']);
+        //     // 5. 查詢全公司請假紀錄（限HR）
+        //     Route::get('/company', [LeaveController::class, 'companyLeaveRecords']);
+        //     // 6. 刪除請假申請
+        //     Route::delete('/{id}', [LeaveController::class, 'leaveApplyDelete']);
+
+        // 🟢 假規
         // 1. 增加假別規則
         Route::post('/types/rules', [LeaveRuleController::class, 'addLeaveRule']);
         // 2. 修改假別規則
@@ -172,54 +173,54 @@ Route::middleware('auth:api')->group(function () {
 
 
 
-        // 人資看到所有申請資料(可以選擇查看日期範圍)
-        Route::get('/corrections', [PunchCorrectionController::class, 'getAllCorrections']);
+    // 人資看到所有申請資料(可以選擇查看日期範圍)
+    Route::get('/corrections', [PunchCorrectionController::class, 'getAllCorrections']);
 
 
-        // 🔹 部門 API
-        Route::prefix('/departments')->group(function () {
-            // 取得所有部門
-            Route::get('/', [DepartmentController::class, 'index']); 
-            // 新增部門
-            Route::post('/', [DepartmentController::class, 'store']); 
-            // 更新部門
-            Route::patch('/{id}', [DepartmentController::class, 'update']); 
-            // 刪除部門
-            Route::delete('/{id}', [DepartmentController::class, 'destroy']); 
-        });
+    // 🔹 部門 API
+    Route::prefix('/departments')->group(function () {
+        // 取得所有部門
+        Route::get('/', [DepartmentController::class, 'index']);
+        // 新增部門
+        Route::post('/', [DepartmentController::class, 'store']);
+        // 更新部門
+        Route::patch('/{id}', [DepartmentController::class, 'update']);
+        // 刪除部門
+        Route::delete('/{id}', [DepartmentController::class, 'destroy']);
+    });
 
-        // 🔹 職位 API
-        Route::prefix('/positions')->group(function () {
-            // 取得所有職位
-            Route::get('/', [PositionController::class, 'index']); 
-            // 根據部門篩選職位
-            Route::get('/by/department/{name}', [PositionController::class, 'getByDepartment']); 
-            // 為部門指派職位
-            Route::post('/by/department/{name}', [PositionController::class, 'assignPositionToDepartment']); 
-            // 新增職位
-            Route::post('/', [PositionController::class, 'store']); 
-            // 更新職位
-            Route::patch('/{id}', [PositionController::class, 'update']); 
-            // 刪除職位
-            Route::delete('/{id}', [PositionController::class, 'destroy']); 
-        });
+    // 🔹 職位 API
+    Route::prefix('/positions')->group(function () {
+        // 取得所有職位
+        Route::get('/', [PositionController::class, 'index']);
+        // 根據部門篩選職位
+        Route::get('/by/department/{name}', [PositionController::class, 'getByDepartment']);
+        // 為部門指派職位
+        Route::post('/by/department/{name}', [PositionController::class, 'assignPositionToDepartment']);
+        // 新增職位
+        Route::post('/', [PositionController::class, 'store']);
+        // 更新職位
+        Route::patch('/{id}', [PositionController::class, 'update']);
+        // 刪除職位
+        Route::delete('/{id}', [PositionController::class, 'destroy']);
+    });
 
 
-        //人員管理 API
-        Route::prefix('/employees')->group(function () {
-            // 取得所有員工
-            Route::get('/', [EmployeeController::class, 'index']); 
-            // 註冊員工
-            Route::post('/', [EmployeeController::class, 'store']); 
-            // HR 審核
-            Route::patch('/{id}/review', [EmployeeController::class, 'reviewEmployee']); 
-            // 分配職位 & 部門
-            Route::patch('/{id}/assign', [EmployeeController::class, 'assignDepartmentAndPosition']); 
-            // 刪除員工
-            Route::delete('/{id}', [EmployeeController::class, 'destroy']); 
-            // 查詢主管
-            Route::get('/{id}/manager', [EmployeeController::class, 'getEmployeeManager']); 
-        });
+    //人員管理 API
+    Route::prefix('/employees')->group(function () {
+        // 取得所有員工
+        Route::get('/', [EmployeeController::class, 'index']);
+        // 註冊員工
+        Route::post('/', [EmployeeController::class, 'store']);
+        // HR 審核
+        Route::patch('/{id}/review', [EmployeeController::class, 'reviewEmployee']);
+        // 分配職位 & 部門
+        Route::patch('/{id}/assign', [EmployeeController::class, 'assignDepartmentAndPosition']);
+        // 刪除員工
+        Route::delete('/{id}', [EmployeeController::class, 'destroy']);
+        // 查詢主管
+        Route::get('/{id}/manager', [EmployeeController::class, 'getEmployeeManager']);
+    });
     // -------------------------------------部門職位------------------------------
 
     // 部門 API（需要 `manage_departments` 權限）
@@ -285,7 +286,7 @@ Route::middleware('auth:api')->group(function () {
 
         // 員工或 HR 可以刪除請假資料（需要 `delete_leave` 權限）
         Route::delete('/{id}', [LeaveController::class, 'deleteLeave'])->middleware('can:delete_leave');
-        
+
         // 員工或 HR 可以修改請假資料（需要 `update_leave` 權限）
         Route::post('/{id}', [LeaveController::class, 'updateLeave'])->middleware('can:update_leave');
 
@@ -303,9 +304,4 @@ Route::middleware('auth:api')->group(function () {
         Route::patch('/{id}/department/approve', [LeaveController::class, 'approveDepartmentLeave'])->middleware('can:approve_department_leave');
         Route::patch('/{id}/department/reject', [LeaveController::class, 'rejectDepartmentLeave'])->middleware('can:approve_department_leave');
     });
-
-    Route::get('/test-api', function () {
-        return response()->json(['message' => 'API 正常運作']);
-    });
-    
 });

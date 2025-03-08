@@ -149,17 +149,14 @@ class LeaveController extends Controller
     public function viewCompanyLeaveRecords(LeaveListRequest $request): JsonResponse
     {
         try {
-            $filters = $request->validated();
-            Log::info('接收到的篩選條件', ['filters' => $filters]);
+            $filters = $request->validated(); // 接收查詢條件
 
-            // ✅ 查詢所有請假紀錄，使用分頁
-            $leaves = $this->leaveService->getCompanyLeaveList($filters, 15);
-
-            Log::info('查詢結果', ['total' => $leaves->total(), 'data' => $leaves->items()]);
+            // ✅ 查詢所有請假紀錄
+            $leaves = $this->leaveService->getCompanyLeaveList($filters);
 
             return response()->json([
                 'message' => '查詢成功',
-                'records' => $leaves->items(),  // 只傳當前分頁的紀錄
+                'records' => $leaves->items(),
                 'pagination' => [
                     'total' => $leaves->total(),
                     'per_page' => $leaves->perPage(),
@@ -168,13 +165,8 @@ class LeaveController extends Controller
                 ],
             ], 200);
         } catch (\Exception $e) {
-            Log::error('全公司請假查詢失敗', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
             return response()->json([
-                'message' => app()->isLocal() ? $e->getMessage() : '系統發生錯誤，請稍後再試',
+                'message' => '系統發生錯誤，請稍後再試',
             ], 500);
         }
     }

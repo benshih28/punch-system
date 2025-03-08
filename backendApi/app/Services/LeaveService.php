@@ -88,19 +88,15 @@ class LeaveService
     }
 
     // 4. 查詢「全公司」請假紀錄（HR）
-    public function getCompanyLeaveList(array $filters, int $perPage = 15)
+    public function getCompanyLeaveList(array $filters)
     {
-        $query = Leave::with(['user', 'leaveType']); // 確保載入關聯資料
+        $query = Leave::with('user'); // 確保載入關聯資料
 
-        Log::info('SQL 查詢', ['sql' => $query->toSql(), 'bindings' => $query->getBindings()]);
+        // ✅ 確保過濾條件生效
+        $this->applyFilters($query, $filters);
 
-        // // ✅ 檢查 filters 是否有作用
-        if (!empty($filters)) {
-            Log::info('篩選條件', ['filters' => $filters]); // 確保 filters 是有效的
-            $this->applyFilters($query, $filters);
-        }
-
-        return $query->orderBy('start_time', 'desc')->paginate($perPage);
+        // ✅ 查詢所有請假單，分頁 10 筆
+        return $query->select('leaves.*')->orderBy('start_time', 'desc')->paginate(10);
     }
 
     // 5. 更新單筆紀錄
@@ -251,7 +247,6 @@ class LeaveService
     private function applyFilters($query, array $filters): void
     {
         if (!empty($filters['start_date']) && !empty($filters['end_date'])) {
-            Log::info('日期篩選條件', ['start_date' => $filters['start_date'], 'end_date' => $filters['end_date']]);
             $query->where(function ($q) use ($filters) {
                 $q->whereBetween('start_time', [$filters['start_date'] . ' 00:00:00', $filters['end_date'] . ' 23:59:59'])
                     ->orWhereBetween('end_time', [$filters['start_date'] . ' 00:00:00', $filters['end_date'] . ' 23:59:59'])
