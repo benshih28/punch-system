@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
+use Spatie\Permission\Models\Permission;
 use App\Models\User; // 確保 `User` Model 正確引用
 
 class AppServiceProvider extends ServiceProvider

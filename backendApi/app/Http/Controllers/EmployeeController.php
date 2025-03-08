@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Employee;
 use Illuminate\Http\Request;
+use App\Services\EmployeeService;
 
 class EmployeeController extends Controller
 {
@@ -32,12 +33,12 @@ class EmployeeController extends Controller
     public function reviewEmployee(Request $request, $id)
     {
         $request->validate(['status' => 'required|in:approved,rejected']);
-    
+
         $employee = Employee::find($id);
         if (!$employee) {
             return response()->json(['error' => '找不到員工'], 404);
         }
-    
+
         if ($request->status === 'approved') {
             $employee->status = 'approved';
             $employee->save();
@@ -48,10 +49,10 @@ class EmployeeController extends Controller
             if ($user) {
                 $user->delete(); // 刪除使用者
             }
-    
+
             // 🔹 刪除 `employees` 資料
             $employee->delete();
-    
+
             return response()->json(['message' => '員工申請已拒絕，並刪除帳號'], 200);
         }
     }
