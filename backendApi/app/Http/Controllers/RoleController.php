@@ -126,17 +126,18 @@ class RoleController extends Controller
     }
 
 
-    public function getRolePermissions($roleName){
-    // ✅ 確保角色存在
-    $role = Role::where('name', $roleName)->first();
-    if (!$role) {
-        return response()->json(['error' => 'Role not found'], 404);
-    }
+    public function getRolePermissions($roleName)
+    {
+        // ✅ 確保角色存在
+        $role = Role::where('name', $roleName)->first();
+        if (!$role) {
+            return response()->json(['error' => 'Role not found'], 404);
+        }
 
-    // ✅ 取得角色的所有權限
-    return response()->json([
-        'role' => $role->name,
-        'permissions' => $role->permissions->pluck('name')
-    ]);
+        // ✅ 取得角色的所有權限
+        return response()->json([
+            'role' => $role->name,
+            'permissions' => $role->permissions->pluck('name')
+        ]);
     }
 }
