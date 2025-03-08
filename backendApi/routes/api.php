@@ -87,7 +87,7 @@ Route::middleware('auth:api')->group(function () {
 
     // -------------------------------------假別 & 假規 API---------------------------------  
     
-    // 🟢 假別
+    // 🟢 假別 & 審核狀態
     Route::middleware('auth:api')->prefix('leaves')->group(function () {
         // 1. 新增假別API
         Route::post('/types/add', [LeaveTypeController::class, 'addLeaveTypes']);
@@ -100,7 +100,7 @@ Route::middleware('auth:api')->group(function () {
         // 5. 狀態選單API (放下拉式選單內)
         Route::get('/status', [LeaveTypeController::class, 'getleaveStatus']);
 
-        // 🟢 假規
+        // 🟢 假規 (增加假別重置判斷)
         // 1. 增加假別規則
         Route::post('/types/rules', [LeaveRuleController::class, 'addLeaveRule']);
         // 2. 修改假別規則

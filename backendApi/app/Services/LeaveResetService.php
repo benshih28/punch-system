@@ -11,6 +11,7 @@ use App\Models\EmployeeProfile;
 
 class LeaveResetService
 {
+    // 1. 依照 'yearly' 或 'monthly' 判斷是每年重置還是每月重置
     public function checkAndResetLeave($leaveTypeId, $userId)
     {
         $rule = LeaveResetRule::where('leave_type_id', $leaveTypeId)->first();
@@ -47,7 +48,7 @@ class LeaveResetService
     }
 
     /**
-     * 計算剩餘假別小時數（支援特休年資遞增）
+     * 2. 計算剩餘假別小時數（支援特休年資遞增）
      */
     public function getRemainingLeaveHours($leaveTypeId, $userId)
     {
@@ -86,7 +87,7 @@ class LeaveResetService
     }
 
     /**
-     * 計算特休天數（依照勞基法規則）
+     * 3. 計算特休天數（依照勞基法規則）
      */
     private function calculateAnnualLeaveDays($years, $months): int
     {

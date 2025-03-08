@@ -8,7 +8,7 @@ use Illuminate\Http\JsonResponse;
 
 class LeaveRuleController extends Controller
 {
-    // ✅ 新增
+    // ✅ 假規新增
     public function addLeaveRule(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -25,7 +25,7 @@ class LeaveRuleController extends Controller
         ], 201);
     }
 
-    // ✅ 修改
+    // ✅ 假規修改
     public function updateLeaveRule(Request $request, $id): JsonResponse
     {
         $validated = $request->validate([
@@ -43,7 +43,7 @@ class LeaveRuleController extends Controller
         ], 200);
     }
 
-    // ✅ 查詢全部規則 (list)
+    // ✅ 查詢全部假規 (list)
     public function getLeaveRules(): JsonResponse
     {
         $rules = LeaveResetRule::with('leaveType')->get();
@@ -54,7 +54,7 @@ class LeaveRuleController extends Controller
         ], 200);
     }
 
-    // ✅ 刪除
+    // ✅ 刪除假規
     public function destroyLeaveRule($id): JsonResponse
     {
         $rule = LeaveResetRule::findOrFail($id);

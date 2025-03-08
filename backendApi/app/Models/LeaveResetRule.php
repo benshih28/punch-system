@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class LeaveResetRule extends Model
 {
-    //
+    // 假規資料表，關聯到leave_type_id
     use HasFactory;
 
     protected $fillable = ['leave_type_id', 'rule_type', 'rule_value'];
