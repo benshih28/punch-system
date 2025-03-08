@@ -7,6 +7,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use Spatie\Permission\Models\Permission;
 use App\Models\User; // 確保 `User` Model 正確引用
+use App\Services\LeaveService; // Import LeaveService
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -16,6 +17,9 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         //
+        $this->app->bind(LeaveService::class, function ($app) {
+            return new LeaveService();
+        });
     }
 
     /**

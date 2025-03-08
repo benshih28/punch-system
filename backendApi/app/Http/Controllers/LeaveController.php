@@ -102,6 +102,8 @@ class LeaveController extends Controller
     // 3. 查詢「部門」請假紀錄（限主管 & HR）
     public function viewDepartmentLeaveRecords(LeaveListRequest $request): JsonResponse
     {
+        dd('Controller 進入成功');
+
         try {
             $user = auth()->user();
 

@@ -287,7 +287,7 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('/{id}', [LeaveController::class, 'deleteLeave'])->middleware('can:delete_leave');
         
         // 員工或 HR 可以修改請假資料（需要 `update_leave` 權限）
-        Route::delete('/{id}', [LeaveController::class, 'deleteLeave'])->middleware('can:update_leave');
+        Route::post('/{id}', [LeaveController::class, 'updateLeave'])->middleware('can:update_leave');
 
         // 主管或 HR 可以查看本部門請假紀錄（需要 `view_department_leave_records` 權限）
         Route::get('/department', [LeaveController::class, 'viewDepartmentLeaveRecords'])->middleware('can:view_department_leave_records');
@@ -303,4 +303,9 @@ Route::middleware('auth:api')->group(function () {
         Route::patch('/{id}/department/approve', [LeaveController::class, 'approveDepartmentLeave'])->middleware('can:approve_department_leave');
         Route::patch('/{id}/department/reject', [LeaveController::class, 'rejectDepartmentLeave'])->middleware('can:approve_department_leave');
     });
+
+    Route::get('/test-api', function () {
+        return response()->json(['message' => 'API 正常運作']);
+    });
+    
 });
