@@ -10,6 +10,8 @@ use App\Services\LeaveService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Models\Leave;
+use App\Models\File;
+use Illuminate\Support\Facades\Storage;
 
 class LeaveController extends Controller
 {
@@ -180,39 +182,36 @@ class LeaveController extends Controller
     // 4. 修改請假申請
     public function updateLeave(LeaveUpdateRequest $request, int $id): JsonResponse
     {
-        dd($request->all()); // 👀 先檢查這裡
-
         try {
             $user = auth()->user();
 
-            // 先查單筆
+            // 1️⃣ 取得請假紀錄
             $leave = Leave::where('id', $id)
                 ->where('user_id', $user->id)
                 ->first();
-
-                dd($leave);
 
             if (!$leave) {
                 return response()->json(['message' => '查無此假單或您無權限修改'], 403);
             }
 
-            // 呼叫服務層更新假單
+            // 2️⃣ 使用 Service 層更新請假
             $updatedLeave = $this->leaveService->updateLeave($leave, $request->validated());
 
-            dd($updatedLeave->toArray()); // 👀 檢查更新後的資料
-
+            // 3️⃣ 回傳成功訊息
             return response()->json([
                 'message' => '假單更新成功',
                 'leave' => $this->formatLeave($updatedLeave),
             ], 200);
         } catch (\Exception $e) {
+            // 4️⃣ 記錄錯誤日誌
             Log::error('更新請假單失敗', [
-                'user_id' => auth()->user()->id,
+                'user_id' => auth()->user()->id ?? null,
                 'leave_id' => $id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
+            // 5️⃣ 回傳錯誤訊息
             return response()->json([
                 'message' => app()->isLocal() ? $e->getMessage() : '系統發生錯誤，請稍後再試',
             ], 500);
@@ -225,27 +224,48 @@ class LeaveController extends Controller
         try {
             $user = auth()->user();  // 取得當前登入的使用者
 
-            // 先查單筆
-            $leave = $this->leaveService->getSingleLeave($user, $id);
+            // 1️⃣ 取得請假紀錄，確保該假單屬於當前用戶
+            $leave = Leave::where('id', $id)
+                ->where('user_id', $user->id)
+                ->first();
 
-            // 刪除請假申請
+            if (!$leave) {
+                Log::warning("刪除請假失敗 - 找不到假單或無權限", ['user_id' => $user->id, 'leave_id' => $id]);
+                return response()->json(['message' => '查無此假單或您無權限刪除'], 403);
+            }
+
+            // 2️⃣ **刪除相關附件**
+            $file = File::where('id', $leave->attachment)->first();
+            if ($file) {
+                $filePath = $file->leave_attachment;
+
+                // **刪除實體檔案**
+                if ($filePath && Storage::disk('public')->exists($filePath)) {
+                    Storage::disk('public')->delete($filePath);
+                    Log::info("成功刪除附件檔案: " . $filePath);
+                }
+
+                // **刪除 `files` 表中的紀錄**
+                $file->delete();
+                Log::info("成功刪除 files 記錄", ['file_id' => $file->id]);
+            }
+
+            // 3️⃣ **刪除請假申請**
             $leave->delete();
+            Log::info("成功刪除假單", ['user_id' => $user->id, 'leave_id' => $id]);
 
-            // 記錄刪除操作的日誌
-            Log::info('刪除請假申請', ['user_id' => $user->id, 'leave_id' => $id]);
-
-            // 成功刪除後的回應
+            // 4️⃣ **回傳成功訊息**
             return response()->json(['message' => '假單刪除成功'], 200);
         } catch (\Exception $e) {
-            // 異常處理，記錄錯誤
+            // 5️⃣ **異常處理，記錄錯誤**
             Log::error('刪除請假申請失敗', [
-                'user_id' => auth()->user()->id,
+                'user_id' => auth()->user()->id ?? null,
                 'leave_id' => $id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            // 回傳錯誤訊息
+            // 6️⃣ **回傳錯誤訊息**
             return response()->json([
                 'message' => app()->isLocal() ? $e->getMessage() : '系統發生錯誤，請稍後再試',
             ], 500);

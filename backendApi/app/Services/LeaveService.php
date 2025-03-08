@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Collection;
 use App\Models\File;
 use App\Http\Requests\LeaveListRequest;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 
 class LeaveService
@@ -96,30 +98,68 @@ class LeaveService
     // 5. 更新單筆紀錄
     public function updateLeave(Leave $leave, array $data): Leave
     {
-        // 計算請假小時數
-        $hours = $this->calculateHours($data['start_time'], $data['end_time']);
+        // 1️⃣ 計算請假小時數
+        $hours = isset($data['start_time']) && isset($data['end_time'])
+            ? $this->calculateHours($data['start_time'], $data['end_time'])
+            : $leave->leave_hours;
 
-        // 📌 確保 attachment 正確處理
-        if (!empty($data['attachment']) && $data['attachment']->isValid()) {
+        // 2️⃣ **檢查是否有舊的附件**
+        $oldFile = File::where('id', $leave->attachment)->first();
+        $oldFilePath = $oldFile ? $oldFile->leave_attachment : null;
+
+        // 3️⃣ **處理新附件上傳**
+        $attachmentId = $leave->attachment; // 預設保留舊的 `files.id`
+
+        if (isset($data['attachment']) && $data['attachment']->isValid()) {
             $file = $data['attachment'];
             $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
-            $attachmentPath = $file->storeAs('attachments', $filename, 'public');
+            $filePath = $file->storeAs('attachments', $filename, 'public');
+
+            // 4️⃣ **刪除舊附件，但不刪除 `files` 紀錄**
+            if ($oldFilePath && Storage::disk('public')->exists($oldFilePath)) {
+                Storage::disk('public')->delete($oldFilePath);
+                Log::info("舊附件刪除成功: " . $oldFilePath);
+            } else {
+                Log::warning("舊附件不存在或無法刪除: " . $oldFilePath);
+            }
+
+            // 5️⃣ **更新 `files` 表內的 `leave_attachment`，不刪除 `files.id`**
+            if ($oldFile) {
+                $oldFile->update([
+                    'leave_attachment' => $filePath, // 直接更新原來的紀錄
+                ]);
+                $attachmentId = $oldFile->id; // 保持原來的 `files.id`
+            } else {
+                // **如果沒有舊紀錄，就新增新的 `files` 紀錄**
+                $fileRecord = File::create([
+                    'user_id' => auth()->user()->id,
+                    'leave_id' => $leave->id,
+                    'leave_attachment' => $filePath,
+                ]);
+                $attachmentId = $fileRecord->id;
+            }
         } else {
-            $attachmentPath = $leave->attachment; // 沒上傳則保留原來的
+            // 如果沒有新附件，則保持原本的 `attachment` ID
+            $attachmentId = $leave->attachment;
         }
 
-        // 開始更新假單資料
+        // 8️⃣ **更新 `leaves` 表**
         $leave->update([
-            'leave_type_id' => $data['leave_type'],
-            'start_time' => $data['start_time'],
-            'end_time' => $data['end_time'],
+            'leave_type_id' => $data['leave_type'] ?? $leave->leave_type_id,
+            'start_time' => $data['start_time'] ?? $leave->start_time,
+            'end_time' => $data['end_time'] ?? $leave->end_time,
             'leave_hours' => $hours,
             'reason' => $data['reason'] ?? $leave->reason,
             'status' => $data['status'] ?? $leave->status,
-            'attachment' => $attachmentPath,  // ✅ 修正 attachment 儲存
+            'attachment' => $attachmentId,
         ]);
 
-        return $leave;
+        Log::info("leaves.attachment 更新完成", [
+            'leave_id' => $leave->id,
+            'attachment_id' => $attachmentId
+        ]);
+
+        return $leave->fresh();
     }
 
     // 5. 計算跨天請假時數 (支援單日、跨日)

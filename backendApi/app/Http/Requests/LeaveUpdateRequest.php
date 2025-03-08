@@ -20,7 +20,7 @@ class LeaveUpdateRequest extends FormRequest
             'end_time' => ['required', 'date', 'after_or_equal:start_time'],  // 必填，要晚於或等於start_time
             'leave_type' => ['required', 'integer', 'exists:leave_types,id'],  // 驗證 leave_type 是 leave_types 表中的有效 id
             'reason' => ['required', 'string'],  // 必填，必須是文字
-            'attachment' =>  ['nullable', 'file', 'mimes:jpg,png,pdf'],  // 驗證 attachment 是 files 表中的有效 id
+            'attachment' => 'nullable|file|max:10240', // 允許 10MB 內的文件
         ];
     }
 }

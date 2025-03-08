@@ -22,7 +22,6 @@ use App\Http\Controllers\UserController;
 
 
 
-
 // 公開 API（不需要登入）
 // 註冊
 Route::post('/register', [RegisteredUserController::class, 'store']);
@@ -84,7 +83,7 @@ Route::middleware('auth:api')->group(function () {
         // 2. 查詢個人請假紀錄API
         Route::get('/records', [LeaveController::class, 'personalLeaveList']);        
         // 3. 修改請假申請API
-        Route::patch('/records/{id}', [LeaveController::class, 'updateLeave']);
+        Route::post('/records/{id}', [LeaveController::class, 'updateLeave']);
         // 4. 查詢「部門」請假紀錄
         Route::get('/department', [LeaveController::class, 'departmentLeaveRecords']);
         // 5. 查詢全公司請假紀錄（限HR）
