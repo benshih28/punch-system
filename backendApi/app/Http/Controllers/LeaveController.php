@@ -146,14 +146,19 @@ class LeaveController extends Controller
     }
 
     // 4. HR查詢全公司請假紀錄
-    public function viewCompanyLeaveRecords(LeaveListRequest $request): JsonResponse
+    public function viewCompanyLeaveRecords(Request $request): JsonResponse
     {
         try {
-            $filters = $request->validated(); // 接收查詢條件
-
             // ✅ 查詢所有請假紀錄
-            $leaves = $this->leaveService->getCompanyLeaveList($filters);
+            $filters = $request->validate([
+                'leave_type_id' => 'nullable|exists:leave_types,id',
+                'start_date' => 'nullable|date',
+                'end_date' => 'nullable|date|after_or_equal:start_date',
+                'status' => 'nullable|in:pending,approved,rejected',
+            ]);
 
+            $leaves = $this->leaveService->getCompanyLeaveList($filters);
+    
             return response()->json([
                 'message' => '查詢成功',
                 'records' => $leaves->items(),
@@ -216,10 +221,8 @@ class LeaveController extends Controller
         try {
             $user = auth()->user();  // 取得當前登入的使用者
 
-            // 1️⃣ 取得請假紀錄，確保該假單屬於當前用戶
-            $leave = Leave::where('id', $id)
-                ->where('user_id', $user->id)
-                ->first();
+            // 1️⃣ 取得請假紀錄
+            $leave = Leave::find($id);
 
             if (!$leave) {
                 Log::warning("刪除請假失敗 - 找不到假單或無權限", ['user_id' => $user->id, 'leave_id' => $id]);

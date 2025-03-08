@@ -99,20 +99,6 @@ Route::middleware('auth:api')->group(function () {
         // 5. 狀態選單API (放下拉式選單內)
         Route::get('/status', [LeaveTypeController::class, 'getleaveStatus']);
 
-        // // 🟢 請假
-        //     // 1.請假申請API
-        //     Route::post('/apply', [LeaveController::class, 'leaveApply']);
-        //     // 2. 查詢個人請假紀錄API
-        //     Route::get('/records', [LeaveController::class, 'personalLeaveList']);        
-        //     // 3. 修改請假申請API
-        //     Route::post('/records/{id}', [LeaveController::class, 'updateLeave']);
-        //     // 4. 查詢「部門」請假紀錄
-        //     Route::get('/department', [LeaveController::class, 'departmentLeaveRecords']);
-        //     // 5. 查詢全公司請假紀錄（限HR）
-        //     Route::get('/company', [LeaveController::class, 'companyLeaveRecords']);
-        //     // 6. 刪除請假申請
-        //     Route::delete('/{id}', [LeaveController::class, 'leaveApplyDelete']);
-
         // 🟢 假規
         // 1. 增加假別規則
         Route::post('/types/rules', [LeaveRuleController::class, 'addLeaveRule']);
@@ -287,7 +273,7 @@ Route::middleware('auth:api')->group(function () {
         // 員工或 HR 可以刪除請假資料（需要 `delete_leave` 權限）
         Route::delete('/{id}', [LeaveController::class, 'deleteLeave'])->middleware('can:delete_leave');
 
-        // 員工或 HR 可以修改請假資料（需要 `update_leave` 權限）
+        // 員工或 HR 可以更新請假資料（需要 `update_leave` 權限）
         Route::post('/{id}', [LeaveController::class, 'updateLeave'])->middleware('can:update_leave');
 
         // 主管或 HR 可以查看本部門請假紀錄（需要 `view_department_leave_records` 權限）

@@ -90,13 +90,19 @@ class LeaveService
     // 4. 查詢「全公司」請假紀錄（HR）
     public function getCompanyLeaveList(array $filters)
     {
+        Log::info('getCompanyLeaveList called with filters:', $filters);
+
         $query = Leave::with('user'); // 確保載入關聯資料
 
         // ✅ 確保過濾條件生效
         $this->applyFilters($query, $filters);
 
-        // ✅ 查詢所有請假單，分頁 10 筆
-        return $query->select('leaves.*')->orderBy('start_time', 'desc')->paginate(10);
+        // 查詢所有請假單，分頁 10 筆
+        $leaves = $query->select('leaves.*')->orderBy('start_time', 'desc')->paginate(10);
+
+        Log::info('Query Result:', ['leaves' => $leaves->items()]);
+
+        return $leaves;
     }
 
     // 5. 更新單筆紀錄
