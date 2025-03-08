@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class Leave extends Model
 {
     use HasFactory;
+    
+    protected $table = 'leaves';
 
     protected $fillable = [
         'user_id',
@@ -29,7 +31,7 @@ class Leave extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function files()

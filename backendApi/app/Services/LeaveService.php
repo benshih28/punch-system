@@ -76,23 +76,31 @@ class LeaveService
     }
 
     // 3. 查詢「部門」請假紀錄（主管 & HR）
-    public function getDepartmentLeaveList($user, array $filters): Collection
+    public function getDepartmentLeaveList($user, array $filters)
     {
         $query = Leave::with('user')
-            ->whereHas('user', fn($q) => $q->where('department_id', $user->department_id));
+            ->whereHas('user.employee', fn($q) => $q->where('department_id', $user->employee->department_id));
 
+        // ✅ 確保過濾條件生效
         $this->applyFilters($query, $filters);
 
-        return $query->orderBy('start_time', 'desc')->paginate(8);
+        return $query->select('leaves.*')->orderBy('start_time', 'desc')->paginate(10);
     }
 
     // 4. 查詢「全公司」請假紀錄（HR）
-    public function getCompanyLeaveList(array $filters): Collection
+    public function getCompanyLeaveList(array $filters, int $perPage = 15)
     {
-        $query = Leave::with('user');
-        $this->applyFilters($query, $filters);
+        $query = Leave::with(['user', 'leaveType']); // 確保載入關聯資料
 
-        return $query->orderBy('start_time', 'desc')->get();
+        Log::info('SQL 查詢', ['sql' => $query->toSql(), 'bindings' => $query->getBindings()]);
+
+        // // ✅ 檢查 filters 是否有作用
+        if (!empty($filters)) {
+            Log::info('篩選條件', ['filters' => $filters]); // 確保 filters 是有效的
+            $this->applyFilters($query, $filters);
+        }
+
+        return $query->orderBy('start_time', 'desc')->paginate($perPage);
     }
 
     // 5. 更新單筆紀錄

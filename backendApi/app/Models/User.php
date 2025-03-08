@@ -99,4 +99,9 @@ class User extends Authenticatable implements JWTSubject  // 實作JWT
     {
         return $this->hasMany(PunchCorrection::class, 'approved_by');
     }
+
+    public function employee()
+    {
+        return $this->hasOne(Employee::class);
+    }
 }
