@@ -46,8 +46,8 @@ Route::middleware('auth:api')->group(function () {
 
 
     //  限制 HR 審核通過的員工才能更換與獲取大頭貼
-    Route::middleware(['auth', 'can:upload_avatar'])->post('/upload/avatar', [FileController::class, 'uploadAvatar']);
-    Route::middleware(['auth', 'can:view_avatar'])->get('/avatar', [FileController::class, 'getAvatar']);
+    Route::middleware('can:upload_avatar')->post('/upload/avatar', [FileController::class, 'uploadAvatar']);
+    Route::middleware('can:view_avatar')->get('/avatar', [FileController::class, 'getAvatar']);
 
 
     // -------------------------------------打卡 API---------------------------------  
