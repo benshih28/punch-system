@@ -1,8 +1,7 @@
 <?php
 
 namespace App\Services;
-
-use App\Models\User; 
+ 
 use App\Models\Employee; 
 use Illuminate\Support\Facades\DB; 
 
