@@ -6,6 +6,7 @@ use App\Http\Requests\LeaveApplyRequest;
 use App\Http\Requests\LeaveListRequest;
 use App\Http\Requests\LeaveUpdateRequest;
 use App\Http\Requests\LeaveDeleteRequest;
+use App\Models\Employee; // 確保引入 Employee 模型
 use App\Services\LeaveService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -158,7 +159,6 @@ class LeaveController extends Controller
             ]);
 
             $leaves = $this->leaveService->getCompanyLeaveList($filters);
-    
             return response()->json([
                 'message' => '查詢成功',
                 'records' => $leaves->items(),
@@ -298,5 +298,149 @@ class LeaveController extends Controller
             'status' => $leave->status,
             'attachment' => $leave->attachment ? asset('storage/' . $leave->attachment) : null,
         ];
+    }
+
+    // 9.部門主管審核通過
+    public function approveDepartmentLeave(Request $request, $id)
+    {
+        $leave = Leave::findOrFail($id);
+        $user = auth()->user();
+
+        // 確保使用者擁有 `approve_department_leave` 權限
+        if (!$user->can('approve_department_leave')) {
+            return response()->json(['error' => '你沒有權限審核本部門請假單'], 403);
+        }
+
+        // 找出請假員工
+        $leaveEmployee = Employee::where('user_id', $leave->user_id)->first();
+        if (!$leaveEmployee) {
+            return response()->json(['error' => '查無此員工'], 404);
+        }
+
+        // 確保主管只能審核自己部門的員工
+        $departmentId = Employee::where('user_id', $user->id)->value('department_id');
+        if ($departmentId !== $leaveEmployee->department_id) {
+            return response()->json(['error' => '你只能審核自己部門的員工'], 403);
+        }
+
+        // 確保請假單是待審核狀態
+        if ($leave->status !== 0) {
+            return response()->json(['error' => '此假單已審核，無法修改'], 403);
+        }
+
+        // 更新狀態為 主管批准
+        $leave->status = 1;
+        $leave->approved_by = $user->id;
+        $leave->save();
+
+        return response()->json(['message' => '假單已被主管審核，等待 HR 審核']);
+    }
+
+    // 10.部門主管審核拒絕
+    public function rejectDepartmentLeave(Request $request, $id)
+    {
+        $leave = Leave::findOrFail($id);
+        $user = auth()->user();
+
+        // 確保使用者擁有 `approve_department_leave` 權限
+        if (!$user->can('approve_department_leave')) {
+            return response()->json(['error' => '你沒有權限駁回請假單'], 403);
+        }
+
+        // 找出請假員工
+        $leaveEmployee = Employee::where('user_id', $leave->user_id)->first();
+        if (!$leaveEmployee) {
+            return response()->json(['error' => '查無此員工'], 404);
+        }
+
+        // 確保主管只能審核自己部門的員工
+        $departmentId = Employee::where('user_id', $user->id)->value('department_id');
+        if ($departmentId !== $leaveEmployee->department_id) {
+            return response()->json(['error' => '你只能拒絕自己部門的員工'], 403);
+        }
+
+        // 確保請假單是待審核狀態
+        if ($leave->status !== 0) {
+            return response()->json(['error' => '此假單已審核，無法修改'], 403);
+        }
+
+        // 確保拒絕理由存在
+        $rejectReason = $request->input('reject_reason');
+        if (!$rejectReason) {
+            return response()->json(['error' => '請填寫拒絕原因'], 400);
+        }
+
+        // 更新狀態為 主管拒絕
+        $leave->status = 2;
+        $leave->reject_reason = $rejectReason;
+        $leave->approved_by = $user->id;
+        $leave->save();
+
+        return response()->json(['message' => '假單已被主管拒絕']);
+    }
+
+    // 11.HR審核通過
+    public function approveLeave(Request $request, $id)
+    {
+        $leave = Leave::findOrFail($id);
+        $user = auth()->user();
+
+        // 確保使用者擁有 `approve_leave` 權限
+        if (!$user->can('approve_leave')) {
+            return response()->json(['error' => '你沒有權限最終批准假單'], 403);
+        }
+
+        // 確保請假單尚未被批准
+        if ($leave->status === 3 || $leave->status === 4) {
+            return response()->json(['error' => '此假單已被批准，不可重複審核'], 403);
+        }
+
+        // 確保請假單已經經過主管審核
+        if ($leave->status !== 1) {
+            return response()->json(['error' => '請假單必須先經過主管審核'], 403);
+        }
+
+        // 更新狀態為 HR 批准
+        $leave->status = 3;
+        $leave->approved_by = $user->id;
+        $leave->save();
+
+        return response()->json(['message' => '假單已最終批准']);
+    }
+
+    // 12.HR審核拒絕
+    public function rejectLeave(Request $request, $id)
+    {
+        $leave = Leave::findOrFail($id);
+        $user = auth()->user();
+
+        // 確保使用者擁有 `approve_leave` 權限
+        if (!$user->can('approve_leave')) {
+            return response()->json(['error' => '你沒有權限駁回假單'], 403);
+        }
+
+        // 確保請假單已經經過主管審核
+        if ($leave->status !== 1) {
+            return response()->json(['error' => '請假單必須先經過主管審核'], 403);
+        }
+
+        // 不能駁回已經被拒絕的請假
+        if ($leave->status === 4) {
+            return response()->json(['error' => '此假單已被拒絕'], 403);
+        }
+
+        // 確保拒絕理由存在
+        $rejectReason = $request->input('reject_reason');
+        if (!$rejectReason) {
+            return response()->json(['error' => '請填寫拒絕原因'], 400);
+        }
+
+        // 更新狀態為 HR 拒絕
+        $leave->status = 4;
+        $leave->reject_reason = $rejectReason;
+        $leave->approved_by = $user->id;
+        $leave->save();
+
+        return response()->json(['message' => '假單已被 HR 拒絕']);
     }
 }
