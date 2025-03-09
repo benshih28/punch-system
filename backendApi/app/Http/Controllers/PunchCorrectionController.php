@@ -144,6 +144,8 @@ class PunchCorrectionController extends Controller
         // 取得 Query 參數
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
+        $perPage = $request->query('per_page', 10); // 預設 10 筆
+        $page = $request->query('page', 1); // 預設第 1 頁
 
         // 查詢使用者的補登紀錄
         $query = PunchCorrection::where('user_id', $user->id);
@@ -157,7 +159,8 @@ class PunchCorrectionController extends Controller
         $corrections = $query
             ->orderByRaw("CASE WHEN status = 'pending' THEN 1 ELSE 2 END") // 讓 'pending' 的資料排在最前面
             ->orderBy('punch_time', 'desc') // 再按照 `punch_time` 由新到舊排序
-            ->get();
+            ->paginate($perPage, ['*'], 'page', $page); // 使用分頁
+
 
         return response()->json([
             'message' => '成功獲取補登紀錄',
@@ -197,6 +200,8 @@ class PunchCorrectionController extends Controller
         // 3️⃣ 取得 Query 參數
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
+        $perPage = $request->query('per_page', 10); // 預設 10 筆
+        $page = $request->query('page', 1); // 預設第 1 頁
 
         // 4️⃣ 呼叫 MySQL 預存程序
         $corrections = DB::select('CALL GetAllPunchCorrections(?, ?)', [
@@ -204,9 +209,23 @@ class PunchCorrectionController extends Controller
             $endDate ?: null      // 如果沒傳 end_date，則傳 NULL
         ]);
 
+
+        // 計算分頁數據
+        $total = count($corrections); // 總筆數
+        $offset = ($page - 1) * $perPage; // 計算偏移量
+        $pagedCorrections = array_slice($corrections, $offset, $perPage); // 取出符合當前頁數的資料
+
+
+        // 返回 JSON（標準 API 分頁格式）
         return response()->json([
             'message' => '成功獲取所有補登紀錄',
-            'data' => $corrections
+            'meta' => [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'last_page' => ceil($total / $perPage),
+            ],
+            'data' => $pagedCorrections
         ], 200);
     }
 }

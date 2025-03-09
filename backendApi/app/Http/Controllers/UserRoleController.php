@@ -10,7 +10,7 @@ use App\Models\User;
 
 class UserRoleController extends Controller
 {
-    // ✅ 指派角色給使用者
+    // 指派角色給使用者
     public function assignRoleToUser(Request $request, $userId)
     {
         $user = User::findOrFail($userId);
@@ -21,7 +21,7 @@ class UserRoleController extends Controller
         return response()->json(['message' => 'Roles assigned successfully']);
     }
 
-    // ✅ 移除使用者的角色
+    // 移除使用者的角色
     public function revokeRoleFromUser(Request $request, $userId)
     {
         $user = User::findOrFail($userId);
@@ -32,14 +32,14 @@ class UserRoleController extends Controller
         return response()->json(['message' => 'Roles revoked successfully']);
     }
 
-    // ✅ 取得使用者的所有角色
+    // 取得使用者的所有角色
     public function getUserRoles($userId)
     {
         $user = User::findOrFail($userId);
         return response()->json(['roles' => $user->getRoleNames()]);
     }
 
-    // ✅ 取得使用者的所有權限
+    // 取得使用者的所有權限
     public function getUserPermissions($userId)
     {
         $user = User::findOrFail($userId);

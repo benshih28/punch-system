@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 class RoleController extends Controller
 {
-    // ✅ 建立新角色並可選擇 `permissions`
+    // 建立新角色並可選擇 `permissions`
     public function createRole(Request $request)
     {
         // 檢查使用者是否擁有 HR 或 Admin 角色
@@ -37,13 +37,13 @@ class RoleController extends Controller
         ], 201);
     }
 
-    // ✅ 取得所有角色
+    // 取得所有角色
     public function getAllRoles()
     {
         return response()->json(Role::all());
     }
 
-    // ✅ 1. 新增權限
+    // 新增權限
     public function createPermission(Request $request)
     {
         $request->validate([
@@ -58,13 +58,13 @@ class RoleController extends Controller
         ], 201);
     }
 
-    // ✅ 2. 取得所有權限
+    // 取得所有權限
     public function getAllPermissions()
     {
         return response()->json(Permission::all());
     }
 
-    // ✅ 3. 刪除權限
+    // 刪除權限
     public function deletePermission($id)
     {
         $permission = Permission::find($id);
@@ -77,7 +77,7 @@ class RoleController extends Controller
         return response()->json(['message' => 'Permission deleted successfully']);
     }
 
-    // ✅ 指派 `permissions` 給角色 (批量)
+    // 指派 `permissions` 給角色 (批量)
     public function assignPermission(Request $request, $roleName)
     {
         $request->validate([
@@ -90,7 +90,7 @@ class RoleController extends Controller
             return response()->json(['error' => 'Role not found'], 404);
         }
 
-        // ✅ 批量更新 `permissions`
+        // 批量更新 `permissions`
         $role->syncPermissions($request->permissions);
 
         return response()->json([
@@ -100,7 +100,7 @@ class RoleController extends Controller
         ]);
     }
 
-    // ✅ 批量移除 `permissions` (刪除)
+    // 批量移除 `permissions` (刪除)
     public function revokePermission(Request $request, $roleName)
     {
         $request->validate([
@@ -113,7 +113,7 @@ class RoleController extends Controller
             return response()->json(['error' => 'Role not found'], 404);
         }
 
-        // ✅ 批量刪除 `permissions`
+        // 批量刪除 `permissions`
         foreach ($request->permissions as $permission) {
             $role->revokePermissionTo($permission);
         }
@@ -127,13 +127,13 @@ class RoleController extends Controller
 
 
     public function getRolePermissions($roleName){
-    // ✅ 確保角色存在
+    // 確保角色存在
     $role = Role::where('name', $roleName)->first();
     if (!$role) {
         return response()->json(['error' => 'Role not found'], 404);
     }
 
-    // ✅ 取得角色的所有權限
+    // 取得角色的所有權限
     return response()->json([
         'role' => $role->name,
         'permissions' => $role->permissions->pluck('name')

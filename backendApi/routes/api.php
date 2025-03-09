@@ -155,7 +155,7 @@ Route::middleware('auth:api')->group(function () {
 
 
     // -------------------------------------人員管理 API--------------------------------
-    Route::prefix('/employees')->group(function () {
+    Route::middleware('can:manage_employees')->prefix('/employees')->group(function () {
         // 取得所有員工
         Route::get('/', [EmployeeController::class, 'index']);
         // 註冊員工

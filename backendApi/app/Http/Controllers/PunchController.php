@@ -11,9 +11,8 @@ use Carbon\Carbon; // ✅ 使用伺服器時間
 
 class PunchController extends Controller
 {
-    /**
-     * 📌 上班打卡（一天內限制一次）
-     */
+    //-------------------------------上班打卡（一天內限制一次）-------------------------------
+
     public function punchIn(Request $request)
     {
         $user = Auth::guard('api')->user();
@@ -49,13 +48,13 @@ class PunchController extends Controller
         ], 201);
     }
 
-    /**
-     * 📌 下班打卡
-     */
+    //-------------------------------下班打卡-------------------------------
+
+
     public function punchOut(Request $request)
     {
-        $user        = Auth::guard('api')->user(); // ✅ 適用 JWT
-        $currentTime = Carbon::now(); // ✅ 使用伺服器時間
+        $user        = Auth::guard('api')->user(); // 適用 JWT
+        $currentTime = Carbon::now(); // 使用伺服器時間
 
         // 建立下班打卡，預設為有效
         $punchOut = PunchOut::create([
@@ -79,8 +78,8 @@ class PunchController extends Controller
             'message'   => 'Punch out recorded',
             'punch_out' => [
                 'user_id'   => $punchOut->user_id,
-                'timestamp' => $punchOut->timestamp->format('Y-m-d H:i:s'), // ✅ 確保格式正確
-                'is_valid'  => $punchOut->is_valid, // ✅ 確保 `is_valid` 回傳
+                'timestamp' => $punchOut->timestamp->format('Y-m-d H:i:s'), // 確保格式正確
+                'is_valid'  => $punchOut->is_valid, // 確保 `is_valid` 回傳
             ],
         ], 201);
     }

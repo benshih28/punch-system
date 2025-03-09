@@ -34,8 +34,8 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users'],
             //必填 (required) 需要輸入 password_confirmation 欄位，確認密碼是否一致 (confirmed) 至少包含一個字母 & 一個數字 & 一個大寫字母和一個小寫字母 & 一個特殊符號
             'password' => ['required', 'string', Password::min(8)->letters()->numbers()->mixedCase()->symbols(), 'confirmed'],
-
-            'gender' => ['required', 'in:male,female'], // 限制只能是 male 或 female
+            // 必填 (required) 限制只能是 male 或 female
+            'gender' => ['required', 'in:male,female'], 
         ]);
 
 
