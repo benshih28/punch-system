@@ -42,7 +42,7 @@ class LeaveService
             'end_time' => $data['end_time'],
             'leave_hours' => $hours,
             'reason' => $data['reason'] ?? '',
-            'status' => 'pending',
+            'status' => 0,
         ]);
 
         // 5️⃣ 處理附件

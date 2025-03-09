@@ -19,13 +19,13 @@ return new class extends Migration
             $table->dateTime('end_time');      // 結束時間
             $table->integer('leave_hours');      // 請假時數
             $table->text('reason');                            // 事由
-            $table->string('status', 20)->default('pending');  // 狀態
-            $table->text('reject_reason')->nullable();                     // 退回原因
+            $table->tinyInteger('status')->default(0)->comment("0:待審核;1:主管通過;2:主管拒絕;3:HR通過;4:HR拒絕");  // 狀態
+            $table->text('reject_reason')->nullable(); // 退回原因
+            $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete(); // 最終批准/拒絕的人
             $table->foreignId('attachment')->nullable()->constrained('files')->nullOnDelete();
             $table->timestamps();  // created_at 和 updated_at
         });
     }
-
 
     /**
      * Reverse the migrations.
