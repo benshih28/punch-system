@@ -81,21 +81,23 @@ class EmployeeController extends Controller
     }
 
     /**
-     * ✅ HR 分配部門、職位、主管
+     * ✅ HR 分配部門、職位、主管、角色
      */
     public function assignDepartmentAndPosition(Request $request, $id): JsonResponse
     {
         $request->validate([
-            'department_id' => 'nullable|exists:departments,id',
-            'position_id' => 'nullable|exists:positions,id',
-            'manager_id' => 'nullable|exists:users,id'
+            'department_id' => 'required|exists:departments,id',
+            'position_id' => 'required|exists:positions,id',
+            'manager_id' => 'required|exists:users,id',
+            'role_id' => 'required|exists:roles,id' 
         ]);
 
         $this->employeeService->assignDepartmentAndPosition(
             $id, 
             $request->department_id,
             $request->position_id,
-            $request->manager_id
+            $request->manager_id,
+            $request->role_id
         );
 
         return response()->json(['message' => '員工資訊更新成功'], 200);
