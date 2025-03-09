@@ -22,7 +22,8 @@ class LeaveListRequest extends FormRequest
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
 
-    // 查詢請假紀錄格式驗證，這裡要填的是「start_date」喔
+    // 查詢請假紀錄格式驗證
+    // 查詢時要填的「start_date」格式是 20XX-XX-XX
     public function rules(): array
     {
         return [

@@ -30,13 +30,13 @@ class Leave extends Model
         'rejected',
     ];
 
-    // 使用者申請請假
+    // 員工申請請假
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    // 附件
+    // 附件儲存
     public function files()
     {
         return $this->hasMany(File::class);

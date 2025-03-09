@@ -14,6 +14,7 @@ class LeaveUpdateRequest extends FormRequest
     }
 
     // 請假紀錄修改格式驗證
+    // 須注意「start_time」要填入「20XX-XX-XX XX:XX」
     public function rules(): array
     {
         return [

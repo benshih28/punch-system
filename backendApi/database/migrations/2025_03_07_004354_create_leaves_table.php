@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    // 要先建完leave_types表才能建leave表喔~
+    // 要先建完leave_types表，才能建leave表喔~
     public function up(): void
     {
         Schema::create('leaves', function (Blueprint $table) {

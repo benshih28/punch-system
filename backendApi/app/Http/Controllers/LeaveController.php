@@ -73,7 +73,7 @@ class LeaveController extends Controller
             $user = auth()->user();
             $filters = $request->validated();
 
-            Log::info('查詢請假紀錄', ['user_id' => $user->id, 'filters' => $filters]);
+            // Log::info('查詢請假紀錄', ['user_id' => $user->id, 'filters' => $filters]);
 
             $leaves = $this->leaveService->getLeaveList($user, $filters);
 
@@ -117,7 +117,7 @@ class LeaveController extends Controller
                 'status' => 'nullable|in:pending,approved,rejected',
             ]);
 
-            Log::info('查詢部門請假紀錄', ['user_id' => $user->id, 'filters' => $filters]);
+            // Log::info('查詢部門請假紀錄', ['user_id' => $user->id, 'filters' => $filters]);
 
             $leaves = $this->leaveService->getDepartmentLeaveList($user, $filters);
 

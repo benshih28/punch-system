@@ -18,7 +18,7 @@ class LeaveService
 
     //  1. 申請請假
     // 根據前端送來的資料，算好請假時數，然後寫入資料庫
-    // 生理假已加上每月重置判斷
+    // 生理假已加上每月重置判斷；特休已加上每年重置及遞增判斷
     public function applyLeave(array $data): Leave
     {
         $user = auth()->user();
@@ -105,7 +105,7 @@ class LeaveService
         return $leaves;
     }
 
-    // 5. 更新單筆紀錄
+    // 5. 更新單筆請假紀錄
     public function updateLeave(Leave $leave, array $data): Leave
     {
         // 1️⃣ 計算請假小時數
