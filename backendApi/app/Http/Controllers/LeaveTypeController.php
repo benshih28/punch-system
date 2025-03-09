@@ -11,7 +11,7 @@ use App\Http\Requests\LeaveTypeUpdateRequest;
 
 class LeaveTypeController extends Controller
 {
-    // 1. 新增假別 
+    // 1. 新增
     public function addLeaveTypes(LeaveTypeCreateRequest $request): JsonResponse
     {
         // 驗證輸入資料
@@ -31,7 +31,7 @@ class LeaveTypeController extends Controller
         ], 201);
     }
 
-    // 2. 刪除假別
+    // 2. 刪除
     public function destroyLeaveTypes($id)
     {
         $leaveType = LeaveType::find($id);
@@ -41,7 +41,7 @@ class LeaveTypeController extends Controller
         return response()->json(['message' => '假別刪除成功'], 200);
     }
 
-    // 3. 修改假別
+    // 3. 修改
     public function updateLeaveTypes($id, LeaveTypeUpdateRequest $request)
     {
         $leaveType = LeaveType::find($id);
@@ -60,7 +60,7 @@ class LeaveTypeController extends Controller
         ], 200);
     }
 
-    // 4. 所有假別(放在下拉式選單)
+    // 4. 取得所有假別(放在下拉式選單)
     public function getleaveTypes()
     {
         // 取得所有假別
@@ -68,7 +68,7 @@ class LeaveTypeController extends Controller
         return response()->json($leaveTypes);
     }
 
-    // 5. 所有狀態(放在下拉式選單)
+    // 5. 取得所有狀態(放在下拉式選單)
     public function getleaveStatus()
     {
         // 取得所有假別狀態（來自 LeaveHelper）

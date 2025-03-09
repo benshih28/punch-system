@@ -30,16 +30,19 @@ class Leave extends Model
         'rejected',
     ];
 
+    // 使用者申請請假
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    // 附件
     public function files()
     {
         return $this->hasMany(File::class);
     }
 
+    // 假別
     public function leaveType()
     {
         return $this->belongsTo(LeaveType::class, 'leave_type_id');

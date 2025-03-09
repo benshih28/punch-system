@@ -18,6 +18,7 @@ class LeaveService
 
     //  1. 申請請假
     // 根據前端送來的資料，算好請假時數，然後寫入資料庫
+    // 生理假已加上每月重置判斷
     public function applyLeave(array $data): Leave
     {
         $user = auth()->user();
@@ -65,7 +66,7 @@ class LeaveService
         return $leave;
     }
 
-    // 2. 查詢個人全部請假紀錄
+    // 2. 查詢個人全部請假紀錄 (員工、主管、HR)
     public function getLeaveList($user, array $filters)
     {
         $query = Leave::with('user')->where('user_id', $user->id);
@@ -74,7 +75,7 @@ class LeaveService
         return $query->orderBy('start_time', 'desc')->paginate(8);
     }
 
-    // 3. 查詢「部門」請假紀錄（主管 & HR）
+    // 3. 查詢「部門」請假紀錄（主管、HR）
     public function getDepartmentLeaveList($user, array $filters)
     {
         $query = Leave::with('user')

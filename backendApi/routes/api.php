@@ -259,22 +259,28 @@ Route::middleware('auth:api')->group(function () {
 
     // -------------------------------------請假功能 API------------------------------
     Route::prefix('/leave')->group(function () {
-        // 員工可以申請請假（需要 `request_leave` 權限）
+        // 申請請假
+        // `request_leave` 權限 ⭢ 員工
         Route::post('/request', [LeaveController::class, 'requestLeave'])->middleware('can:request_leave');
 
-        // 員工、主管、HR 可以查詢自己的請假紀錄（需要 `view_leave_records` 權限）
+        // 查詢個人請假紀錄
+        // `view_leave_records` 權限 ⭢ 員工、主管、HR
         Route::get('/records', [LeaveController::class, 'viewMyLeaveRecords'])->middleware('can:view_leave_records');
 
-        // 員工或 HR 可以刪除請假資料（需要 `delete_leave` 權限）
+        // 刪除請假資料
+        // `delete_leave` 權限 ⭢ 員工、HR
         Route::delete('/{id}', [LeaveController::class, 'deleteLeave'])->middleware('can:delete_leave');
 
-        // 員工或 HR 可以更新請假資料（需要 `update_leave` 權限）
+        //  更新請假資料
+        //  `update_leave` 權限 ⭢ 員工、HR
         Route::post('/{id}', [LeaveController::class, 'updateLeave'])->middleware('can:update_leave');
 
-        // 主管或 HR 可以查看本部門請假紀錄（需要 `view_department_leave_records` 權限）
+        // 查看本部門請假紀錄
+        // `view_department_leave_records` 權限 ⭢ 主管、HR
         Route::get('/department', [LeaveController::class, 'viewDepartmentLeaveRecords'])->middleware('can:view_department_leave_records');
 
-        // HR 可以查看全公司的請假紀錄（需要 `view_company_leave_records` 權限）
+        // 查看全公司的請假紀錄
+        // `view_company_leave_records` 權限 ⭢ HR
         Route::get('/company', [LeaveController::class, 'viewCompanyLeaveRecords'])->middleware('can:view_company_leave_records');
 
         // 主管或 HR 可以審核請假（需要 `approve_leave` 權限）

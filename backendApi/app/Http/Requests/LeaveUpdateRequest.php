@@ -13,7 +13,7 @@ class LeaveUpdateRequest extends FormRequest
         return true;
     }
 
-    // 請假修改格式驗證
+    // 請假紀錄修改格式驗證
     public function rules(): array
     {
         return [

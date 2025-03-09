@@ -13,7 +13,7 @@ class LeaveApplyRequest extends FormRequest
         return true; // 這裡直接return true，因為是登入後的API，已經有auth保護了
     }
 
-    // 請假格式驗證
+    // 申請請假格式驗證，須注意start_time要填入「2025-03-03 09:00」
     public function rules(): array
     {
         return [

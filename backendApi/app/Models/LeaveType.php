@@ -19,6 +19,7 @@ class LeaveType extends Model
         return $this->hasMany(Leave::class, 'leave_type_id');
     }
 
+    // 假規
     public function resetRules()
 {
     return $this->hasMany(LeaveResetRule::class);

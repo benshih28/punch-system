@@ -24,7 +24,7 @@ class LeaveController extends Controller
         $this->leaveService = $leaveService;
     }
 
-    // 1. 員工申請請假
+    // 1. 申請請假 (員工)
     public function requestLeave(LeaveApplyRequest $request): JsonResponse
     {
         try {
@@ -66,7 +66,7 @@ class LeaveController extends Controller
         }
     }
 
-    // 2. 查詢個人請假紀錄 (員工)
+    // 2. 查詢個人請假紀錄 (員工、主管、HR)
     public function viewMyLeaveRecords(LeaveListRequest $request): JsonResponse
     {
         try {
@@ -101,7 +101,7 @@ class LeaveController extends Controller
         }
     }
 
-    // 3. 查詢「部門」請假紀錄（主管 & HR）
+    // 3. 查詢「部門」請假紀錄（主管、HR）
     public function viewDepartmentLeaveRecords(Request $request): JsonResponse
     {
         try {
@@ -176,7 +176,7 @@ class LeaveController extends Controller
         }
     }
 
-    // 5. 修改請假申請 (HR、員工)
+    // 5. 修改請假申請 (員工、HR)
     public function updateLeave(LeaveUpdateRequest $request, int $id): JsonResponse
     {
         try {
@@ -215,7 +215,7 @@ class LeaveController extends Controller
         }
     }
 
-    // 6. 刪除請假申請 (HR、員工)
+    // 6. 刪除請假申請 (員工、HR)
     public function deleteLeave(int $id): JsonResponse
     {
         try {

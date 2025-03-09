@@ -20,7 +20,7 @@ class LeaveTypeCreateRequest extends FormRequest
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
 
-    // 假別格式驗證
+    // 新增假別格式驗證
     public function rules(): array
     {
         return [
