@@ -100,7 +100,7 @@ Route::middleware('auth:api')->group(function () {
         // 5. 狀態選單API (放下拉式選單內)
         Route::get('/status', [LeaveTypeController::class, 'getleaveStatus']);
 
-        // 🟢 假規 (增加假別重置判斷)
+        // 🟢 假規 (增加假別重置判斷：特休假、月假) (管理員專用)
         // 1. 增加假別規則
         Route::post('/types/rules', [LeaveRuleController::class, 'addLeaveRule']);
         // 2. 修改假別規則

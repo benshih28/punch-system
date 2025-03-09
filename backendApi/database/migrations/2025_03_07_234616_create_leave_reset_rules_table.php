@@ -9,6 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
+    // 假別規則資料表
     public function up(): void
     {
         Schema::create('leave_reset_rules', function (Blueprint $table) {

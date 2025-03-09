@@ -11,6 +11,7 @@ use App\Models\EmployeeProfile;
 
 class LeaveResetService
 {
+    // 特休假及生理假重置判斷
     // 1. 依照 'yearly' 或 'monthly' 判斷是每年重置還是每月重置
     public function checkAndResetLeave($leaveTypeId, $userId)
     {
