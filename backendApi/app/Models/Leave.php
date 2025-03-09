@@ -25,9 +25,7 @@ class Leave extends Model
     ];
 
     public const STATUSES = [
-        'pending',
-        'approved',
-        'rejected',
+        0,1,2,3,4
     ];
 
     public function user()
