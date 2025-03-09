@@ -4,9 +4,23 @@ namespace App\Services;
  
 use App\Models\Employee; 
 use Illuminate\Support\Facades\DB; 
-
+use Illuminate\Support\Facades\Log;
 class EmployeeService
 {
+
+    public function createEmployee(array $data): Employee
+    {
+        return Employee::create($data);  // 純建Employee
+    }
+
+    public function triggerAddEmployeeProfile(int $employeeId): void
+    {
+        Log::info('🚀 呼叫AddEmployeeProfile Stored Procedure', ['employee_id' => $employeeId]);
+        DB::statement("CALL AddEmployeeProfile(?)", [$employeeId]);
+    }
+
+
+
     /**
      * 註冊新員工（使用 MySQL 預存程序）
      */
@@ -76,3 +90,6 @@ class EmployeeService
 }
 
 ?>
+
+
+
