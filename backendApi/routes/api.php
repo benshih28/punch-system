@@ -16,6 +16,7 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\LeaveTypeController;
+use App\Http\Controllers\LeaveResetRuleController;
 
 
 
@@ -172,6 +173,18 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('/{id}', [LeaveTypeController::class, 'destroy']);
         // 4. 假別選單API (放下拉式選單內)
         Route::get('/', [LeaveTypeController::class, 'index']);
+    });
+
+    // 假別規則API (需要加上Admin權限)
+    Route::middleware('auth:api')->prefix('leavetypes')->group(function () { 
+        // 1. 增加假規
+        Route::post('/rules/add', [LeaveResetRuleController::class, 'store']);     
+        // 2. 更新假規
+        Route::patch('/rules/{id}', [LeaveResetRuleController::class, 'update']);    
+        // 3. 查詢假規
+        Route::get('/rules', [LeaveResetRuleController::class, 'index']);     
+        // 4. 刪除假規
+        Route::delete('/rules/{id}', [LeaveResetRuleController::class, 'destroy']);
     });
 
 });
