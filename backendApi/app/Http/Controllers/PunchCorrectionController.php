@@ -165,7 +165,7 @@ class PunchCorrectionController extends Controller
         ], 200);
     }
 
-
+    // 個人的打卡紀錄
     public function getFinalAttendanceRecords(Request $request)
     {
         $userId = Auth::guard('api')->id();
@@ -186,6 +186,68 @@ class PunchCorrectionController extends Controller
         return response()->json($records);
     }
 
+    // 讓人資看到所有人的打卡紀錄
+    public function getAllFinalAttendanceRecords(Request $request)
+    {
+        // 確保使用者已登入
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['message' => '未授權的請求'], 401);
+        }
+
+        // 取得 Query 參數
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+        $page = (int) $request->query('page', 1);
+        $perPage = (int) $request->query('per_page', 10);
+
+        // 避免 page 或 perPage 為負數
+        $page = max(1, $page);
+        $perPage = max(1, $perPage);
+
+        // **呼叫 MySQL 預存程序**
+        $records = DB::select('CALL GetAllFinalAttendanceRecords(?, ?, ?, ?)', [
+            $startDate ?: null,
+            $endDate ?: null,
+            $page,
+            $perPage
+        ]);
+
+        // **整理回傳格式**
+        $groupedData = [];
+        foreach ($records as $record) {
+            $userId = $record->user_id;
+            $userName = $record->user_name;
+
+            if (!isset($groupedData[$userId])) {
+                $groupedData[$userId] = [
+                    'user_id' => $userId,
+                    'user_name' => $userName,
+                    'records' => []
+                ];
+            }
+
+            // 限制每個使用者最多 31 筆資料
+            if (count($groupedData[$userId]['records']) < 31) {
+                $groupedData[$userId]['records'][] = [
+                    'date' => $record->date,
+                    'punch_in' => $record->punch_in,
+                    'punch_out' => $record->punch_out
+                ];
+            }
+        }
+
+        return response()->json([
+            'message' => '成功獲取所有員工的打卡紀錄',
+            'data' => [
+                'current_page' => $page,
+                'data' => array_values($groupedData), // 確保輸出為陣列
+            ]
+        ], 200);
+    }
+
+
+
     // 人資查看所有補登打卡申請
     public function getAllCorrections(Request $request)
     {
@@ -199,12 +261,14 @@ class PunchCorrectionController extends Controller
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
         $page = $request->query('page', 1); // 預設第一頁
-        $perPage = 10; //每頁顯示10筆
+        $perPage = 300; //每頁顯示10筆
 
         // 呼叫 MySQL 預存程序
-        $corrections = DB::select('CALL GetAllPunchCorrections(?, ?)', [
+        $corrections = DB::select('CALL GetAllPunchCorrections(?, ?, ?, ?)', [
             $startDate ?: null,   // 如果沒傳 start_date，則傳 NULL
-            $endDate ?: null      // 如果沒傳 end_date，則傳 NULL
+            $endDate ?: null,      // 如果沒傳 end_date，則傳 NULL
+            $page,
+            $perPage
         ]);
 
         // 轉換成 Laravel Collection 以支援分頁

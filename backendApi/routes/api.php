@@ -16,9 +16,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\UserController;
-
-
-
+use App\Models\PunchCorrection;
 
 // 公開 API（不需要登入）
 // 註冊
@@ -107,7 +105,8 @@ Route::middleware('auth:api')->group(function () {
 
         // 人資看到所有申請資料(可以選擇查看日期範圍)
         Route::get('/corrections', [PunchCorrectionController::class, 'getAllCorrections']);
-
+        // 人資看到所有人的打卡紀錄
+        Route::get('/allfinalattendance', [PunchCorrectionController::class, 'getAllFinalAttendanceRecords']);
 
         // 🔹 部門 API
         Route::prefix('/departments')->group(function () {
