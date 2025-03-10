@@ -16,6 +16,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\LeaveTypeController;
 
 
 
@@ -162,7 +163,7 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/my/employees', [EmployeeController::class, 'getMyEmployees']); 
     });
 
-    // 假別功能API (需要Admin權限) 
+    // 假別功能API (需要加上Admin權限) 
     Route::middleware('auth:api')->prefix('leavetypes')->group(function () {
         // 1. 新增假別API
         Route::post('/add', [LeaveTypeController::class, 'store']);
