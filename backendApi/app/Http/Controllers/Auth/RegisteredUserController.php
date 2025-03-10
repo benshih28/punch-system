@@ -11,13 +11,41 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 
-
 class RegisteredUserController extends Controller
 {
-
-
     /**
-     * Handle an incoming registration request.
+     * @OA\Post(
+     *     path="/register",
+     *     summary="使用者註冊",
+     *     description="用戶註冊新帳號",
+     *     operationId="registerUser",
+     *     tags={"Authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="使用者註冊資訊",
+     *         @OA\JsonContent(
+     *             required={"name", "email", "password", "password_confirmation", "gender"},
+     *             @OA\Property(property="name", type="string", example="John Doe", description="使用者名稱"),
+     *             @OA\Property(property="email", type="string", format="email", example="john.doe@example.com", description="電子郵件"),
+     *             @OA\Property(property="password", type="string", example="Password123!", description="密碼"),
+     *             @OA\Property(property="password_confirmation", type="string", example="Password123!", description="確認密碼"),
+     *             @OA\Property(property="gender", type="string", enum={"male", "female"}, example="male", description="性別")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="註冊成功",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="User successfully registered. Please log in."),
+     *             @OA\Property(property="user", type="object", description="使用者資訊"),
+     *             @OA\Property(property="employee", type="object", description="員工資訊")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="驗證失敗"
+     *     )
+     * )
      */
     public function store(Request $request): JsonResponse
     {
