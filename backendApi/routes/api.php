@@ -16,6 +16,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\LeaveResetRuleController;
 
 
 
@@ -162,5 +163,22 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/my/employees', [EmployeeController::class, 'getMyEmployees']); 
     });
 
+    
+    
+    // 假別規則API
+    Route::middleware('auth:api')->prefix('leavetypes')->group(function () { 
+        // 1. Add Leave Policy Rule
+        Route::post('/rules/add', [LeaveResetRuleController::class, 'addLeaveRule']); 
+    
+        // 2. Update Leave Policy Rule
+        Route::patch('/rules/{id}', [LeaveResetRuleController::class, 'updateLeaveRule']);
+    
+        // 3. Retrieve Leave Policy Rules
+        Route::get('/types', [LeaveResetRuleController::class, 'getLeaveRules']); 
+    
+        // 4. Delete Leave Policy Rule
+        Route::delete('/rules/{id}', [LeaveResetRuleController::class, 'destroyLeaveRule']);
+    });
+    
 
 });
