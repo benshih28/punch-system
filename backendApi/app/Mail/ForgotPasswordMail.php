@@ -24,7 +24,7 @@ class ForgotPasswordMail extends Mailable
             ->view('emails.forgot-password')  //呼叫forgot-password.blade.php
             ->with([
                 'newPassword' => $this->newPassword,
-                'loginUrl' => url('http://localhost:3000/login'),
+                'loginUrl' => url('http://localhost:5173/login'),
             ]);
     }
 }
