@@ -37,7 +37,6 @@ class UserController extends Controller
             'new_password_confirmation.required_with' => '請輸入確認密碼'
         ]);
 
-
         // 新密碼
         if ($request->filled('new_password')) {
             // 1.檢查是否輸入舊密碼
@@ -56,6 +55,7 @@ class UserController extends Controller
         // Log::info('User profile updated: ' . $user->id);
 
         // 透過 FileController 上傳大頭貼
+
         // 如果有上傳新大頭貼，直接呼叫 FileController@uploadAvatar 方法
         if ($request->hasFile('avatar')) {
             $fileController = app(FileController::class);
@@ -63,7 +63,7 @@ class UserController extends Controller
             $avatarData = json_decode($avatarResponse->getContent(), true);
             $avatarUrl = $avatarData['url'] ?? null;
         } else {
-            // ✅ 從 files 表獲取當前最新的大頭貼 URL
+            // 從 files 表獲取當前最新的大頭貼 URL
             $file = File::where('user_id', $user->id)->whereNotNull('avatar')->first();
             $avatarUrl = $file ? Storage::url("avatars/" . $file->avatar) : null;
         }
@@ -72,5 +72,6 @@ class UserController extends Controller
         $user->save();
 
         return response()->json(['message' => '個人資料已更新', 'avatar' => $avatarUrl]);
+
     }
 }
