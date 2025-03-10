@@ -186,27 +186,55 @@ class PunchCorrectionController extends Controller
         return response()->json($records);
     }
 
+    // 人資查看所有補登打卡申請
     public function getAllCorrections(Request $request)
     {
-        // 1️⃣ 確保使用者已登入
+        // 確保使用者已登入
         $user = Auth::user();
         if (!$user) {
             return response()->json(['message' => '未授權的請求'], 401);
         }
 
-        // 3️⃣ 取得 Query 參數
+        // 取得 Query 參數
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
+        $page = $request->query('page', 1); // 預設第一頁
+        $perPage = 10; //每頁顯示10筆
 
-        // 4️⃣ 呼叫 MySQL 預存程序
+        // 呼叫 MySQL 預存程序
         $corrections = DB::select('CALL GetAllPunchCorrections(?, ?)', [
             $startDate ?: null,   // 如果沒傳 start_date，則傳 NULL
             $endDate ?: null      // 如果沒傳 end_date，則傳 NULL
         ]);
 
+        // 轉換成 Laravel Collection 以支援分頁
+        $correctionsCollection = collect($corrections);
+
+        // 手動分頁
+        $pagedCorrections = $correctionsCollection->slice(($page - 1) * $perPage, $perPage)->values();
+
+        // 計算分頁資訊
+        $total = $correctionsCollection->count();
+        $lastPage = ceil($total / $perPage);
+        $nextPageUrl = $page < $lastPage ? url("/api/corrections?page=" . ($page + 1)) : null;
+        $prevPageUrl = $page > 1 ? url("/api/corrections?page=" . ($page - 1)) : null;
+
         return response()->json([
             'message' => '成功獲取所有補登紀錄',
-            'data' => $corrections
+            'data' => [
+                'current_page' => $page, // 當前頁碼
+                'data' => $pagedCorrections, // 實際資料
+                'first_page_url' => url("/api/corrections?page=1"), // 第一頁URL
+                'from' => ($page - 1) * $perPage + 1,
+                'last_page' => $lastPage, // 最後一頁頁碼
+                'last_page_url' => url("/api/corrections?page=" . $lastPage), // 最後一頁URL
+                'next_page_url' => $nextPageUrl, // 下一頁URL
+                'path' => url("/api/corrections"),
+                'per_page' => $perPage, // 每頁筆數
+                'prev_page_url' => $prevPageUrl, // 上一頁URL
+                'to' => min($page * $perPage, $total),
+                'total' => $total // 總比數
+            ]
         ], 200);
     }
 }
