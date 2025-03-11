@@ -211,6 +211,14 @@ Route::middleware('auth:api')->group(function () {
 
         // 6. HR 可以查看全公司的請假紀錄（需要 `view_company_leave_records` 權限）
         Route::get('/company', [LeaveController::class, 'viewCompanyLeaveRecords']);
+
+        // 7.HR 可以審核/駁回請假（需要 `approve_leave` 權限）
+        Route::patch('/{id}/approve', [LeaveController::class, 'approveLeave'])->middleware('can:approve_leave');
+        Route::patch('/{id}/reject', [LeaveController::class, 'rejectLeave'])->middleware('can:approve_leave');
+        
+        // 8.主管可以核准/駁回本部門請假單（需要 `approve_department_leave` 權限）
+        Route::patch('/{id}/department/approve', [LeaveController::class, 'approveDepartmentLeave'])->middleware('can:approve_department_leave');
+        Route::patch('/{id}/department/reject', [LeaveController::class, 'rejectDepartmentLeave'])->middleware('can:approve_department_leave');
     });
 
 });
