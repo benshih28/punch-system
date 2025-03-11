@@ -65,7 +65,7 @@ Route::middleware('auth:api')->group(function () {
     });
 
     // 查詢當前使用者打卡紀錄 （需要 `view_attendance` 權限）
-    Route::get('/attendance/finalrecords', [PunchCorrectionController::class, 'getFinalAttendanceRecords'])->middleware('can:view_attendance');
+    Route::get('/attendance/record', [PunchCorrectionController::class, 'getAttendanceRecords'])->middleware('can:view_attendance');
 
 
 
@@ -111,8 +111,10 @@ Route::middleware('auth:api')->group(function () {
     Route::put('/punch/correction/{id}/approve', [PunchCorrectionController::class, 'approve'])->middleware('can:approve_correction');
     Route::put('/punch/correction/{id}/reject', [PunchCorrectionController::class, 'reject'])->middleware('can:approve_correction');
 
-    // 人資看到所有申請資料(可以選擇查看日期範圍) (需要 `view_all_corrections` 權限)
+    // 人資看到所有補登打卡申請資料(可以選擇查看日期範圍) (需要 `view_all_corrections` 權限)
     Route::get('/corrections', [PunchCorrectionController::class, 'getAllCorrections'])->middleware('can:view_all_corrections');
+    // 人資看到所有人的打卡紀錄
+    Route::get('/attendancerecords', [PunchCorrectionController::class, 'getAllAttendanceRecords']);
 
 
     // 部門 API（需要 `manage_departments` 權限）
@@ -181,45 +183,45 @@ Route::middleware('auth:api')->group(function () {
     });
 
     // 假別規則API (需要加上Admin權限)
-    Route::middleware('auth:api')->prefix('leavetypes')->group(function () { 
+    Route::middleware('auth:api')->prefix('leavetypes')->group(function () {
         // 1. 增加假規
-        Route::post('/rules/add', [LeaveResetRuleController::class, 'store']);     
+        Route::post('/rules/add', [LeaveResetRuleController::class, 'store']);
         // 2. 更新假規
-        Route::patch('/rules/{id}', [LeaveResetRuleController::class, 'update']);    
+        Route::patch('/rules/{id}', [LeaveResetRuleController::class, 'update']);
         // 3. 查詢假規
-        Route::get('/rules', [LeaveResetRuleController::class, 'index']);     
+        Route::get('/rules', [LeaveResetRuleController::class, 'index']);
         // 4. 刪除假規
         Route::delete('/rules/{id}', [LeaveResetRuleController::class, 'destroy']);
     });
 
     // 請假功能
-    Route::middleware('auth:api')->prefix('leave')->group(function () {
-        // 1. 員工可以申請請假（需要 `request_leave` 權限）
-        Route::post('/request', [LeaveController::class, 'requestLeave'])->middleware('can:request_leave');
+    // Route::middleware('auth:api')->prefix('leave')->group(function () {
+    //     // 1. 員工可以申請請假（需要 `request_leave` 權限）
+    //     Route::post('/request', [LeaveController::class, 'requestLeave'])->middleware('can:request_leave');
 
-        // 2. 員工、主管、HR 可以查詢自己的請假紀錄（需要 `view_leave_records` 權限）
-        Route::get('/records', [LeaveController::class, 'viewMyLeaveRecords'])->middleware('can:view_leave_records');
+    //     // 2. 員工、主管、HR 可以查詢自己的請假紀錄（需要 `view_leave_records` 權限）
+    //     Route::get('/records', [LeaveController::class, 'viewMyLeaveRecords'])->middleware('can:view_leave_records');
 
-        // 3. 員工或 HR 可以刪除請假資料（需要 `delete_leave` 權限）
-        Route::delete('/{id}', [LeaveController::class, 'deleteLeave'])->middleware('can:delete_leave');
+    //     // 3. 員工或 HR 可以刪除請假資料（需要 `delete_leave` 權限）
+    //     Route::delete('/{id}', [LeaveController::class, 'deleteLeave'])->middleware('can:delete_leave');
 
-        // 4. 員工或 HR 可以更新請假資料（需要 `update_leave` 權限）
-        Route::post('/{id}', [LeaveController::class, 'updateLeave'])->middleware('can:update_leave');
+    //     // 4. 員工或 HR 可以更新請假資料（需要 `update_leave` 權限）
+    //     Route::post('/{id}', [LeaveController::class, 'updateLeave'])->middleware('can:update_leave');
 
-        // 5. 主管或 HR 可以查看本部門請假紀錄（需要 `view_department_leave_records` 權限）
-        Route::get('/department', [LeaveController::class, 'viewDepartmentLeaveRecords'])->middleware('can:view_department_leave_records');
+    //     // 5. 主管或 HR 可以查看本部門請假紀錄（需要 `view_department_leave_records` 權限）
+    //     Route::get('/department', [LeaveController::class, 'viewDepartmentLeaveRecords'])->middleware('can:view_department_leave_records');
 
-        // 6. HR 可以查看全公司的請假紀錄（需要 `view_company_leave_records` 權限）
-        Route::get('/company', [LeaveController::class, 'viewCompanyLeaveRecords'])->middleware('can:view_company_leave_records');
+    //     // 6. HR 可以查看全公司的請假紀錄（需要 `view_company_leave_records` 權限）
+    //     Route::get('/company', [LeaveController::class, 'viewCompanyLeaveRecords'])->middleware('can:view_company_leave_records');
 
 
-        // 7.HR 可以審核/駁回請假（需要 `approve_leave` 權限）
-        Route::patch('/{id}/approve', [LeaveController::class, 'approveLeave'])->middleware('can:approve_leave');
-        Route::patch('/{id}/reject', [LeaveController::class, 'rejectLeave'])->middleware('can:approve_leave');
-        
-        // 8.主管可以核准/駁回本部門請假單（需要 `approve_department_leave` 權限）
-        Route::patch('/{id}/department/approve', [LeaveController::class, 'approveDepartmentLeave'])->middleware('can:approve_department_leave');
-        Route::patch('/{id}/department/reject', [LeaveController::class, 'rejectDepartmentLeave'])->middleware('can:approve_department_leave');
-    });
+    //     // 7.HR 可以審核/駁回請假（需要 `approve_leave` 權限）
+    //     Route::patch('/{id}/approve', [LeaveController::class, 'approveLeave'])->middleware('can:approve_leave');
+    //     Route::patch('/{id}/reject', [LeaveController::class, 'rejectLeave'])->middleware('can:approve_leave');
+
+    //     // 8.主管可以核准/駁回本部門請假單（需要 `approve_department_leave` 權限）
+    //     Route::patch('/{id}/department/approve', [LeaveController::class, 'approveDepartmentLeave'])->middleware('can:approve_department_leave');
+    //     Route::patch('/{id}/department/reject', [LeaveController::class, 'rejectDepartmentLeave'])->middleware('can:approve_department_leave');
+    // });
 
 });
