@@ -6,10 +6,6 @@
         "contact": {
             "email": "admin@example.com"
         },
-        "license": {
-            "name": "Apache 2.0",
-            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
-        },
         "version": "1.0.0"
     },
     "paths": {
@@ -140,7 +136,7 @@
                 }
             }
         },
-        "/logout": {
+        "/api/logout": {
             "post": {
                 "tags": [
                     "Authentication"
@@ -225,7 +221,7 @@
                 ]
             }
         },
-        "/register": {
+        "/api/register": {
             "post": {
                 "tags": [
                     "Authentication"
@@ -313,12 +309,360 @@
                     }
                 }
             }
+        },
+        "/api/employees": {
+            "post": {
+                "tags": [
+                    "Employees"
+                ],
+                "summary": "HR 註冊新員工",
+                "description": "HR 註冊新員工，會建立 `User` 帳號並在 `Employee` 記錄中標記 `pending` 狀態。",
+                "operationId": "registerEmployeeByHR",
+                "requestBody": {
+                    "description": "HR 註冊新員工資訊",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password",
+                                    "password_confirmation",
+                                    "gender"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "description": "員工姓名",
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "description": "員工電子郵件",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john.doe@example.com"
+                                    },
+                                    "password": {
+                                        "description": "密碼",
+                                        "type": "string",
+                                        "example": "Password123!"
+                                    },
+                                    "password_confirmation": {
+                                        "description": "確認密碼",
+                                        "type": "string",
+                                        "example": "Password123!"
+                                    },
+                                    "gender": {
+                                        "description": "性別",
+                                        "type": "string",
+                                        "enum": [
+                                            "male",
+                                            "female"
+                                        ],
+                                        "example": "male"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "員工註冊成功，等待 HR 審核",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "員工已註冊，等待審核"
+                                        },
+                                        "user": {
+                                            "description": "使用者資訊",
+                                            "type": "object"
+                                        },
+                                        "employee": {
+                                            "description": "員工資訊",
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "驗證失敗"
+                    },
+                    "403": {
+                        "description": "權限不足"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/employees/{id}/review": {
+            "patch": {
+                "tags": [
+                    "Employees"
+                ],
+                "summary": "HR 批准 / 拒絕 員工註冊",
+                "description": "HR 可以批准或拒絕員工註冊申請。",
+                "operationId": "reviewEmployee",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "員工的 ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 3
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "選擇批准或拒絕員工註冊",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "description": "批准或拒絕",
+                                        "type": "string",
+                                        "enum": [
+                                            "approved",
+                                            "rejected"
+                                        ],
+                                        "example": "approved"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "操作成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "員工已批准"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "找不到員工",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "找不到員工"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "驗證失敗"
+                    },
+                    "403": {
+                        "description": "權限不足"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/employees/{id}/assign": {
+            "patch": {
+                "tags": [
+                    "Employees"
+                ],
+                "summary": "HR 分配部門、職位、主管、角色",
+                "description": "HR 指派員工的部門、職位、主管和角色。員工必須已通過審核 (approved) 才能指派。",
+                "operationId": "assignEmployeeDetails",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "員工的 ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 3
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "需要指派的部門、職位、主管、角色 ID",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "department_id",
+                                    "position_id",
+                                    "manager_id",
+                                    "role_id"
+                                ],
+                                "properties": {
+                                    "department_id": {
+                                        "description": "部門 ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "position_id": {
+                                        "description": "職位 ID",
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "manager_id": {
+                                        "description": "主管的使用者 ID",
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "role_id": {
+                                        "description": "角色 ID",
+                                        "type": "integer",
+                                        "example": 3
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "員工部門、職位、主管、角色已更新",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "員工部門、職位、主管、角色已更新"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "員工未通過審核，無法指派",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "無法指派，員工尚未通過審核"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "找不到員工",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "找不到員工"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "驗證失敗"
+                    },
+                    "403": {
+                        "description": "權限不足"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "User": {
+                "properties": {
+                    "id": {
+                        "description": "使用者 ID",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "description": "使用者名稱",
+                        "type": "string",
+                        "example": "John Doe"
+                    },
+                    "email": {
+                        "description": "電子郵件",
+                        "type": "string",
+                        "format": "email",
+                        "example": "john.doe@example.com"
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "description": "使用 JWT token進行認證，格式為 'Bearer {token}'",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
         }
     },
     "tags": [
         {
             "name": "Authentication",
             "description": "Authentication"
+        },
+        {
+            "name": "Employees",
+            "description": "Employees"
         }
     ]
 }
