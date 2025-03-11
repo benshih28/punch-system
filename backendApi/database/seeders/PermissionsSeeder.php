@@ -24,6 +24,7 @@ class PermissionsSeeder extends Seeder
             'approve_leave', // 主管/HR 可以「審核請假」
             'view_leave_records', // 員工/主管/HR 可以「查詢請假紀錄」
             'delete_leave', // 員工可以「刪除請假資料」
+            'update_leave',  // 員工或 HR 可以更新請假資料
             'view_department_leave_records', // 主管/HR 可以「查看部門請假紀錄」
             'view_company_leave_records', // HR 可以「查看全公司請假紀錄」
             'approve_department_leave', // 主管/HR 可以「核准/駁回本部門請假單」
