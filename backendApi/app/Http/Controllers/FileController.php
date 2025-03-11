@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Storage;
 // use Illuminate\Support\Facades\Log;
 // use App\Http\Controllers\Controller;
 
+
 class FileController extends Controller
 {
     // 上傳大頭貼 avatar
@@ -17,6 +18,7 @@ class FileController extends Controller
         $request->validate([
             'avatar' => 'required|image|mimes:jpg,jpeg,png|max:2048',
         ]);
+
 
         // 取得上傳的副檔名
         // $extension = $request->file('avatar')->getClientOriginalExtension();
@@ -48,6 +50,7 @@ class FileController extends Controller
         return response()->json([
             'message' => '大頭貼更新成功',
             'url' => Storage::url("avatars/" . $filename)
+
         ]);
     }
 
@@ -56,14 +59,17 @@ class FileController extends Controller
     {
         // $file = File::where('user_id', Auth::id())->first();
         $file = File::where('user_id', Auth::id())
+
             ->whereNotNull('avatar') // 確保 avatar 不是 NULL
             ->first();
+
 
         return response()->json([
             // 'avatar_url' => $file ? Storage::url("avatars/" . $file->avatar) : asset('default-avatar.png')
             'avatar_url' => $file && $file->avatar
                 ? Storage::url("avatars/" . $file->avatar) 
                 : null // 如NULL，則回傳 NULL
+
         ]);
     }
 
