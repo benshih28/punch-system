@@ -212,6 +212,7 @@ Route::middleware('auth:api')->group(function () {
         // 6. HR 可以查看全公司的請假紀錄（需要 `view_company_leave_records` 權限）
         Route::get('/company', [LeaveController::class, 'viewCompanyLeaveRecords'])->middleware('can:view_company_leave_records');
 
+
         // 7.HR 可以審核/駁回請假（需要 `approve_leave` 權限）
         Route::patch('/{id}/approve', [LeaveController::class, 'approveLeave'])->middleware('can:approve_leave');
         Route::patch('/{id}/reject', [LeaveController::class, 'rejectLeave'])->middleware('can:approve_leave');
