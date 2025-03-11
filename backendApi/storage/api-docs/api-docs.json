@@ -373,6 +373,337 @@
                     }
                 }
             }
+        },
+        "/api/leavetypes/add": {
+            "post": {
+                "tags": [
+                    "Leave Types"
+                ],
+                "summary": "新增請假類型",
+                "description": "此 API 允許新增請假類型，請確保名稱是唯一的。",
+                "operationId": "0bdece7f275cf298a4a3aae621c548ca",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "description": "請假類型的英文名稱",
+                                        "type": "string",
+                                        "example": "Annual Leave"
+                                    },
+                                    "description": {
+                                        "description": "請假類型的中文名稱",
+                                        "type": "string",
+                                        "example": "年假"
+                                    },
+                                    "total_hours": {
+                                        "description": "假別總時數（可選）",
+                                        "type": "integer",
+                                        "example": 40
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "假別新增成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "假別新增成功"
+                                        },
+                                        "leave_type": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Annual Leave"
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "example": "年假"
+                                                },
+                                                "total_hours": {
+                                                    "type": "integer",
+                                                    "example": 40
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "請求資料驗證失敗",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "請假類型名稱已存在"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "未授權，請提供 JWT Token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "未授權"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/leavetypes/update/{id}": {
+            "put": {
+                "tags": [
+                    "Leave Types"
+                ],
+                "summary": "修改請假類型",
+                "description": "此 API 允許修改請假類型，請確保名稱是唯一的。",
+                "operationId": "f6b9d6c06a4ef3b0121faae58fd20802",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "請假類型 ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "description": "請假類型的英文名稱",
+                                        "type": "string",
+                                        "example": "Sick Leave"
+                                    },
+                                    "description": {
+                                        "description": "請假類型的中文名稱",
+                                        "type": "string",
+                                        "example": "病假"
+                                    },
+                                    "total_hours": {
+                                        "description": "假別總時數（可選）",
+                                        "type": "integer",
+                                        "example": 20
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "假別更新成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "假別更新成功"
+                                        },
+                                        "leave_type": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Sick Leave"
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "example": "病假"
+                                                },
+                                                "total_hours": {
+                                                    "type": "integer",
+                                                    "example": 20
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "請假類型不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "找不到該請假類型"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/leavetypes/{id}": {
+            "delete": {
+                "tags": [
+                    "Leave Types"
+                ],
+                "summary": "刪除請假類型",
+                "description": "此 API 允許刪除請假類型。",
+                "operationId": "6c138bd7d03d7ebc6c196fc61523cf91",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "請假類型 ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "假別刪除成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "假別刪除成功"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "請假類型不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "找不到該請假類型"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/leavetypes/": {
+            "get": {
+                "tags": [
+                    "Leave Types"
+                ],
+                "summary": "取得所有請假類型",
+                "description": "此 API 取得所有請假類型，通常用於前端的請假類型選單。",
+                "operationId": "b75be6d7d971fbe758b6e77b3dbe7847",
+                "responses": {
+                    "200": {
+                        "description": "請假類型列表",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "name": {
+                                                "type": "string",
+                                                "example": "Annual Leave"
+                                            },
+                                            "description": {
+                                                "type": "string",
+                                                "example": "年假"
+                                            },
+                                            "total_hours": {
+                                                "type": "integer",
+                                                "example": 40
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -412,6 +743,10 @@
         {
             "name": "Authentication",
             "description": "Authentication"
+        },
+        {
+            "name": "Leave Types",
+            "description": "Leave Types"
         }
     ]
 }
