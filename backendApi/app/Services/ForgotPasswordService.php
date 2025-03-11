@@ -19,11 +19,10 @@ class ForgotPasswordService
             return response()->json(['message' => '該 Email 未註冊'], 404);
         }
 
-        // 產生符合密碼規則的 9 位數強密碼
+        // 產生符合密碼規則的 8 位數密碼
         $newPassword = $this->generateStrongPassword();
 
         // 產生新密碼
-        //$newPassword = substr(md5(uniqid()), 0, 10);
         $user->password = Hash::make($newPassword);
         $user->save();
 
@@ -34,7 +33,7 @@ class ForgotPasswordService
     }
 
      /**
-     * 產生符合 Laravel 安全規則的 9 位數強密碼
+     * 產生符合安全規則的 8 位數密碼
      */
     private function generateStrongPassword()
     {
@@ -42,12 +41,13 @@ class ForgotPasswordService
         $uppercase = chr(rand(65, 90)); // A-Z
         $lowercase = chr(rand(97, 122)); // a-z
         $number = chr(rand(48, 57)); // 0-9
-        $symbol = chr(rand(33, 47)); // 特殊符號 !, ", #, $, %, &
+        $symbols = '!#$%&*+-./'; //特殊符號
+        $symbol = $symbols[rand(0, strlen($symbols) - 1)]; // 隨機選擇一個特殊符號
 
-        // 剩下的 5 個字元隨機生成
-        $remaining = substr(str_shuffle(str_repeat('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', 5)), 0, 5);
+        // 剩下的 4 個字元隨機生成
+        $remaining = substr(str_shuffle(str_repeat('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', 4)), 0, 4);
 
-        // 組合密碼並打亂
+        // 組合密碼並打亂(共八位數)
         $password = str_shuffle($uppercase . $lowercase . $number . $symbol . $remaining);
 
         return $password;
