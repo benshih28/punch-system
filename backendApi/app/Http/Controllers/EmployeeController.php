@@ -12,10 +12,106 @@ use Illuminate\Support\Facades\DB;
 
 class EmployeeController extends Controller
 {
-    // ✅ 取得所有員工列表（HR 介面）
-    public function index()
+    /**
+     * @OA\Get(
+     *     path="/api/employees",
+     *     summary="取得所有員工列表（HR 介面）",
+     *     description="HR 取得所有員工的資訊，包含部門、職位、員工姓名、主管 ID、角色、狀態。",
+     *     tags={"Employees"},
+     *     security={{ "bearerAuth": {} }},
+     *
+     *     @OA\Parameter(
+     *         name="department_id",
+     *         in="query",
+     *         description="篩選特定部門 ID 的員工",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=2)
+     *     ),
+     *     @OA\Parameter(
+     *         name="role_id",
+     *         in="query",
+     *         description="篩選特定角色 ID 的員工",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=3)
+     *     ),
+     *     @OA\Parameter(
+     *         name="user_id",
+     *         in="query",
+     *         description="篩選特定使用者 ID",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=5)
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="每頁顯示的筆數",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=10)
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="目前頁數",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="成功取得員工列表",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="成功獲取員工列表"),
+     *             @OA\Property(property="meta", type="object",
+     *                 @OA\Property(property="current_page", type="integer", example=1),
+     *                 @OA\Property(property="per_page", type="integer", example=10),
+     *                 @OA\Property(property="total", type="integer", example=50),
+     *                 @OA\Property(property="last_page", type="integer", example=5)
+     *             ),
+     *             @OA\Property(property="data", type="array",
+     *                 @OA\Items(
+     *                     @OA\Property(property="department", type="string", example="IT 部門"),
+     *                     @OA\Property(property="position", type="string", example="軟體工程師"),
+     *                     @OA\Property(property="employee_name", type="string", example="ben"),
+     *                     @OA\Property(property="manager_id", type="integer", example=3),
+     *                     @OA\Property(property="roles", type="string", example="員工"),
+     *                     @OA\Property(property="status", type="string", enum={"pending", "approved", "rejected", "inactive"}, example="approved")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="未授權，請提供有效 Token"),
+     *     @OA\Response(response=403, description="沒有權限存取"),
+     *     @OA\Response(response=500, description="伺服器錯誤")
+     * )
+     */
+    public function index(Request $request) // 取得所有員工列表（HR 介面）
     {
-        return response()->json(Employee::all(), 200);
+        $departmentId = $request->query('department_id');
+        $roleId = $request->query('role_id');
+        $userId = $request->query('user_id') ?: null;
+        $perPage = $request->query('per_page', 10);
+        $page = $request->query('page', 1);
+        $offset = ($page - 1) * $perPage;
+
+        $employees = DB::select('CALL GetEmployees(?, ?, ?, ?, ?)', [
+            $departmentId ?: null,
+            $roleId ?: null,
+            $userId,
+            $perPage,
+            $offset
+        ]);
+
+        return response()->json([
+            'message' => '成功獲取員工列表',
+            'meta' => [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => count($employees), // 這裡需要額外查詢總數
+                'last_page' => ceil(count($employees) / $perPage),
+            ],
+            'data' => $employees
+        ], 200);
     }
 
 
@@ -141,7 +237,7 @@ class EmployeeController extends Controller
      *     )
      * )
      */
-    public function reviewEmployee(Request $request, $id)// HR 批准 / 拒絕 員工註冊
+    public function reviewEmployee(Request $request, $id) // HR 批准 / 拒絕 員工註冊
     {
         $request->validate([
             'status' => 'required|in:approved,rejected',
@@ -258,7 +354,39 @@ class EmployeeController extends Controller
             'message' => '員工部門、職位、主管、角色已更新'
         ], 200);
     }
-
+    /**
+     * @OA\Delete(
+     *     path="/api/employees/{id}",
+     *     summary="HR 刪除員工 (標記為離職)",
+     *     description="HR 可以將員工標記為離職 (inactive)，而不是真正刪除資料。",
+     *     operationId="deleteEmployee",
+     *     tags={"Employees"},
+     *     security={{ "bearerAuth":{} }},
+     *
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="員工 ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="員工已標記為離職",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="員工已標記為離職")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="找不到員工",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="找不到員工")
+     *         )
+     *     )
+     * )
+     */
     public function destroy($id)    // HR 刪除員工
     {
         $employee = Employee::find($id);
@@ -275,27 +403,56 @@ class EmployeeController extends Controller
     }
 
 
-    public function getEmployeeManager($id) // 員工查詢自己的主管
-    {
-        $employee = Employee::with('manager')->find($id);
-
-        if (!$employee) {
-            return response()->json(['message' => '找不到員工'], 404);
-        }
-
-        return response()->json($employee->manager);
-    }
-
-    // ✅ 主管查詢自己管理的員工
-    public function getMyEmployees()
+    /**
+     * @OA\Get(
+     *     path="/api/my/employees",
+     *     summary="取得主管管理的員工 ID",
+     *     description="返回當前登入使用者作為主管時，所管理的員工 user_id 列表。",
+     *     operationId="getMyEmployees",
+     *     tags={"Employee"},
+     *     security={{"bearerAuth":{}}}, 
+     *     @OA\Response(
+     *         response=200,
+     *         description="成功獲取主管管理的員工 ID",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="成功獲取你管理的員工"),
+     *             @OA\Property(
+     *                 property="user_ids",
+     *                 type="array",
+     *                 @OA\Items(type="integer", example=10),
+     *                 description="員工的 user_id 列表"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="當前使用者沒有管理任何員工",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="你沒有管理任何員工")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="未授權，Token 無效或未提供",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="Unauthorized")
+     *         )
+     *     )
+     * )
+     */
+    public function getMyEmployees() // 主管查詢自己管理的員工
     {
         $user = auth()->user();
-        $employees = Employee::where('manager_id', $user->id)->get();
+        $employees = Employee::where('manager_id', $user->id)
+            ->pluck('user_id'); // 只取出 user_id
 
         if ($employees->isEmpty()) {
             return response()->json(['error' => '你沒有管理任何員工'], 403);
         }
 
-        return response()->json($employees);
+        return response()->json([
+            'message' => '成功獲取你管理的員工',
+            'user_ids' => $employees
+        ]);
     }
 }

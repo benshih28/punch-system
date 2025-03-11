@@ -157,8 +157,8 @@ Route::middleware('auth:api')->group(function () {
 
         // 刪除員工（需要 `delete_employee` 權限）
         Route::delete('/{id}', [EmployeeController::class, 'destroy'])->middleware('can:delete_employee');
-        // 查詢主管
-        Route::get('/{id}/manager', [EmployeeController::class, 'getEmployeeManager']);
+        // // 查詢主管
+        // Route::get('/{id}/manager', [EmployeeController::class, 'getEmployeeManager']);
     });
 
 
