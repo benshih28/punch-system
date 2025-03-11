@@ -15,7 +15,7 @@ class RegisteredUserController extends Controller
 {
     /**
      * @OA\Post(
-     *     path="/register",
+     *     path="/api/register",
      *     summary="使用者註冊",
      *     description="用戶註冊新帳號",
      *     operationId="registerUser",
