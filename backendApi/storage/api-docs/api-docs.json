@@ -374,6 +374,336 @@
                 }
             }
         },
+        "/api/leavetypes/rules/add": {
+            "post": {
+                "tags": [
+                    "Leave Reset Rules"
+                ],
+                "summary": "新增假規",
+                "description": "此 API 允許新增假規。",
+                "operationId": "c7962a8aceb313343e3aae5eb58a08fb",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "leave_type_id": {
+                                        "description": "對應的假別類型 ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "rule_type": {
+                                        "description": "假規類型，可選 `yearly` 或 `monthly`",
+                                        "type": "string",
+                                        "example": "yearly"
+                                    },
+                                    "rule_value": {
+                                        "description": "假規值，例如 '01-01' 代表每年 1 月 1 日重置",
+                                        "type": "string",
+                                        "example": "01-01"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "假規新增成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "新增成功"
+                                        },
+                                        "rule": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "leave_type_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "rule_type": {
+                                                    "type": "string",
+                                                    "example": "yearly"
+                                                },
+                                                "rule_value": {
+                                                    "type": "string",
+                                                    "example": "01-01"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "請求資料驗證失敗",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "請提供有效的 leave_type_id"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/leavetypes/rules/{id}": {
+            "delete": {
+                "tags": [
+                    "Leave Reset Rules"
+                ],
+                "summary": "刪除假規",
+                "description": "此 API 允許刪除假規。",
+                "operationId": "668b3429dbd91b023baadea13e749810",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "假規 ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "假規刪除成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "刪除成功"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "假規不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "找不到該假規"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Leave Reset Rules"
+                ],
+                "summary": "更新假規",
+                "description": "此 API 允許修改假規。",
+                "operationId": "2a649905e7efa286b8acf1d30fb10ef3",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "假規 ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "leave_type_id": {
+                                        "description": "對應的假別類型 ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "rule_type": {
+                                        "description": "假規類型，可選 `yearly` 或 `monthly`",
+                                        "type": "string",
+                                        "example": "monthly"
+                                    },
+                                    "rule_value": {
+                                        "description": "假規值，例如 '15' 代表每月 15 日重置",
+                                        "type": "string",
+                                        "example": "15"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "假規更新成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "更新成功"
+                                        },
+                                        "rule": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "leave_type_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "rule_type": {
+                                                    "type": "string",
+                                                    "example": "monthly"
+                                                },
+                                                "rule_value": {
+                                                    "type": "string",
+                                                    "example": "15"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "假規不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "找不到該假規"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/leavetypes/rules": {
+            "get": {
+                "tags": [
+                    "Leave Reset Rules"
+                ],
+                "summary": "取得所有假規",
+                "description": "此 API 取得所有假規。",
+                "operationId": "c01b17be8bc14ad6a00b647855939c4b",
+                "responses": {
+                    "200": {
+                        "description": "假規列表",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "leave_type_id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "rule_type": {
+                                                "type": "string",
+                                                "example": "yearly"
+                                            },
+                                            "rule_value": {
+                                                "type": "string",
+                                                "example": "01-01"
+                                            },
+                                            "leave_type": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Annual Leave"
+                                                    },
+                                                    "description": {
+                                                        "type": "string",
+                                                        "example": "年假"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/leavetypes/add": {
             "post": {
                 "tags": [
@@ -743,6 +1073,10 @@
         {
             "name": "Authentication",
             "description": "Authentication"
+        },
+        {
+            "name": "Leave Reset Rules",
+            "description": "Leave Reset Rules"
         },
         {
             "name": "Leave Types",
