@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\File;
 use Illuminate\Support\Facades\Storage;
+// use Illuminate\Support\Facades\Log;
+// use App\Http\Controllers\Controller;
+
 
 class FileController extends Controller
 {
@@ -16,24 +19,38 @@ class FileController extends Controller
             'avatar' => 'required|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-        // 設定檔案名稱
-        $filename = 'avatar_' . Auth::id() . '_' . time() . '.' . $request->file('avatar')->getClientOriginalExtension();
 
-        // 存放到 `storage/app/public/avatars/`
+        // 取得上傳的副檔名
+        // $extension = $request->file('avatar')->getClientOriginalExtension();
+        $hash = hash('sha256', Auth::id() . time()); // 產生雜湊值
+        $filename = 'avatar_' . Auth::id() . '.' . $hash;
+
+        // 取得目前的 `avatar` 記錄
+        $file = File::where('user_id', Auth::id())->whereNull('leave_id')->first();
+        $oldFilename = $file ? $file->avatar : null;
+
+        // 刪除舊的大頭貼
+        if ($oldFilename && Storage::disk('public')->exists("avatars/{$oldFilename}")) {
+            Storage::disk('public')->delete("avatars/{$oldFilename}");
+        }
+
+        // 存放到 storage/app/public/avatars/
         $path = $request->file('avatar')->storeAs('avatars', $filename, 'public');
 
-        // 刪除舊大頭貼
-        File::where('user_id',  Auth::id())->whereNull('leave_id')->delete();
+        // ✅ 更新或新增大頭貼記錄
+        File::updateOrCreate(
+            ['user_id' => Auth::id(), 'leave_id' => null], // 搜尋條件
+            ['avatar' => $filename] // 更新的值
+        );
 
-        // 新增大頭貼記錄
-        $file = File::create([
-            'user_id' => Auth::id(),
-            'avatar' => $filename // 只存 filename，不存 path
-        ]);
+        // **新增 DEBUG LOG**
+        // Log::info("Avatar uploaded: " . $filename);
+        // Log::info("Storage URL: " . Storage::url("avatars/" . $filename));
 
         return response()->json([
             'message' => '大頭貼更新成功',
-            'url' => Storage::url("avatars/" . $file->avatar)
+            'url' => Storage::url("avatars/" . $filename)
+
         ]);
     }
 
@@ -42,15 +59,17 @@ class FileController extends Controller
     {
         // $file = File::where('user_id', Auth::id())->first();
         $file = File::where('user_id', Auth::id())
-                ->whereNotNull('avatar') // ✅ 確保 avatar 不是 NULL
-                ->first();
+
+            ->whereNotNull('avatar') // 確保 avatar 不是 NULL
+            ->first();
+
 
         return response()->json([
             // 'avatar_url' => $file ? Storage::url("avatars/" . $file->avatar) : asset('default-avatar.png')
             'avatar_url' => $file && $file->avatar
-                ? Storage::url("avatars/" . $file->avatar) // ✅ 存在則回傳檔案 URL
-                // : asset('default-avatar.png') // ✅ 如果 `NULL`，則回傳預設圖片
-                : null // ✅ 如果 `NULL`，則回傳 `NULL`
+                ? Storage::url("avatars/" . $file->avatar) 
+                : null // 如NULL，則回傳 NULL
+
         ]);
     }
 
