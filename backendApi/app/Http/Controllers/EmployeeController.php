@@ -82,12 +82,16 @@ class EmployeeController extends Controller
     public function destroy($id)
     {
         $employee = Employee::find($id);
+    
         if (!$employee) {
             return response()->json(['error' => '找不到員工'], 404);
         }
-
-        $employee->delete();
-        return response()->json(['message' => '員工刪除成功']);
+    
+        // ✅ 直接將狀態標記為 `inactive`
+        $employee->status = 'inactive';
+        $employee->save();
+    
+        return response()->json(['message' => '員工已標記為離職'], 200);
     }
 
     // ✅ 員工查詢自己的主管
