@@ -1,4 +1,5 @@
 <?php
+
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use Illuminate\Support\Facades\Route;
@@ -18,9 +19,6 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\LeaveTypeController;
 use App\Http\Controllers\LeaveResetRuleController;
 
-
-
-
 // 公開 API（不需要登入）
 // 註冊
 Route::post('/register', [RegisteredUserController::class, 'store']);
@@ -39,7 +37,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/user', function (Request $request) {
         return response()->json($request->user());
     });
-    
+
     // 🟢 大頭貼
     Route::post('/upload/avatar', [FileController::class, 'uploadAvatar'])->middleware('auth');
     Route::get('/avatar', [FileController::class, 'getAvatar'])->middleware('auth');
@@ -56,14 +54,13 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/in', [PunchController::class, 'punchIn']);
         Route::post('/out', [PunchController::class, 'punchOut']);
         // 打卡補登請求
-        Route::post('/correction', [PunchCorrectionController::class, 'store']); 
+        Route::post('/correction', [PunchCorrectionController::class, 'store']);
         // 個人的補登打卡紀錄表單(可以選擇查看日期範圍)
-        Route::get('/correction', [PunchCorrectionController::class, 'getUserCorrections']); 
+        Route::get('/correction', [PunchCorrectionController::class, 'getUserCorrections']);
     });
 
-    // 查詢當前使用者打卡紀錄
-    Route::get('/attendance/finalrecords', [PunchCorrectionController::class, 'getFinalAttendanceRecords']);
-
+    // 查詢打卡紀錄
+    Route::get('/attendance/records', [PunchCorrectionController::class, 'getAttendanceRecords']);
 
 
     //  只有 HR & Admin 才能存取的 API
@@ -79,31 +76,31 @@ Route::middleware('auth:api')->group(function () {
             // 移除 `permissions`
             Route::delete('/{role}/permissions', [RoleController::class, 'revokePermission']);
             // 取得角色permissions
-            Route::get('/{role}/permissions', [RoleController::class, 'getRolePermissions']); 
+            Route::get('/{role}/permissions', [RoleController::class, 'getRolePermissions']);
         });
 
-    // 使用者角色管理 API (只處理「使用者」)
-    Route::prefix('/users')->group(function () {
-        // 指派 `roles` 給 `users`
-        Route::post('/{userId}/assign/roles', [UserRoleController::class, 'assignRoleToUser']);
-        // 移除 `roles`
-        Route::delete('/{userId}/revoke/roles', [UserRoleController::class, 'revokeRoleFromUser']);
-        // 取得 `users` 的 `roles`
-        Route::get('/{userId}/roles', [UserRoleController::class, 'getUserRoles']);
-        // 取得 `users` 的 `permissions`
-        Route::get('/{userId}/permissions', [UserRoleController::class, 'getUserPermissions']);
-    });
+        // 使用者角色管理 API (只處理「使用者」)
+        Route::prefix('/users')->group(function () {
+            // 指派 `roles` 給 `users`
+            Route::post('/{userId}/assign/roles', [UserRoleController::class, 'assignRoleToUser']);
+            // 移除 `roles`
+            Route::delete('/{userId}/revoke/roles', [UserRoleController::class, 'revokeRoleFromUser']);
+            // 取得 `users` 的 `roles`
+            Route::get('/{userId}/roles', [UserRoleController::class, 'getUserRoles']);
+            // 取得 `users` 的 `permissions`
+            Route::get('/{userId}/permissions', [UserRoleController::class, 'getUserPermissions']);
+        });
 
 
-    // 權限管理 API
-    Route::prefix('/permissions')->group(function () {
-        // 新增權限
-        Route::post('/', [RoleController::class, 'createPermission']);
-        // 取得所有權限 
-        Route::get('/', [RoleController::class, 'getAllPermissions']);
-        // 刪除權限 
-        Route::delete('/{id}', [RoleController::class, 'deletePermission']); 
-    });
+        // 權限管理 API
+        Route::prefix('/permissions')->group(function () {
+            // 新增權限
+            Route::post('/', [RoleController::class, 'createPermission']);
+            // 取得所有權限 
+            Route::get('/', [RoleController::class, 'getAllPermissions']);
+            // 刪除權限 
+            Route::delete('/{id}', [RoleController::class, 'deletePermission']);
+        });
 
 
         // 打卡補登審核通過或未通過
@@ -112,66 +109,66 @@ Route::middleware('auth:api')->group(function () {
 
         // 人資看到所有申請資料(可以選擇查看日期範圍)
         Route::get('/corrections', [PunchCorrectionController::class, 'getAllCorrections']);
+        // 讓人資查看所有人的打卡紀錄
+        Route::get('/allattendance/records', [PunchCorrectionController::class, 'getAllFinalAttendanceRecords']);
 
 
         // 🔹 部門 API
         Route::prefix('/departments')->group(function () {
             // 取得所有部門
-            Route::get('/', [DepartmentController::class, 'index']); 
+            Route::get('/', [DepartmentController::class, 'index']);
             // 新增部門
-            Route::post('/', [DepartmentController::class, 'store']); 
+            Route::post('/', [DepartmentController::class, 'store']);
             // 更新部門
-            Route::patch('/{id}', [DepartmentController::class, 'update']); 
+            Route::patch('/{id}', [DepartmentController::class, 'update']);
             // 刪除部門
-            Route::delete('/{id}', [DepartmentController::class, 'destroy']); 
+            Route::delete('/{id}', [DepartmentController::class, 'destroy']);
         });
 
         // 🔹 職位 API
         Route::prefix('/positions')->group(function () {
             // 取得所有職位
-            Route::get('/', [PositionController::class, 'index']); 
+            Route::get('/', [PositionController::class, 'index']);
             // 根據部門篩選職位
-            Route::get('/by/department/{name}', [PositionController::class, 'getByDepartment']); 
+            Route::get('/by/department/{name}', [PositionController::class, 'getByDepartment']);
             // 為部門指派職位
-            Route::post('/by/department/{name}', [PositionController::class, 'assignPositionToDepartment']); 
+            Route::post('/by/department/{name}', [PositionController::class, 'assignPositionToDepartment']);
             // 新增職位
-            Route::post('/', [PositionController::class, 'store']); 
+            Route::post('/', [PositionController::class, 'store']);
             // 更新職位
-            Route::patch('/{id}', [PositionController::class, 'update']); 
+            Route::patch('/{id}', [PositionController::class, 'update']);
             // 刪除職位
-            Route::delete('/{id}', [PositionController::class, 'destroy']); 
+            Route::delete('/{id}', [PositionController::class, 'destroy']);
         });
 
 
         //人員管理 API
         Route::prefix('/employees')->group(function () {
             // 取得所有員工
-            Route::get('/', [EmployeeController::class, 'index']); 
+            Route::get('/', [EmployeeController::class, 'index']);
             // 註冊員工
-            Route::post('/', [EmployeeController::class, 'store']); 
+            Route::post('/', [EmployeeController::class, 'store']);
             // HR 審核
-            Route::patch('/{id}/review', [EmployeeController::class, 'reviewEmployee']); 
+            Route::patch('/{id}/review', [EmployeeController::class, 'reviewEmployee']);
             // 分配職位 & 部門
-            Route::patch('/{id}/assign', [EmployeeController::class, 'assignDepartmentAndPosition']); 
+            Route::patch('/{id}/assign', [EmployeeController::class, 'assignDepartmentAndPosition']);
             // 刪除員工
-            Route::delete('/{id}', [EmployeeController::class, 'destroy']); 
+            Route::delete('/{id}', [EmployeeController::class, 'destroy']);
             // 查詢主管
-            Route::get('/{id}/manager', [EmployeeController::class, 'getEmployeeManager']); 
+            Route::get('/{id}/manager', [EmployeeController::class, 'getEmployeeManager']);
         });
-
-
     });
 
     Route::middleware(['auth:api', 'isManager'])->group(function () {
         // 主管查詢自己管理的員工
-        Route::get('/my/employees', [EmployeeController::class, 'getMyEmployees']); 
+        Route::get('/my/employees', [EmployeeController::class, 'getMyEmployees']);
     });
 
     // 假別功能API (需要加上Admin權限) 
     Route::middleware('auth:api')->prefix('leavetypes')->group(function () {
         // 1. 新增假別API
         Route::post('/add', [LeaveTypeController::class, 'store']);
-       // 2. 修改假別API
+        // 2. 修改假別API
         Route::put('/update/{id}', [LeaveTypeController::class, 'update']);
         // 3. 刪除假別API
         Route::delete('/{id}', [LeaveTypeController::class, 'destroy']);
@@ -180,15 +177,14 @@ Route::middleware('auth:api')->group(function () {
     });
 
     // 假別規則API (需要加上Admin權限)
-    Route::middleware('auth:api')->prefix('leavetypes')->group(function () { 
+    Route::middleware('auth:api')->prefix('leavetypes')->group(function () {
         // 1. 增加假規
-        Route::post('/rules/add', [LeaveResetRuleController::class, 'store']);     
+        Route::post('/rules/add', [LeaveResetRuleController::class, 'store']);
         // 2. 更新假規
-        Route::patch('/rules/{id}', [LeaveResetRuleController::class, 'update']);    
+        Route::patch('/rules/{id}', [LeaveResetRuleController::class, 'update']);
         // 3. 查詢假規
-        Route::get('/rules', [LeaveResetRuleController::class, 'index']);     
+        Route::get('/rules', [LeaveResetRuleController::class, 'index']);
         // 4. 刪除假規
         Route::delete('/rules/{id}', [LeaveResetRuleController::class, 'destroy']);
     });
-
 });
