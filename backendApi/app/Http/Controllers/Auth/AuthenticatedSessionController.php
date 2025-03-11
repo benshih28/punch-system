@@ -10,7 +10,7 @@ class AuthenticatedSessionController extends Controller
 {
     /**
      * @OA\Post(
-     *     path="/login",
+     *     path="/api/login",
      *     summary="使用者登入",
      *     description="用戶使用電子郵件和密碼登入系統，成功後返回 JWT token",
      *     operationId="loginUser",
@@ -85,7 +85,7 @@ class AuthenticatedSessionController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/logout",
+     *     path="/api/logout",
      *     summary="使用者登出",
      *     description="用戶登出系統，使當前 JWT token失效",
      *     operationId="logoutUser",
