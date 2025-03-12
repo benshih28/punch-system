@@ -12,7 +12,7 @@ class PositionController extends Controller
     // 取得所有職位 (包含部門名稱)
     /**
      * @OA\Get(
-     *     path="/positions",
+     *     path="/api/positions",
      *     summary="取得所有職位",
      *     description="返回所有職位列表，包含部門名稱",
      *     operationId="getAllPositions",
@@ -54,7 +54,7 @@ class PositionController extends Controller
     // 新增職位
     /**
      * @OA\Post(
-     *     path="/positions",
+     *     path="/api/positions",
      *     summary="新增職位",
      *     description="建立一個新的職位",
      *     operationId="createPosition",
@@ -102,7 +102,7 @@ class PositionController extends Controller
     // 根據部門篩選職位
     /**
      * @OA\Get(
-     *     path="/positions/by/department/{name}",
+     *     path="/api/positions/by/department/{name}",
      *     summary="根據部門篩選職位",
      *     description="根據部門名稱篩選職位",
      *     operationId="getPositionsByDepartment",
@@ -158,7 +158,7 @@ class PositionController extends Controller
     // 為部門指派職位
     /**
      * @OA\Post(
-     *     path="/positions/by/department/{name}",
+     *     path="/api/positions/by/department/{name}",
      *     summary="為部門指派職位",
      *     description="將職位指派到特定部門",
      *     operationId="assignPositionToDepartment",
@@ -223,7 +223,7 @@ class PositionController extends Controller
     // 更新職位
     /**
      * @OA\Patch(
-     *     path="/positions/{id}",
+     *     path="/api/positions/{id}",
      *     summary="更新職位",
      *     description="更新職位名稱或所屬部門",
      *     operationId="updatePosition",
@@ -283,7 +283,7 @@ class PositionController extends Controller
     // 刪除職位
     /**
      * @OA\Delete(
-     *     path="/positions/{id}",
+     *     path="/api/positions/{id}",
      *     summary="刪除職位",
      *     description="刪除指定職位",
      *     operationId="deletePosition",

@@ -21,7 +21,7 @@ class PunchCorrectionController extends Controller
     // 提交補登請求
     /**
      * @OA\Post(
-     *     path="/correction",
+     *     path="/api/punch/correction",
      *     summary="提交補登請求",
      *     description="使用者提交補登請求",
      *     operationId="requestPunchCorrection",
@@ -96,7 +96,7 @@ class PunchCorrectionController extends Controller
     // 管理員審核（批准）
     /**
      * @OA\Put(
-     *     path="/punch/correction/{id}/approve",
+     *     path="/api/punch/correction/{id}/approve",
      *     summary="審核補登申請（通過）",
      *     description="管理員審核通過補登申請",
      *     operationId="approvePunchCorrection",
@@ -159,7 +159,7 @@ class PunchCorrectionController extends Controller
     // 管理員審核（拒絕）
     /**
      * @OA\Put(
-     *     path="/punch/correction/{id}/reject",
+     *     path="/api/punch/correction/{id}/reject",
      *     summary="審核補登申請（拒絕）",
      *     description="管理員拒絕補登申請",
      *     operationId="rejectPunchCorrection",
@@ -224,7 +224,7 @@ class PunchCorrectionController extends Controller
     // 使用者可以查看自己的所有打卡補登紀錄(可選擇日期範圍)
     /**
      * @OA\Get(
-     *     path="/correction",
+     *     path="/api/punch/correction",
      *     summary="取得個人補登紀錄",
      *     description="使用者可查詢自己的補登紀錄（可篩選日期）",
      *     operationId="getUserPunchCorrections",
@@ -299,7 +299,7 @@ class PunchCorrectionController extends Controller
     // 個人的打卡紀錄
     /**
      * @OA\Get(
-     *     path="/attendance/record",
+     *     path="/api/attendance/record",
      *     summary="取得個人打卡紀錄",
      *     description="使用者可以查詢自己的打卡紀錄（依日期範圍篩選）",
      *     operationId="getUserAttendanceRecords",
@@ -339,7 +339,7 @@ class PunchCorrectionController extends Controller
     // 讓人資看到所有人的打卡紀錄
         /**
      * @OA\Get(
-     *     path="/attendancerecords",
+     *     path="/api/attendancerecords",
      *     summary="查詢所有員工的打卡紀錄",
      *     description="人資或主管可查詢所有員工的打卡紀錄（可依部門、使用者ID、年份、月份篩選）",
      *     operationId="getAllAttendanceRecords",
@@ -545,7 +545,7 @@ class PunchCorrectionController extends Controller
     // 人資查看所有補登打卡申請
     /**
      * @OA\Get(
-     *     path="/corrections",
+     *     path="/api/corrections",
      *     summary="查看所有補登申請",
      *     description="人資可查看所有補登申請（可篩選日期）",
      *     operationId="getAllPunchCorrections",
