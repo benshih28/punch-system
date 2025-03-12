@@ -375,6 +375,198 @@
                 }
             }
         },
+        "/api/departments": {
+            "get": {
+                "tags": [
+                    "Departments"
+                ],
+                "summary": "取得所有部門",
+                "description": "此 API 取得所有部門。",
+                "operationId": "da8820891dd6bf08713e9d77fbe6389f",
+                "responses": {
+                    "200": {
+                        "description": "成功獲取所有部門",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "成功獲取所有部門"
+                                        },
+                                        "departments": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Department"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "未授權，請提供有效的 Bearer Token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "未授權的請求"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Departments"
+                ],
+                "summary": "新增部門",
+                "description": "此 API 新增部門",
+                "operationId": "c0f48115550ccf6a76b43ff263bfc05c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "人資部"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "部門已新增",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "部門已新增"
+                                        },
+                                        "department": {}
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "請求驗證錯誤"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/departments/{id}": {
+            "delete": {
+                "tags": [
+                    "Departments"
+                ],
+                "summary": "刪除部門",
+                "operationId": "5cc7aebc708fbbbeb04b81504f62b499",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "部門 ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "部門刪除成功"
+                    },
+                    "404": {
+                        "description": "找不到部門"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Departments"
+                ],
+                "summary": "更新部門名稱",
+                "operationId": "86358cf8bb4f728cb89a0b4225133b63",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "部門 ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "研發部"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "部門更新成功"
+                    },
+                    "404": {
+                        "description": "找不到部門"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/employees": {
             "get": {
                 "tags": [
@@ -1632,6 +1824,937 @@
                 ]
             }
         },
+        "/api/positions": {
+            "get": {
+                "tags": [
+                    "Position"
+                ],
+                "summary": "取得所有職位",
+                "description": "返回所有職位列表，包含部門名稱",
+                "operationId": "getAllPositions",
+                "responses": {
+                    "200": {
+                        "description": "成功獲取職位列表",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "成功獲取所有職位"
+                                        },
+                                        "positions": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Position"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "未授權",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "未授權的請求"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Position"
+                ],
+                "summary": "新增職位",
+                "description": "建立一個新的職位",
+                "operationId": "createPosition",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "專案經理"
+                                    },
+                                    "department_id": {
+                                        "type": "integer",
+                                        "example": 2,
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "職位新增成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "職位新增成功"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "驗證失敗",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "職位名稱已存在"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/positions/by/department/{name}": {
+            "get": {
+                "tags": [
+                    "Position"
+                ],
+                "summary": "根據部門篩選職位",
+                "description": "根據部門名稱篩選職位",
+                "operationId": "getPositionsByDepartment",
+                "parameters": [
+                    {
+                        "name": "name",
+                        "in": "path",
+                        "description": "部門名稱",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "資訊部"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功獲取職位",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "department": {
+                                            "type": "string",
+                                            "example": "資訊部"
+                                        },
+                                        "positions": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Position"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "找不到該部門",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "找不到該部門"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Position"
+                ],
+                "summary": "為部門指派職位",
+                "description": "將職位指派到特定部門",
+                "operationId": "assignPositionToDepartment",
+                "parameters": [
+                    {
+                        "name": "name",
+                        "in": "path",
+                        "description": "部門名稱",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "資訊部"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "example": 3
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "職位已指派到部門",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "職位已指派到部門"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "找不到該部門",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "找不到該部門"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/positions/{id}": {
+            "delete": {
+                "tags": [
+                    "Position"
+                ],
+                "summary": "刪除職位",
+                "description": "刪除指定職位",
+                "operationId": "deletePosition",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "職位 ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 3
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "職位刪除成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "職位刪除成功"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "找不到職位",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "找不到職位"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Position"
+                ],
+                "summary": "更新職位",
+                "description": "更新職位名稱或所屬部門",
+                "operationId": "updatePosition",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "職位 ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "資深開發工程師"
+                                    },
+                                    "department_id": {
+                                        "type": "integer",
+                                        "example": 2,
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "職位更新成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "職位更新成功"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "找不到職位",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "找不到職位"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/punch/correction": {
+            "get": {
+                "tags": [
+                    "Punch Correction"
+                ],
+                "summary": "取得個人補登紀錄",
+                "description": "使用者可查詢自己的補登紀錄（可篩選日期）",
+                "operationId": "getUserPunchCorrections",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "開始日期",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-03-01"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "結束日期",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-03-10"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功獲取補登紀錄",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/PunchCorrection"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "未授權"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Punch Correction"
+                ],
+                "summary": "提交補登請求",
+                "description": "使用者提交補登請求",
+                "operationId": "requestPunchCorrection",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "correction_type",
+                                    "punch_time",
+                                    "reason"
+                                ],
+                                "properties": {
+                                    "correction_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "punch_in",
+                                            "punch_out"
+                                        ],
+                                        "example": "punch_in"
+                                    },
+                                    "punch_time": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2025-03-11 08:00:00"
+                                    },
+                                    "reason": {
+                                        "type": "string",
+                                        "example": "忘記打卡"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "補登申請成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PunchCorrection"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "打卡時間不能是未來時間"
+                    },
+                    "401": {
+                        "description": "未授權"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/punch/correction/{id}/approve": {
+            "put": {
+                "tags": [
+                    "Punch Correction"
+                ],
+                "summary": "審核補登申請（通過）",
+                "description": "管理員審核通過補登申請",
+                "operationId": "approvePunchCorrection",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "補登請求 ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "review_message": {
+                                        "type": "string",
+                                        "example": "審核通過"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "補登已通過審核",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PunchCorrection"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "此補登申請已被處理"
+                    },
+                    "401": {
+                        "description": "未授權"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/punch/correction/{id}/reject": {
+            "put": {
+                "tags": [
+                    "Punch Correction"
+                ],
+                "summary": "審核補登申請（拒絕）",
+                "description": "管理員拒絕補登申請",
+                "operationId": "rejectPunchCorrection",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "補登請求 ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "review_message"
+                                ],
+                                "properties": {
+                                    "review_message": {
+                                        "type": "string",
+                                        "example": "補登原因不合理"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "補登請求已被拒絕",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PunchCorrection"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "請填寫拒絕原因"
+                    },
+                    "401": {
+                        "description": "未授權"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/attendance/record": {
+            "get": {
+                "tags": [
+                    "Attendance"
+                ],
+                "summary": "取得個人打卡紀錄",
+                "description": "使用者可以查詢自己的打卡紀錄（依日期範圍篩選）",
+                "operationId": "getUserAttendanceRecords",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "開始日期",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-03-01"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "結束日期",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-03-31"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功獲取個人打卡紀錄",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/AttendanceRecord"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "請提供 start_date 和 end_date"
+                    },
+                    "401": {
+                        "description": "未授權"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/attendancerecords": {
+            "get": {
+                "tags": [
+                    "Attendance"
+                ],
+                "summary": "查詢所有員工的打卡紀錄",
+                "description": "人資或主管可查詢所有員工的打卡紀錄（可依部門、使用者ID、年份、月份篩選）",
+                "operationId": "getAllAttendanceRecords",
+                "parameters": [
+                    {
+                        "name": "department_name",
+                        "in": "query",
+                        "description": "部門名稱（選填）",
+                        "schema": {
+                            "type": "string",
+                            "example": "人資部"
+                        }
+                    },
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "description": "特定使用者 ID（選填）",
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "year",
+                        "in": "query",
+                        "description": "查詢年份",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 2025
+                        }
+                    },
+                    {
+                        "name": "month",
+                        "in": "query",
+                        "description": "查詢月份",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 3
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "分頁頁碼（預設 1）",
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "每頁顯示數量（預設 10）",
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功獲取所有員工的打卡紀錄",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "成功獲取所有員工的打卡紀錄"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/AttendanceRecord"
+                                                    }
+                                                },
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 50
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "from": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "to": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "first_page_url": {
+                                                    "type": "string",
+                                                    "example": "http://127.0.0.1:8000/api/attendancerecords?page=1&per_page=10"
+                                                },
+                                                "last_page_url": {
+                                                    "type": "string",
+                                                    "example": "http://127.0.0.1:8000/api/attendancerecords?page=5&per_page=10"
+                                                },
+                                                "next_page_url": {
+                                                    "type": "string",
+                                                    "example": "http://127.0.0.1:8000/api/attendancerecords?page=2&per_page=10",
+                                                    "nullable": true
+                                                },
+                                                "prev_page_url": {
+                                                    "type": "string",
+                                                    "example": null,
+                                                    "nullable": true
+                                                },
+                                                "path": {
+                                                    "type": "string",
+                                                    "example": "http://127.0.0.1:8000/api/attendancerecords"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "請提供年份和月份"
+                    },
+                    "401": {
+                        "description": "未授權"
+                    },
+                    "404": {
+                        "description": "找不到符合條件的打卡紀錄"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/corrections": {
+            "get": {
+                "tags": [
+                    "Punch Correction"
+                ],
+                "summary": "查看所有補登申請",
+                "description": "人資可查看所有補登申請（可篩選日期）",
+                "operationId": "getAllPunchCorrections",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "開始日期",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-03-01"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "結束日期",
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-03-10"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功獲取補登紀錄",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/PunchCorrection"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "未授權"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/user/update/profile": {
             "post": {
                 "tags": [
@@ -1745,6 +2868,154 @@
     },
     "components": {
         "schemas": {
+            "Department": {
+                "title": "Department",
+                "description": "部門資料結構",
+                "required": [
+                    "id",
+                    "name"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "人事部"
+                    }
+                },
+                "type": "object"
+            },
+            "Position": {
+                "title": "Position",
+                "description": "職位資料結構",
+                "required": [
+                    "id",
+                    "name"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "資深工程師"
+                    },
+                    "department_id": {
+                        "type": "integer",
+                        "example": 2,
+                        "nullable": true
+                    },
+                    "department": {
+                        "$ref": "#/components/schemas/Department"
+                    }
+                },
+                "type": "object"
+            },
+            "PunchCorrection": {
+                "title": "Punch Correction",
+                "description": "打卡補登請求資料結構",
+                "required": [
+                    "id",
+                    "user_id",
+                    "correction_type",
+                    "punch_time",
+                    "status"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "user_id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "correction_type": {
+                        "type": "string",
+                        "enum": [
+                            "punch_in",
+                            "punch_out"
+                        ],
+                        "example": "punch_in"
+                    },
+                    "punch_time": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-03-11 08:00:00"
+                    },
+                    "reason": {
+                        "type": "string",
+                        "example": "忘記打卡"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "approved",
+                            "rejected"
+                        ],
+                        "example": "pending"
+                    },
+                    "review_message": {
+                        "type": "string",
+                        "example": "審核通過"
+                    },
+                    "approved_by": {
+                        "type": "integer",
+                        "example": 1,
+                        "nullable": true
+                    },
+                    "approved_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-03-11 09:00:00",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "AttendanceRecord": {
+                "title": "Attendance Record",
+                "description": "打卡紀錄的回應格式",
+                "required": [
+                    "user_id",
+                    "user_name",
+                    "date",
+                    "punch_in",
+                    "punch_out"
+                ],
+                "properties": {
+                    "user_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "user_name": {
+                        "type": "string",
+                        "example": "王小明"
+                    },
+                    "date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2025-03-11"
+                    },
+                    "punch_in": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-03-11 08:00:00",
+                        "nullable": true
+                    },
+                    "punch_out": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-03-11 17:00:00",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
             "User": {
                 "properties": {
                     "id": {
@@ -1782,6 +3053,10 @@
             "description": "Authentication"
         },
         {
+            "name": "Departments",
+            "description": "Departments"
+        },
+        {
             "name": "Employees",
             "description": "Employees"
         },
@@ -1796,6 +3071,18 @@
         {
             "name": "Leave Types",
             "description": "Leave Types"
+        },
+        {
+            "name": "Position",
+            "description": "Position"
+        },
+        {
+            "name": "Punch Correction",
+            "description": "Punch Correction"
+        },
+        {
+            "name": "Attendance",
+            "description": "Attendance"
         },
         {
             "name": "User",
