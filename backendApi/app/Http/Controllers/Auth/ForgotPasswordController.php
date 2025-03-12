@@ -21,6 +21,7 @@ class ForgotPasswordController extends Controller
      * @OA\Post(
      *     path="/api/forgot/password",
      *     summary="忘記密碼",
+     *     description="使用者忘記密碼時，可透過 Email 寄送一組預設密碼至信箱，並點擊信箱內立即登入之連結進行登入。",
      *     tags={"Authentication"},
      *     @OA\RequestBody(
      *         required=true,
@@ -31,14 +32,14 @@ class ForgotPasswordController extends Controller
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="新密碼已發送至您的信箱，請查收",
+     *         description="成功透過電子郵件寄送新密碼",
      *         @OA\JsonContent(
      *             @OA\Property(property="message", type="string", example="新密碼已發送至您的信箱，請查收")
      *         )
      *     ),
      *     @OA\Response(
      *         response=404,
-     *         description="該 Email 未註冊",
+     *         description=" Email 未註冊",
      *         @OA\JsonContent(
      *             @OA\Property(property="message", type="string", example="該 Email 未註冊")
      *         )
