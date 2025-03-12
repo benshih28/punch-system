@@ -221,6 +221,7 @@
                 ]
             }
         },
+
         "/api/register": {
             "post": {
                 "tags": [
@@ -310,208 +311,37 @@
                 }
             }
         },
-        "/api/employees": {
-            "get": {
-                "tags": [
-                    "Employees"
-                ],
-                "summary": "取得所有員工列表（HR 介面）",
-                "description": "HR 取得所有員工的資訊，包含部門、職位、員工姓名、主管 ID、角色、狀態。",
-                "operationId": "7fc06f144c1cd7925c5c391a6609f02d",
-                "parameters": [
-                    {
-                        "name": "department_id",
-                        "in": "query",
-                        "description": "篩選特定部門 ID 的員工",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 2
-                        }
-                    },
-                    {
-                        "name": "role_id",
-                        "in": "query",
-                        "description": "篩選特定角色 ID 的員工",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 3
-                        }
-                    },
-                    {
-                        "name": "user_id",
-                        "in": "query",
-                        "description": "篩選特定使用者 ID",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 5
-                        }
-                    },
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "description": "每頁顯示的筆數",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 10
-                        }
-                    },
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "description": "目前頁數",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功取得員工列表",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "成功獲取員工列表"
-                                        },
-                                        "meta": {
-                                            "properties": {
-                                                "current_page": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "per_page": {
-                                                    "type": "integer",
-                                                    "example": 10
-                                                },
-                                                "total": {
-                                                    "type": "integer",
-                                                    "example": 50
-                                                },
-                                                "last_page": {
-                                                    "type": "integer",
-                                                    "example": 5
-                                                }
-                                            },
-                                            "type": "object"
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "department": {
-                                                        "type": "string",
-                                                        "example": "IT 部門"
-                                                    },
-                                                    "position": {
-                                                        "type": "string",
-                                                        "example": "軟體工程師"
-                                                    },
-                                                    "employee_name": {
-                                                        "type": "string",
-                                                        "example": "ben"
-                                                    },
-                                                    "manager_id": {
-                                                        "type": "integer",
-                                                        "example": 3
-                                                    },
-                                                    "roles": {
-                                                        "type": "string",
-                                                        "example": "員工"
-                                                    },
-                                                    "status": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "pending",
-                                                            "approved",
-                                                            "rejected",
-                                                            "inactive"
-                                                        ],
-                                                        "example": "approved"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "未授權，請提供有效 Token"
-                    },
-                    "403": {
-                        "description": "沒有權限存取"
-                    },
-                    "500": {
-                        "description": "伺服器錯誤"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
+
+
+
+        "/api/leavetypes/rules/add": {
             "post": {
                 "tags": [
-                    "Employees"
+                    "Leave Reset Rules"
                 ],
-                "summary": "HR 註冊新員工",
-                "description": "HR 註冊新員工，會建立 `User` 帳號並在 `Employee` 記錄中標記 `pending` 狀態。",
-                "operationId": "registerEmployeeByHR",
+                "summary": "新增假規",
+                "description": "此 API 允許新增假規。",
+                "operationId": "c7962a8aceb313343e3aae5eb58a08fb",
                 "requestBody": {
-                    "description": "HR 註冊新員工資訊",
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "name",
-                                    "email",
-                                    "password",
-                                    "password_confirmation",
-                                    "gender"
-                                ],
                                 "properties": {
-                                    "name": {
-                                        "description": "員工姓名",
-                                        "type": "string",
-                                        "example": "John Doe"
+                                    "leave_type_id": {
+                                        "description": "對應的假別類型 ID",
+                                        "type": "integer",
+                                        "example": 1
                                     },
-                                    "email": {
-                                        "description": "員工電子郵件",
+                                    "rule_type": {
+                                        "description": "假規類型，可選 `yearly` 或 `monthly`",
                                         "type": "string",
-                                        "format": "email",
-                                        "example": "john.doe@example.com"
+                                        "example": "yearly"
                                     },
-                                    "password": {
-                                        "description": "密碼",
+                                    "rule_value": {
+                                        "description": "假規值，例如 '01-01' 代表每年 1 月 1 日重置",
                                         "type": "string",
-                                        "example": "Password123!"
-                                    },
-                                    "password_confirmation": {
-                                        "description": "確認密碼",
-                                        "type": "string",
-                                        "example": "Password123!"
-                                    },
-                                    "gender": {
-                                        "description": "性別",
-                                        "type": "string",
-                                        "enum": [
-                                            "male",
-                                            "female"
-                                        ],
-                                        "example": "male"
+                                        "example": "01-01"
                                     }
                                 },
                                 "type": "object"
@@ -521,22 +351,38 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "員工註冊成功，等待 HR 審核",
+                        "description": "假規新增成功",
+
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "員工已註冊，等待審核"
+
+                                            "example": "新增成功"
                                         },
-                                        "user": {
-                                            "description": "使用者資訊",
+                                        "rule": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "leave_type_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "rule_type": {
+                                                    "type": "string",
+                                                    "example": "yearly"
+                                                },
+                                                "rule_value": {
+                                                    "type": "string",
+                                                    "example": "01-01"
+                                                }
+                                            },
                                             "type": "object"
-                                        },
-                                        "employee": {
-                                            "description": "員工資訊",
-                                            "type": "object"
+
                                         }
                                     },
                                     "type": "object"
@@ -544,225 +390,23 @@
                             }
                         }
                     },
-                    "422": {
-                        "description": "驗證失敗"
-                    },
-                    "403": {
-                        "description": "權限不足"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/employees/{id}/review": {
-            "patch": {
-                "tags": [
-                    "Employees"
-                ],
-                "summary": "HR 批准 / 拒絕 員工註冊",
-                "description": "HR 可以批准或拒絕員工註冊申請。",
-                "operationId": "reviewEmployee",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "員工的 ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 3
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "選擇批准或拒絕員工註冊",
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "status"
-                                ],
-                                "properties": {
-                                    "status": {
-                                        "description": "批准或拒絕",
-                                        "type": "string",
-                                        "enum": [
-                                            "approved",
-                                            "rejected"
-                                        ],
-                                        "example": "approved"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "操作成功",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "員工已批准"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "找不到員工",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "error": {
-                                            "type": "string",
-                                            "example": "找不到員工"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "驗證失敗"
-                    },
-                    "403": {
-                        "description": "權限不足"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/employees/{id}/assign": {
-            "patch": {
-                "tags": [
-                    "Employees"
-                ],
-                "summary": "HR 分配部門、職位、主管、角色",
-                "description": "HR 指派員工的部門、職位、主管和角色。員工必須已通過審核 (approved) 才能指派。",
-                "operationId": "assignEmployeeDetails",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "員工的 ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 3
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "description": "需要指派的部門、職位、主管、角色 ID",
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "department_id",
-                                    "position_id",
-                                    "manager_id",
-                                    "role_id"
-                                ],
-                                "properties": {
-                                    "department_id": {
-                                        "description": "部門 ID",
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "position_id": {
-                                        "description": "職位 ID",
-                                        "type": "integer",
-                                        "example": 2
-                                    },
-                                    "manager_id": {
-                                        "description": "主管的使用者 ID",
-                                        "type": "integer",
-                                        "example": 5
-                                    },
-                                    "role_id": {
-                                        "description": "角色 ID",
-                                        "type": "integer",
-                                        "example": 3
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "員工部門、職位、主管、角色已更新",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "員工部門、職位、主管、角色已更新"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
+
                     "400": {
-                        "description": "員工未通過審核，無法指派",
+                        "description": "請求資料驗證失敗",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "error": {
                                             "type": "string",
-                                            "example": "無法指派，員工尚未通過審核"
+                                            "example": "請提供有效的 leave_type_id"
                                         }
                                     },
                                     "type": "object"
                                 }
                             }
                         }
-                    },
-                    "404": {
-                        "description": "找不到員工",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "error": {
-                                            "type": "string",
-                                            "example": "找不到員工"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "驗證失敗"
-                    },
-                    "403": {
-                        "description": "權限不足"
+
                     }
                 },
                 "security": [
@@ -770,21 +414,22 @@
                         "bearerAuth": []
                     }
                 ]
+
             }
         },
-        "/api/employees/{id}": {
+        "/api/leavetypes/rules/{id}": {
             "delete": {
                 "tags": [
-                    "Employees"
+                    "Leave Reset Rules"
                 ],
-                "summary": "HR 刪除員工 (標記為離職)",
-                "description": "HR 可以將員工標記為離職 (inactive)，而不是真正刪除資料。",
-                "operationId": "deleteEmployee",
+                "summary": "刪除假規",
+                "description": "此 API 允許刪除假規。",
+                "operationId": "668b3429dbd91b023baadea13e749810",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "員工 ID",
+                        "description": "假規 ID",
                         "required": true,
                         "schema": {
                             "type": "integer",
@@ -794,14 +439,134 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "員工已標記為離職",
+                        "description": "假規刪除成功",
+
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "員工已標記為離職"
+
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+
+                    "404": {
+                        "description": "假規不存在",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "找不到該假規"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+
+            },
+            "patch": {
+                "tags": [
+                    "Leave Reset Rules"
+                ],
+                "summary": "更新假規",
+                "description": "此 API 允許修改假規。",
+                "operationId": "2a649905e7efa286b8acf1d30fb10ef3",
+
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+
+                        "description": "假規 ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+
+                        }
+                    }
+                ],
+                "requestBody": {
+
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+
+                                "properties": {
+                                    "leave_type_id": {
+                                        "description": "對應的假別類型 ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "rule_type": {
+                                        "description": "假規類型，可選 `yearly` 或 `monthly`",
+                                        "type": "string",
+                                        "example": "monthly"
+                                    },
+                                    "rule_value": {
+                                        "description": "假規值，例如 '15' 代表每月 15 日重置",
+                                        "type": "string",
+                                        "example": "15"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+
+                        "description": "假規更新成功",
+
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+
+                                            "example": "更新成功"
+                                        },
+                                        "rule": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "leave_type_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "rule_type": {
+                                                    "type": "string",
+                                                    "example": "monthly"
+                                                },
+                                                "rule_value": {
+                                                    "type": "string",
+                                                    "example": "15"
+                                                }
+                                            },
+                                            "type": "object"
+
                                         }
                                     },
                                     "type": "object"
@@ -810,17 +575,82 @@
                         }
                     },
                     "404": {
-                        "description": "找不到員工",
+
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "error": {
-                                            "type": "string",
-                                            "example": "找不到員工"
-                                        }
+                      }
                                     },
                                     "type": "object"
+                                }
+                            }
+                        }
+
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+
+        "/api/leavetypes/rules": {
+            "get": {
+                "tags": [
+                    "Leave Reset Rules"
+                ],
+                "summary": "取得所有假規",
+                "description": "此 API 取得所有假規。",
+                "operationId": "c01b17be8bc14ad6a00b647855939c4b",
+                "responses": {
+                    "200": {
+                        "description": "假規列表",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "leave_type_id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "rule_type": {
+                                                "type": "string",
+                                                "example": "yearly"
+                                            },
+                                            "rule_value": {
+                                                "type": "string",
+                                                "example": "01-01"
+                                            },
+                                            "leave_type": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Annual Leave"
+                                                    },
+                                                    "description": {
+                                                        "type": "string",
+                                                        "example": "年假"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
                                 }
                             }
                         }
@@ -833,48 +663,219 @@
                 ]
             }
         },
-        "/api/my/employees": {
-            "get": {
+        "/api/leavetypes/add": {
+            "post": {
                 "tags": [
-                    "Employee"
+                    "Leave Types"
                 ],
-                "summary": "取得主管管理的員工 ID",
-                "description": "返回當前登入使用者作為主管時，所管理的員工 user_id 列表。",
-                "operationId": "getMyEmployees",
-                "responses": {
-                    "200": {
-                        "description": "成功獲取主管管理的員工 ID",
+                "summary": "新增請假類型",
+                "description": "此 API 允許新增請假類型，請確保名稱是唯一的。",
+                "operationId": "0bdece7f275cf298a4a3aae621c548ca",
+                "requestBody": {
+
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+
+                                "properties": {
+                                    "name": {
+                                        "description": "請假類型的英文名稱",
+                                        "type": "string",
+                                        "example": "Annual Leave"
+                                    },
+                                    "description": {
+                                        "description": "請假類型的中文名稱",
+                                        "type": "string",
+                                        "example": "年假"
+                                    },
+                                    "total_hours": {
+                                        "description": "假別總時數（可選）",
+                                        "type": "integer",
+                                        "example": 40
+
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+
+                    "201": {
+                        "description": "假別新增成功",
+
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "成功獲取你管理的員工"
+
+                                            "example": "假別新增成功"
                                         },
-                                        "user_ids": {
-                                            "description": "員工的 user_id 列表",
-                                            "type": "array",
-                                            "items": {
-                                                "type": "integer",
-                                                "example": 10
-                                            }
+                                        "leave_type": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Annual Leave"
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "example": "年假"
+                                                },
+                                                "total_hours": {
+                                                    "type": "integer",
+                                                    "example": 40
+                                                }
+                                            },
+
                                         }
                                     },
                                     "type": "object"
                                 }
                             }
                         }
+                    },
+
+                        "description": "請求資料驗證失敗",
+
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+
+                                            "example": "請假類型名稱已存在"
+
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                "example": "未授權"
+
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+
+                    },
+                    "422": {
+                        "description": "驗證失敗"
                     },
                     "403": {
-                        "description": "當前使用者沒有管理任何員工",
+                        "description": "權限不足"
+
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+
+        "/api/leavetypes/update/{id}": {
+            "put": {
+                "tags": [
+                    "Leave Types"
+                ],
+                "summary": "修改請假類型",
+                "description": "此 API 允許修改請假類型，請確保名稱是唯一的。",
+                "operationId": "f6b9d6c06a4ef3b0121faae58fd20802",
+
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "description": "請假類型的英文名稱",
+                                        "type": "string",
+                                        "example": "Sick Leave"
+                                    },
+                                    "description": {
+                                        "description": "請假類型的中文名稱",
+                                        "type": "string",
+                                        "example": "病假"
+                                    },
+                                    "total_hours": {
+                                        "description": "假別總時數（可選）",
+                                        "type": "integer",
+                                        "example": 20
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "假別更新成功",
+
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "error": {
+                                        "message": {
                                             "type": "string",
-                                            "example": "你沒有管理任何員工"
+
+                                            "example": "假別更新成功"
+                                        },
+                                        "leave_type": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Sick Leave"
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "example": "病假"
+                                                },
+                                                "total_hours": {
+                                                    "type": "integer",
+                                                    "example": 20
+                                                }
+                                            },
+                                            "type": "object"
+
                                         }
                                     },
                                     "type": "object"
@@ -882,15 +883,17 @@
                             }
                         }
                     },
-                    "401": {
-                        "description": "未授權，Token 無效或未提供",
+                    "404": {
+
+                        "description": "請假類型不存在",
+
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "error": {
                                             "type": "string",
-                                            "example": "Unauthorized"
+
                                         }
                                     },
                                     "type": "object"
@@ -905,53 +908,35 @@
                     }
                 ]
             }
-        }
-    },
-    "components": {
-        "schemas": {
-            "User": {
-                "properties": {
-                    "id": {
-                        "description": "使用者 ID",
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "name": {
-                        "description": "使用者名稱",
-                        "type": "string",
-                        "example": "John Doe"
-                    },
-                    "email": {
-                        "description": "電子郵件",
-                        "type": "string",
-                        "format": "email",
-                        "example": "john.doe@example.com"
+        },
+
+        "/api/leavetypes/{id}": {
+            "delete": {
+                "tags": [
+                    "Leave Types"
+                ],
+                "summary": "刪除請假類型",
+                "description": "此 API 允許刪除請假類型。",
+                "operationId": "6c138bd7d03d7ebc6c196fc61523cf91",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "請假類型 ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
-                },
-                "type": "object"
-            }
-        },
-        "securitySchemes": {
-            "bearerAuth": {
-                "type": "http",
-                "description": "使用 JWT token進行認證，格式為 'Bearer {token}'",
-                "bearerFormat": "JWT",
-                "scheme": "bearer"
-            }
-        }
-    },
-    "tags": [
-        {
-            "name": "Authentication",
-            "description": "Authentication"
-        },
-        {
-            "name": "Employees",
-            "description": "Employees"
-        },
-        {
-            "name": "Employee",
-            "description": "Employee"
-        }
-    ]
-}
+                ],
+                "responses": {
+                    "200": {
+                        "description": "假別刪除成功",
+
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
