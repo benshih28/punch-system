@@ -12,6 +12,31 @@ use Illuminate\Support\Facades\Storage;
 
 class FileController extends Controller
 {
+
+    /**
+ * @OA\Get(
+ *     path="/api/avatar",
+ *     summary="取得使用者大頭貼",
+ *     description="使用者先行登入後，取得使用者大頭貼",
+ *     tags={"User"},
+ *     security={{"bearerAuth":{}}},
+ *     @OA\Response(
+ *         response=200,
+ *         description="成功取得大頭貼",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="avatar_url", type="string", nullable=true, example="/storage/avatars/avatar_2.6da43bda2dfa8d30688b2136cc26d91d6d1280bed7b6cb08cbc55b6baa66359e")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=404,
+ *         description="沒有找到大頭貼",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="avatar_url", type="string", nullable=true, example=null)
+ *         )
+ *     )
+ * )
+ */
+
     // 上傳大頭貼 avatar
     public function uploadAvatar(Request $request)
     {
