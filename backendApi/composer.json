@@ -56,6 +56,13 @@
             "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
             "@php artisan migrate --graceful --ansi"
         ],
+        "post-install-cmd": [
+            "@php artisan key:generate",
+            "@php artisan jwt:secret --force",
+            "@php artisan migrate --force",
+            "@php artisan db:seed --class=RolesSeeder --force",
+            "@php artisan db:seed --class=PermissionsSeeder --force"
+        ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
             "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"npm run dev\" --names='server,queue,vite'"
