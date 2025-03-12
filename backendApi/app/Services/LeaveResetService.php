@@ -34,14 +34,14 @@ class LeaveResetService
 
         $lastLeave = Leave::where('user_id', $userId)
             ->where('leave_type_id', $leaveTypeId)
-            ->where('status', 'approved')
+            ->where('status', 3)
             ->orderBy('created_at', 'desc')
             ->first();
 
         if (!$lastLeave || $lastLeave->created_at < $resetDate) {
             Leave::where('user_id', $userId)
                 ->where('leave_type_id', $leaveTypeId)
-                ->where('status', 'approved')
+                ->where('status', 3)
                 ->update(['leave_hours' => 0]);
 
             // Log::info("✅ User $userId 的 leaveType $leaveTypeId 已於 $resetDate 重置");
@@ -75,17 +75,29 @@ class LeaveResetService
 
             $baseHours = 0; // 初始為 0，年資增加額外特休
             $totalHours = $baseHours + $extraHours;
+        } elseif ($leaveType->name === 'Menstrual Leave') {
+            // 每月 8 小時
+            $totalHours = 8;
+
+            // 取得本月已使用的生理假時數
+            $usedHours = Leave::where('user_id', $userId)
+                ->where('leave_type_id', $leaveTypeId)
+                ->where('status', 0)
+                ->whereMonth('start_time', now()->month) // 只計算當月的
+                ->sum('leave_hours');
         } else {
             $totalHours = $leaveType->total_hours;
+
+            // 計算所有已批准的時數
+            $usedHours = Leave::where('user_id', $userId)
+                ->where('leave_type_id', $leaveTypeId)
+                ->where('status', 3)
+                ->sum('leave_hours');
         }
 
-        $usedHours = Leave::where('user_id', $userId)
-            ->where('leave_type_id', $leaveTypeId)
-            ->where('status', 'approved')
-            ->sum('leave_hours');
-
-            return max($totalHours - $usedHours, 0); // 確保不會變成負數
+        return max($totalHours - $usedHours, 0); // 確保不會變成負數
     }
+
 
     /**
      * 3. 計算特休天數（依照勞基法規則）
