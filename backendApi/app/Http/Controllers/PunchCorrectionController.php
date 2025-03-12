@@ -323,9 +323,9 @@ class PunchCorrectionController extends Controller
 
         // **計算分頁資訊**
         $lastPage = max(1, ceil($totalUsers / $perPage));
-        $nextPageUrl = $page < $lastPage ? url("/api/attendancerecords?page=" . ($page + 1) . "&per_page=" . $perPage) : null;
-        $prevPageUrl = $page > 1 ? url("/api/attendancerecords?page=" . ($page - 1) . "&per_page=" . $perPage) : null;
-
+        $nextPageUrl = $page < $lastPage ? url("/api/attendance/records?page=" . ($page + 1) . "&per_page=" . $perPage) : null;
+        $prevPageUrl = $page > 1 ? url("/api/attendance/records?page=" . ($page - 1) . "&per_page=" . $perPage) : null;
+        
         // **統一 API 分頁格式**
         return response()->json([
             'message' => '成功獲取所有員工的打卡紀錄',
