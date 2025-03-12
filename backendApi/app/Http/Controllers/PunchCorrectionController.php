@@ -144,29 +144,53 @@ class PunchCorrectionController extends Controller
         // 取得 Query 參數
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
+        $page = (int) $request->query('page', 1);
+        $perPage = (int) $request->query('per_page', 10);
 
-        // 查詢使用者的補登紀錄
-        $query = PunchCorrection::where('user_id', $user->id);
+        // 確保 page 和 perPage 為正數
+        $page = max(1, $page);
+        $perPage = max(1, min($perPage, 10));
 
-        // 若有提供開始 & 結束日期，則篩選日期範圍
-        if ($startDate && $endDate) {
-            $query->whereBetween('punch_time', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
-        }
+        // **呼叫 MySQL 預存程序**
+        $records = DB::select('CALL GetUserPunchCorrections(?, ?, ?, ?, ?)', [
+            $user->id,
+            $startDate ?: null,
+            $endDate ?: null,
+            $page,
+            $perPage
+        ]);
 
-        // 先按照 `status = 'pending'` 排序，然後再按照 `punch_time` 由新到舊排序
-        $corrections = $query
-            ->orderByRaw("CASE WHEN status = 'pending' THEN 1 ELSE 2 END") // 讓 'pending' 的資料排在最前面
-            ->orderBy('punch_time', 'desc') // 再按照 `punch_time` 由新到舊排序
-            ->get();
+        // **取得總筆數 (從預存程序的第一筆資料)**
+        $totalRecords = count($records) > 0 ? $records[0]->total_records : 0;
 
+        // **計算分頁資訊**
+        $lastPage = max(1, ceil($totalRecords / $perPage));
+        $nextPageUrl = $page < $lastPage ? url("/api/user/corrections?page=" . ($page + 1) . "&per_page=" . $perPage) : null;
+        $prevPageUrl = $page > 1 ? url("/api/user/corrections?page=" . ($page - 1) . "&per_page=" . $perPage) : null;
+
+        // **統一 API 分頁格式**
         return response()->json([
             'message' => '成功獲取補登紀錄',
-            'data' => $corrections
+            'data' => [
+                'data' => $records,
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => $totalRecords,
+                'last_page' => $lastPage,
+                'from' => ($page - 1) * $perPage + 1,
+                'to' => min($page * $perPage, $totalRecords),
+                'first_page_url' => url("/api/user/corrections?page=1&per_page=" . $perPage),
+                'last_page_url' => url("/api/user/corrections?page=" . $lastPage . "&per_page=" . $perPage),
+                'next_page_url' => $nextPageUrl,
+                'prev_page_url' => $prevPageUrl,
+                'path' => url("/api/user/corrections")
+            ]
         ], 200);
     }
 
+
     // 個人的打卡紀錄
-    public function getFinalAttendanceRecords(Request $request)
+    public function getAttendanceRecords(Request $request)
     {
         $userId = Auth::guard('api')->id();
         $startDate = $request->input('start_date');
@@ -187,7 +211,7 @@ class PunchCorrectionController extends Controller
     }
 
     // 讓人資看到所有人的打卡紀錄
-    public function getAllFinalAttendanceRecords(Request $request)
+    public function getAllAttendanceRecords(Request $request)
     {
         // 確保使用者已登入
         $user = Auth::user();
@@ -195,8 +219,13 @@ class PunchCorrectionController extends Controller
             return response()->json(['message' => '未授權的請求'], 401);
         }
 
+        // ✅ 取得使用者角色和 ID
+        $requesterId = $user->id;
+        $requesterRole = $user->role; // HR, MANAGER, EMPLOYEE
+
         // 取得 Query 參數
-        $departmentId = $request->query('department_id');
+        $departmentId = $request->query('department_id'); // 部門 ID (可選)
+        $userId = $request->query('user_id'); // 指定查詢的 user ID (可選)
         $year = $request->query('year');
         $month = $request->query('month');
         $page = $request->query('page', 1); // 預設第一頁
@@ -211,7 +240,25 @@ class PunchCorrectionController extends Controller
         $page = max(1, $page);
         $perPage = max(1, 10);
 
-        // ✅ 第一次查詢：計算總 user 數量
+        // ✅ 轉換 `departmentId` → `departmentName`
+        $departmentName = null;
+        if ($departmentId) {
+            $dept = DB::table('departments')->where('id', $departmentId)->first();
+            if ($dept) {
+                $departmentName = $dept->name;
+            }
+        }
+
+        // ✅ 直接使用預存程序查詢 `totalUsers`
+        $totalUsersResult = DB::select('CALL GetAllFinalAttendanceRecords(?, ?, ?, ?, ?, ?, 0, 0)', [
+            $requesterId,
+            $requesterRole,
+            $departmentName,
+            $userId ?: null,
+            $year,
+            $month
+        ]);
+
         $totalUsersResult = DB::select("
             SELECT COUNT(DISTINCT user_id) AS total_users
             FROM (
@@ -231,16 +278,19 @@ class PunchCorrectionController extends Controller
             ) AS all_users
             WHERE user_id IN (
                 SELECT id FROM employees WHERE status != 'inactive'
-                AND (? IS NULL OR department_id = ?) -- 如果 departmentId 為 NULL 則不過濾
+                AND (? IS NULL OR department_id = ?)
             )
         ", [$year, $month, $year, $month, $year, $month, $departmentId, $departmentId]);
 
         // **獲取 `total_users`**
-        $totalUsers = $totalUsersResult[0]->total_users ?? 0;
+        $totalUsers = $totalUsersResult[0]->total_users ?? 0; // 計算總使用者數量
 
-        // 呼叫 MySQL 預存程序
-        $records = DB::select('CALL GetAllFinalAttendanceRecords(?, ?, ?, ?, ?)', [
-            $departmentId ?: null,
+        // ✅ 呼叫 MySQL 預存程序，取得該分頁的資料
+        $records = DB::select('CALL GetAllFinalAttendanceRecords(?, ?, ?, ?, ?, ?, ?, ?)', [
+            $requesterId,
+            $requesterRole,
+            $departmentName,
+            $userId ?: null,
             $year,
             $month,
             $page,
@@ -275,7 +325,7 @@ class PunchCorrectionController extends Controller
         $lastPage = max(1, ceil($totalUsers / $perPage));
         $nextPageUrl = $page < $lastPage ? url("/api/attendance/records?page=" . ($page + 1) . "&per_page=" . $perPage) : null;
         $prevPageUrl = $page > 1 ? url("/api/attendance/records?page=" . ($page - 1) . "&per_page=" . $perPage) : null;
-
+        
         // **統一 API 分頁格式**
         return response()->json([
             'message' => '成功獲取所有員工的打卡紀錄',
@@ -287,11 +337,11 @@ class PunchCorrectionController extends Controller
                 'last_page' => $lastPage, // 總頁數
                 'from' => ($page - 1) * $perPage + 1, // 當前頁的第一筆資料的索引
                 'to' => min($page * $perPage, $totalUsers), // 當前頁的最後一筆資料的索引
-                'first_page_url' => url("/api/attendance/records?page=1&per_page=" . $perPage), // 第一頁的 API URL
-                'last_page_url' => url("/api/attendance/records?page=" . $lastPage . "&per_page=" . $perPage), // 最後一頁的 API URL
+                'first_page_url' => url("/api/attendancerecords?page=1&per_page=" . $perPage), // 第一頁的 API URL
+                'last_page_url' => url("/api/attendancerecords?page=" . $lastPage . "&per_page=" . $perPage), // 最後一頁的 API URL
                 'next_page_url' => $nextPageUrl, // 最後一頁的 API URL
                 'prev_page_url' => $prevPageUrl, // 上一頁的 API URL（如果有）
-                'path' => url("/api/attendance/records") // API 路徑（不帶分頁參數）
+                'path' => url("/api/attendancerecords") // API 路徑（不帶分頁參數）
             ]
         ], 200);
     }
