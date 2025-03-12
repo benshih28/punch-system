@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
             'isManager' => \App\Http\Middleware\IsManagerMiddleware::class, // 🔹 註冊 `isManager` Middleware
+            'approved' => \App\Http\Middleware\EnsureEmployeeIsApproved::class, // 新增 `approved` Middleware
         ]);
 
         //
