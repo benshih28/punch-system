@@ -85,10 +85,10 @@ Route::middleware('auth:api')->group(function () {
 
     // 使用者角色管理 API (只處理「使用者」)
     Route::prefix('/users')->group(function () {
-        // (已合併待移除)指派 `roles` 給 `users`
-        Route::post('/{userId}/assign/roles', [UserRoleController::class, 'assignRoleToUser']);
-        // (已合併待移除)移除 `roles`
-        Route::delete('/{userId}/revoke/roles', [UserRoleController::class, 'revokeRoleFromUser']);
+        
+        // (admin)指派 `roles` 給 `users`
+        //Route::post('/{userId}/assign/roles', [UserRoleController::class, 'assignRoleToUser']);
+
         // 取得 `users` 的 `roles` (需要 `view_roles` 權限)
         Route::get('/{userId}/roles', [UserRoleController::class, 'getUserRoles'])->middleware('can:view_roles');
         // 取得 `users` 的 `permissions` (需要 `view_permissions` 權限)
@@ -154,16 +154,13 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/', [EmployeeController::class, 'store'])->middleware('can:register_employee');
         // HR 審核員工註冊（需要 `review_employee` 權限）
         Route::patch('/{id}/review', [EmployeeController::class, 'reviewEmployee'])->middleware('can:review_employee');
-        // (已修改待刪除)分配職位 & 部門
-        Route::patch('/{id}/assign', [EmployeeController::class, 'assignDepartmentAndPosition']);
-
         //分配&變更部門、職位、主管、角色（需要 `assign_employee_details` 權限）
         Route::patch('/employees/{id}/assign', [EmployeeController::class, 'assignEmployeeDetails'])->middleware('can:assign_employee_details');
 
         // 刪除員工（需要 `delete_employee` 權限）
         Route::delete('/{id}', [EmployeeController::class, 'destroy'])->middleware('can:delete_employee');
-        // 查詢主管
-        Route::get('/{id}/manager', [EmployeeController::class, 'getEmployeeManager']);
+        // // 查詢主管
+        // Route::get('/{id}/manager', [EmployeeController::class, 'getEmployeeManager']);
     });
 
 

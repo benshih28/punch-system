@@ -221,70 +221,7 @@
                 ]
             }
         },
-        "/api/forgot/password": {
-            "post": {
-                "tags": [
-                    "Authentication"
-                ],
-                "summary": "忘記密碼",
-                "operationId": "166f88e2af5d40070b961b29c12eeb3a",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "email"
-                                ],
-                                "properties": {
-                                    "email": {
-                                        "description": "使用者電子郵件",
-                                        "type": "string",
-                                        "format": "email",
-                                        "example": "john@example.com"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "新密碼已發送至您的信箱，請查收",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "新密碼已發送至您的信箱，請查收"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "該 Email 未註冊",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "該 Email 未註冊"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
+
         "/api/register": {
             "post": {
                 "tags": [
@@ -374,6 +311,9 @@
                 }
             }
         },
+
+
+
         "/api/leavetypes/rules/add": {
             "post": {
                 "tags": [
@@ -412,12 +352,14 @@
                 "responses": {
                     "201": {
                         "description": "假規新增成功",
+
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
+
                                             "example": "新增成功"
                                         },
                                         "rule": {
@@ -440,6 +382,7 @@
                                                 }
                                             },
                                             "type": "object"
+
                                         }
                                     },
                                     "type": "object"
@@ -447,6 +390,7 @@
                             }
                         }
                     },
+
                     "400": {
                         "description": "請求資料驗證失敗",
                         "content": {
@@ -462,6 +406,7 @@
                                 }
                             }
                         }
+
                     }
                 },
                 "security": [
@@ -469,6 +414,7 @@
                         "bearerAuth": []
                     }
                 ]
+
             }
         },
         "/api/leavetypes/rules/{id}": {
@@ -494,13 +440,14 @@
                 "responses": {
                     "200": {
                         "description": "假規刪除成功",
+
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "刪除成功"
+
                                         }
                                     },
                                     "type": "object"
@@ -508,6 +455,7 @@
                             }
                         }
                     },
+
                     "404": {
                         "description": "假規不存在",
                         "content": {
@@ -523,6 +471,7 @@
                                 }
                             }
                         }
+
                     }
                 },
                 "security": [
@@ -530,6 +479,7 @@
                         "bearerAuth": []
                     }
                 ]
+
             },
             "patch": {
                 "tags": [
@@ -538,23 +488,28 @@
                 "summary": "更新假規",
                 "description": "此 API 允許修改假規。",
                 "operationId": "2a649905e7efa286b8acf1d30fb10ef3",
+
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
+
                         "description": "假規 ID",
                         "required": true,
                         "schema": {
                             "type": "integer",
                             "example": 1
+
                         }
                     }
                 ],
                 "requestBody": {
+
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
+
                                 "properties": {
                                     "leave_type_id": {
                                         "description": "對應的假別類型 ID",
@@ -579,13 +534,16 @@
                 },
                 "responses": {
                     "200": {
+
                         "description": "假規更新成功",
+
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
+
                                             "example": "更新成功"
                                         },
                                         "rule": {
@@ -608,6 +566,7 @@
                                                 }
                                             },
                                             "type": "object"
+
                                         }
                                     },
                                     "type": "object"
@@ -616,20 +575,19 @@
                         }
                     },
                     "404": {
-                        "description": "假規不存在",
+
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "error": {
-                                            "type": "string",
-                                            "example": "找不到該假規"
-                                        }
+                      }
                                     },
                                     "type": "object"
                                 }
                             }
                         }
+
                     }
                 },
                 "security": [
@@ -639,6 +597,7 @@
                 ]
             }
         },
+
         "/api/leavetypes/rules": {
             "get": {
                 "tags": [
@@ -713,10 +672,12 @@
                 "description": "此 API 允許新增請假類型，請確保名稱是唯一的。",
                 "operationId": "0bdece7f275cf298a4a3aae621c548ca",
                 "requestBody": {
+
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
+
                                 "properties": {
                                     "name": {
                                         "description": "請假類型的英文名稱",
@@ -732,6 +693,7 @@
                                         "description": "假別總時數（可選）",
                                         "type": "integer",
                                         "example": 40
+
                                     }
                                 },
                                 "type": "object"
@@ -739,15 +701,17 @@
                         }
                     }
                 },
-                "responses": {
+
                     "201": {
                         "description": "假別新增成功",
+
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
+
                                             "example": "假別新增成功"
                                         },
                                         "leave_type": {
@@ -769,7 +733,7 @@
                                                     "example": 40
                                                 }
                                             },
-                                            "type": "object"
+
                                         }
                                     },
                                     "type": "object"
@@ -777,15 +741,18 @@
                             }
                         }
                     },
-                    "400": {
+
                         "description": "請求資料驗證失敗",
+
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "error": {
                                             "type": "string",
+
                                             "example": "請假類型名稱已存在"
+
                                         }
                                     },
                                     "type": "object"
@@ -793,21 +760,29 @@
                             }
                         }
                     },
-                    "401": {
-                        "description": "未授權，請提供 JWT Token",
+
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "error": {
                                             "type": "string",
-                                            "example": "未授權"
+                                "example": "未授權"
+
                                         }
                                     },
                                     "type": "object"
                                 }
                             }
                         }
+
+                    },
+                    "422": {
+                        "description": "驗證失敗"
+                    },
+                    "403": {
+                        "description": "權限不足"
+
                     }
                 },
                 "security": [
@@ -817,6 +792,7 @@
                 ]
             }
         },
+
         "/api/leavetypes/update/{id}": {
             "put": {
                 "tags": [
@@ -825,11 +801,12 @@
                 "summary": "修改請假類型",
                 "description": "此 API 允許修改請假類型，請確保名稱是唯一的。",
                 "operationId": "f6b9d6c06a4ef3b0121faae58fd20802",
+
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "請假類型 ID",
+
                         "required": true,
                         "schema": {
                             "type": "integer",
@@ -837,6 +814,7 @@
                         }
                     }
                 ],
+
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -867,12 +845,14 @@
                 "responses": {
                     "200": {
                         "description": "假別更新成功",
+
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
+
                                             "example": "假別更新成功"
                                         },
                                         "leave_type": {
@@ -895,6 +875,7 @@
                                                 }
                                             },
                                             "type": "object"
+
                                         }
                                     },
                                     "type": "object"
@@ -903,14 +884,16 @@
                         }
                     },
                     "404": {
+
                         "description": "請假類型不存在",
+
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "error": {
                                             "type": "string",
-                                            "example": "找不到該請假類型"
+
                                         }
                                     },
                                     "type": "object"
@@ -926,6 +909,7 @@
                 ]
             }
         },
+
         "/api/leavetypes/{id}": {
             "delete": {
                 "tags": [
@@ -949,138 +933,10 @@
                 "responses": {
                     "200": {
                         "description": "假別刪除成功",
+
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "假別刪除成功"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "請假類型不存在",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "error": {
-                                            "type": "string",
-                                            "example": "找不到該請假類型"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/leavetypes/": {
-            "get": {
-                "tags": [
-                    "Leave Types"
-                ],
-                "summary": "取得所有請假類型",
-                "description": "此 API 取得所有請假類型，通常用於前端的請假類型選單。",
-                "operationId": "b75be6d7d971fbe758b6e77b3dbe7847",
-                "responses": {
-                    "200": {
-                        "description": "請假類型列表",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer",
-                                                "example": 1
-                                            },
-                                            "name": {
-                                                "type": "string",
-                                                "example": "Annual Leave"
-                                            },
-                                            "description": {
-                                                "type": "string",
-                                                "example": "年假"
-                                            },
-                                            "total_hours": {
-                                                "type": "integer",
-                                                "example": 40
-                                            }
-                                        },
-                                        "type": "object"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        }
-    },
-    "components": {
-        "schemas": {
-            "User": {
-                "properties": {
-                    "id": {
-                        "description": "使用者 ID",
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "name": {
-                        "description": "使用者名稱",
-                        "type": "string",
-                        "example": "John Doe"
-                    },
-                    "email": {
-                        "description": "電子郵件",
-                        "type": "string",
-                        "format": "email",
-                        "example": "john.doe@example.com"
-                    }
-                },
-                "type": "object"
-            }
-        },
-        "securitySchemes": {
-            "bearerAuth": {
-                "type": "http",
-                "description": "使用 JWT token進行認證，格式為 'Bearer {token}'",
-                "bearerFormat": "JWT",
-                "scheme": "bearer"
-            }
-        }
-    },
-    "tags": [
-        {
-            "name": "Authentication",
-            "description": "Authentication"
-        },
-        {
-            "name": "Leave Reset Rules",
-            "description": "Leave Reset Rules"
-        },
-        {
-            "name": "Leave Types",
-            "description": "Leave Types"
-        }
-    ]
-}
