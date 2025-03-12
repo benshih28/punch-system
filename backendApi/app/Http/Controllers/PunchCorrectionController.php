@@ -18,7 +18,34 @@ class PunchCorrectionController extends Controller
     }
 
 
-    // 1️⃣ 提交補登請求
+    // 提交補登請求
+    /**
+     * @OA\Post(
+     *     path="/correction",
+     *     summary="提交補登請求",
+     *     description="使用者提交補登請求",
+     *     operationId="requestPunchCorrection",
+     *     tags={"Punch Correction"},
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"correction_type", "punch_time", "reason"},
+     *             @OA\Property(property="correction_type", type="string", enum={"punch_in", "punch_out"}, example="punch_in"),
+     *             @OA\Property(property="punch_time", type="string", format="date-time", example="2025-03-11 08:00:00"),
+     *             @OA\Property(property="reason", type="string", example="忘記打卡")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="補登申請成功",
+     *         @OA\JsonContent(ref="#/components/schemas/PunchCorrection")
+     *     ),
+     *     @OA\Response(response=400, description="打卡時間不能是未來時間"),
+     *     @OA\Response(response=401, description="未授權")
+     * )
+     */
     public function store(Request $request)
     {
         // 取得當前登入的使用者
@@ -66,7 +93,37 @@ class PunchCorrectionController extends Controller
         ], 201);
     }
 
-    // 2️⃣ 管理員審核（批准）
+    // 管理員審核（批准）
+    /**
+     * @OA\Put(
+     *     path="/punch/correction/{id}/approve",
+     *     summary="審核補登申請（通過）",
+     *     description="管理員審核通過補登申請",
+     *     operationId="approvePunchCorrection",
+     *     tags={"Punch Correction"},
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="補登請求 ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="review_message", type="string", example="審核通過")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="補登已通過審核",
+     *         @OA\JsonContent(ref="#/components/schemas/PunchCorrection")
+     *     ),
+     *     @OA\Response(response=400, description="此補登申請已被處理"),
+     *     @OA\Response(response=401, description="未授權")
+     * )
+     */
     public function approve(Request $request, $id)
     {
         $request->validate([
@@ -99,7 +156,39 @@ class PunchCorrectionController extends Controller
     }
 
 
-    // 3️⃣ 管理員審核（拒絕）
+    // 管理員審核（拒絕）
+    /**
+     * @OA\Put(
+     *     path="/punch/correction/{id}/reject",
+     *     summary="審核補登申請（拒絕）",
+     *     description="管理員拒絕補登申請",
+     *     operationId="rejectPunchCorrection",
+     *     tags={"Punch Correction"},
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="補登請求 ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"review_message"},
+     *             @OA\Property(property="review_message", type="string", example="補登原因不合理")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="補登請求已被拒絕",
+     *         @OA\JsonContent(ref="#/components/schemas/PunchCorrection")
+     *     ),
+     *     @OA\Response(response=400, description="請填寫拒絕原因"),
+     *     @OA\Response(response=401, description="未授權")
+     * )
+     */
     public function reject(Request $request, $id)
     {
         // $request->validate([
@@ -133,6 +222,24 @@ class PunchCorrectionController extends Controller
     }
 
     // 使用者可以查看自己的所有打卡補登紀錄(可選擇日期範圍)
+    /**
+     * @OA\Get(
+     *     path="/correction",
+     *     summary="取得個人補登紀錄",
+     *     description="使用者可查詢自己的補登紀錄（可篩選日期）",
+     *     operationId="getUserPunchCorrections",
+     *     tags={"Punch Correction"},
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Parameter(name="start_date", in="query", description="開始日期", @OA\Schema(type="string", format="date", example="2025-03-01")),
+     *     @OA\Parameter(name="end_date", in="query", description="結束日期", @OA\Schema(type="string", format="date", example="2025-03-10")),
+     *     @OA\Response(
+     *         response=200,
+     *         description="成功獲取補登紀錄",
+     *         @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/PunchCorrection"))
+     *     ),
+     *     @OA\Response(response=401, description="未授權")
+     * )
+     */
     public function getUserCorrections(Request $request)
     {
         // 確保使用者已登入
@@ -190,6 +297,25 @@ class PunchCorrectionController extends Controller
 
 
     // 個人的打卡紀錄
+    /**
+     * @OA\Get(
+     *     path="/attendance/record",
+     *     summary="取得個人打卡紀錄",
+     *     description="使用者可以查詢自己的打卡紀錄（依日期範圍篩選）",
+     *     operationId="getUserAttendanceRecords",
+     *     tags={"Attendance"},
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Parameter(name="start_date", in="query", required=true, description="開始日期", @OA\Schema(type="string", format="date", example="2025-03-01")),
+     *     @OA\Parameter(name="end_date", in="query", required=true, description="結束日期", @OA\Schema(type="string", format="date", example="2025-03-31")),
+     *     @OA\Response(
+     *         response=200,
+     *         description="成功獲取個人打卡紀錄",
+     *         @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/AttendanceRecord"))
+     *     ),
+     *     @OA\Response(response=400, description="請提供 start_date 和 end_date"),
+     *     @OA\Response(response=401, description="未授權")
+     * )
+     */
     public function getAttendanceRecords(Request $request)
     {
         $userId = Auth::guard('api')->id();
@@ -211,6 +337,81 @@ class PunchCorrectionController extends Controller
     }
 
     // 讓人資看到所有人的打卡紀錄
+        /**
+     * @OA\Get(
+     *     path="/attendancerecords",
+     *     summary="查詢所有員工的打卡紀錄",
+     *     description="人資或主管可查詢所有員工的打卡紀錄（可依部門、使用者ID、年份、月份篩選）",
+     *     operationId="getAllAttendanceRecords",
+     *     tags={"Attendance"},
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Parameter(
+     *         name="department_name",
+     *         in="query",
+     *         description="部門名稱（選填）",
+     *         @OA\Schema(type="string", example="人資部")
+     *     ),
+     *     @OA\Parameter(
+     *         name="user_id",
+     *         in="query",
+     *         description="特定使用者 ID（選填）",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="year",
+     *         in="query",
+     *         required=true,
+     *         description="查詢年份",
+     *         @OA\Schema(type="integer", example=2025)
+     *     ),
+     *     @OA\Parameter(
+     *         name="month",
+     *         in="query",
+     *         required=true,
+     *         description="查詢月份",
+     *         @OA\Schema(type="integer", example=3)
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="分頁頁碼（預設 1）",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="每頁顯示數量（預設 10）",
+     *         @OA\Schema(type="integer", example=10)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="成功獲取所有員工的打卡紀錄",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="成功獲取所有員工的打卡紀錄"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/AttendanceRecord")),
+     *                 @OA\Property(property="current_page", type="integer", example=1),
+     *                 @OA\Property(property="per_page", type="integer", example=10),
+     *                 @OA\Property(property="total", type="integer", example=50),
+     *                 @OA\Property(property="last_page", type="integer", example=5),
+     *                 @OA\Property(property="from", type="integer", example=1),
+     *                 @OA\Property(property="to", type="integer", example=10),
+     *                 @OA\Property(property="first_page_url", type="string", example="http://127.0.0.1:8000/api/attendancerecords?page=1&per_page=10"),
+     *                 @OA\Property(property="last_page_url", type="string", example="http://127.0.0.1:8000/api/attendancerecords?page=5&per_page=10"),
+     *                 @OA\Property(property="next_page_url", type="string", nullable=true, example="http://127.0.0.1:8000/api/attendancerecords?page=2&per_page=10"),
+     *                 @OA\Property(property="prev_page_url", type="string", nullable=true, example=null),
+     *                 @OA\Property(property="path", type="string", example="http://127.0.0.1:8000/api/attendancerecords")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=400, description="請提供年份和月份"),
+     *     @OA\Response(response=401, description="未授權"),
+     *     @OA\Response(response=404, description="找不到符合條件的打卡紀錄")
+     * )
+     */
     public function getAllAttendanceRecords(Request $request)
     {
         // 確保使用者已登入
@@ -224,7 +425,7 @@ class PunchCorrectionController extends Controller
         $requesterRole = $user->role; // HR, MANAGER, EMPLOYEE
 
         // 取得 Query 參數
-        $departmentId = $request->query('department_id'); // 部門 ID (可選)
+        $departmentName = $request->query('department_name'); // 部門名稱 (可選)
         $userId = $request->query('user_id'); // 指定查詢的 user ID (可選)
         $year = $request->query('year');
         $month = $request->query('month');
@@ -240,32 +441,14 @@ class PunchCorrectionController extends Controller
         $page = max(1, $page);
         $perPage = max(1, 10);
 
-        // ✅ 轉換 `departmentId` → `departmentName`
-        $departmentName = null;
-        if ($departmentId) {
-            $dept = DB::table('departments')->where('id', $departmentId)->first();
-            if ($dept) {
-                $departmentName = $dept->name;
-            }
-        }
-
-        // ✅ 直接使用預存程序查詢 `totalUsers`
-        $totalUsersResult = DB::select('CALL GetAllFinalAttendanceRecords(?, ?, ?, ?, ?, ?, 0, 0)', [
-            $requesterId,
-            $requesterRole,
-            $departmentName,
-            $userId ?: null,
-            $year,
-            $month
-        ]);
-
+        // 確保 `departmentName` 在 SQL 查詢中不會導致 COLLATION 問題
         $totalUsersResult = DB::select("
-            SELECT COUNT(DISTINCT user_id) AS total_users
+        SELECT COUNT(DISTINCT user_id) AS total_users
             FROM (
                 SELECT user_id FROM punch_corrections 
                 WHERE status = 'approved' 
                 AND YEAR(punch_time) = ? AND MONTH(punch_time) = ?
-                
+
                 UNION
 
                 SELECT user_id FROM punch_ins 
@@ -277,20 +460,33 @@ class PunchCorrectionController extends Controller
                 WHERE YEAR(timestamp) = ? AND MONTH(timestamp) = ?
             ) AS all_users
             WHERE user_id IN (
-                SELECT id FROM employees WHERE status != 'inactive'
-                AND (? IS NULL OR department_id = ?)
+                SELECT e.id FROM employees e
+                LEFT JOIN departments d ON e.department_id = d.id
+                WHERE e.status != 'inactive'
+                AND (
+                    (? IS NULL OR d.name COLLATE utf8mb4_unicode_ci = COALESCE(?, d.name) COLLATE utf8mb4_unicode_ci)
+                )
             )
-        ", [$year, $month, $year, $month, $year, $month, $departmentId, $departmentId]);
+        ", [
+            $year,
+            $month, // punch_corrections
+            $year,
+            $month, // punch_ins
+            $year,
+            $month, // punch_outs
+            $departmentName,
+            $departmentName // 部門名稱 (兩個 `?`)
+        ]);
 
         // **獲取 `total_users`**
-        $totalUsers = $totalUsersResult[0]->total_users ?? 0; // 計算總使用者數量
+        $totalUsers = count($totalUsersResult) > 0 ? $totalUsersResult[0]->total_users : 0; // 計算總使用者數量
 
         // ✅ 呼叫 MySQL 預存程序，取得該分頁的資料
         $records = DB::select('CALL GetAllFinalAttendanceRecords(?, ?, ?, ?, ?, ?, ?, ?)', [
             $requesterId,
             $requesterRole,
-            $departmentName,
-            $userId ?: null,
+            $departmentName ?? null,
+            $userId ?? null,
             $year,
             $month,
             $page,
@@ -347,6 +543,24 @@ class PunchCorrectionController extends Controller
     }
 
     // 人資查看所有補登打卡申請
+    /**
+     * @OA\Get(
+     *     path="/corrections",
+     *     summary="查看所有補登申請",
+     *     description="人資可查看所有補登申請（可篩選日期）",
+     *     operationId="getAllPunchCorrections",
+     *     tags={"Punch Correction"},
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Parameter(name="start_date", in="query", description="開始日期", @OA\Schema(type="string", format="date", example="2025-03-01")),
+     *     @OA\Parameter(name="end_date", in="query", description="結束日期", @OA\Schema(type="string", format="date", example="2025-03-10")),
+     *     @OA\Response(
+     *         response=200,
+     *         description="成功獲取補登紀錄",
+     *         @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/PunchCorrection"))
+     *     ),
+     *     @OA\Response(response=401, description="未授權")
+     * )
+     */
     public function getAllCorrections(Request $request)
     {
         // 確保使用者已登入
