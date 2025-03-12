@@ -6,10 +6,6 @@
         "contact": {
             "email": "admin@example.com"
         },
-        "license": {
-            "name": "Apache 2.0",
-            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
-        },
         "version": "1.0.0"
     },
     "paths": {
@@ -140,7 +136,7 @@
                 }
             }
         },
-        "/logout": {
+        "/api/logout": {
             "post": {
                 "tags": [
                     "Authentication"
@@ -225,7 +221,7 @@
                 ]
             }
         },
-        "/register": {
+        "/api/register": {
             "post": {
                 "tags": [
                     "Authentication"
@@ -313,12 +309,159 @@
                     }
                 }
             }
+        },
+        "/api/user/update/profile": {
+            "post": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "更新使用者個人資料（可選擇修改密碼或上傳大頭貼）",
+                "operationId": "5238331b71079ba01fbe896701e2dce3",
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "old_password": {
+                                        "description": "舊密碼 (修改密碼時必填)",
+                                        "type": "string",
+                                        "example": "OldPass123!",
+                                        "nullable": true
+                                    },
+                                    "new_password": {
+                                        "description": "新密碼 (修改密碼時必填)",
+                                        "type": "string",
+                                        "example": "NewPass456!",
+                                        "nullable": true
+                                    },
+                                    "new_password_confirmation": {
+                                        "description": "確認新密碼 (修改密碼時必填)",
+                                        "type": "string",
+                                        "example": "NewPass456!",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "個人資料已更新",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "個人資料已更新"
+                                        },
+                                        "avatar": {
+                                            "type": "string",
+                                            "example": "avatar_1.279f7c1cb3782406ae8f1c8fcfb16257ea04a63fe1d5e2c0050aaa197f690309"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "新密碼輸入不一致、密碼輸入不符規則",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "errors": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "example": [
+                                                "新密碼與確認密碼不一致",
+                                                "新密碼至少需要 8 個字元(包含大小寫字母、數字和特殊符號)"
+                                            ]
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "舊密碼錯誤或新密碼與舊密碼相同",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "errors": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "example": [
+                                                "舊密碼錯誤",
+                                                "新密碼不能與舊密碼相同"
+                                            ]
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "User": {
+                "properties": {
+                    "id": {
+                        "description": "使用者 ID",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "description": "使用者名稱",
+                        "type": "string",
+                        "example": "John Doe"
+                    },
+                    "email": {
+                        "description": "電子郵件",
+                        "type": "string",
+                        "format": "email",
+                        "example": "john.doe@example.com"
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "description": "使用 JWT token進行認證，格式為 'Bearer {token}'",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
         }
     },
     "tags": [
         {
             "name": "Authentication",
             "description": "Authentication"
+        },
+        {
+            "name": "User",
+            "description": "User"
         }
     ]
 }
