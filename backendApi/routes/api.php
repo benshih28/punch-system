@@ -158,7 +158,7 @@ Route::middleware('auth:api')->group(function () {
             // HR 審核員工註冊（需要 `review_employee` 權限）
             Route::patch('/{id}/review', [EmployeeController::class, 'reviewEmployee'])->middleware('can:review_employee');
             //分配&變更部門、職位、主管、角色（需要 `assign_employee_details` 權限）
-            Route::patch('/employees/{id}/assign', [EmployeeController::class, 'assignEmployeeDetails'])->middleware('can:assign_employee_details');
+            Route::patch('/{id}/assign', [EmployeeController::class, 'assignEmployeeDetails'])->middleware('can:assign_employee_details');
 
             // 刪除員工（需要 `delete_employee` 權限）
             Route::delete('/{id}', [EmployeeController::class, 'destroy'])->middleware('can:delete_employee');
