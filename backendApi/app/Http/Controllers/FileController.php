@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Storage;
 class FileController extends Controller
 {
 
-/**
+    /**
  * @OA\Get(
  *     path="/api/avatar",
  *     summary="取得使用者大頭貼",

@@ -160,7 +160,6 @@ Route::middleware('auth:api')->group(function () {
             //分配&變更部門、職位、主管、角色（需要 `assign_employee_details` 權限）
             Route::patch('/{id}/assign', [EmployeeController::class, 'assignEmployeeDetails'])->middleware('can:assign_employee_details');
 
-
             // 刪除員工（需要 `delete_employee` 權限）
             Route::delete('/{id}', [EmployeeController::class, 'destroy'])->middleware('can:delete_employee');
             // // 查詢主管
