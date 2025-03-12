@@ -8,6 +8,7 @@ use App\Models\PunchCorrection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class PunchCorrectionController extends Controller
 {
@@ -296,48 +297,8 @@ class PunchCorrectionController extends Controller
     }
 
 
-    // 個人的打卡紀錄
-    /**
-     * @OA\Get(
-     *     path="/api/attendance/record",
-     *     summary="取得個人打卡紀錄",
-     *     description="使用者可以查詢自己的打卡紀錄（依日期範圍篩選）",
-     *     operationId="getUserAttendanceRecords",
-     *     tags={"Attendance"},
-     *     security={{ "bearerAuth":{} }},
-     *     @OA\Parameter(name="start_date", in="query", required=true, description="開始日期", @OA\Schema(type="string", format="date", example="2025-03-01")),
-     *     @OA\Parameter(name="end_date", in="query", required=true, description="結束日期", @OA\Schema(type="string", format="date", example="2025-03-31")),
-     *     @OA\Response(
-     *         response=200,
-     *         description="成功獲取個人打卡紀錄",
-     *         @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/AttendanceRecord"))
-     *     ),
-     *     @OA\Response(response=400, description="請提供 start_date 和 end_date"),
-     *     @OA\Response(response=401, description="未授權")
-     * )
-     */
-    public function getAttendanceRecords(Request $request)
-    {
-        $userId = Auth::guard('api')->id();
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
-
-        if (!$startDate || !$endDate) {
-            return response()->json(['error' => '請提供 start_date 和 end_date'], 400);
-        }
-
-        // 呼叫 MySQL 預存程序
-        $records = DB::select('CALL GetFinalAttendanceRecords(?,?,?)', [
-            $userId,
-            $startDate,
-            $endDate,
-        ]);
-
-        return response()->json($records);
-    }
-
     // 讓人資看到所有人的打卡紀錄
-        /**
+    /**
      * @OA\Get(
      *     path="/api/attendancerecords",
      *     summary="查詢所有員工的打卡紀錄",
@@ -346,10 +307,10 @@ class PunchCorrectionController extends Controller
      *     tags={"Attendance"},
      *     security={{ "bearerAuth":{} }},
      *     @OA\Parameter(
-     *         name="department_name",
+     *         name="department_id",
      *         in="query",
-     *         description="部門名稱（選填）",
-     *         @OA\Schema(type="string", example="人資部")
+     *         description="部門 ID（選填，人資可指定要查詢的部門）",
+     *         @OA\Schema(type="integer", example=2)
      *     ),
      *     @OA\Parameter(
      *         name="user_id",
@@ -411,7 +372,64 @@ class PunchCorrectionController extends Controller
      *     @OA\Response(response=401, description="未授權"),
      *     @OA\Response(response=404, description="找不到符合條件的打卡紀錄")
      * )
+     * 
+     * @OA\Get(
+     *     path="/api/attendance/record",
+     *     summary="查詢個人打卡紀錄",
+     *     description="讓使用者查詢自己的打卡紀錄，需具有 `view_attendance` 權限。",
+     *     operationId="getPersonalAttendanceRecords",
+     *     tags={"Attendance"},
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Parameter(
+     *         name="year",
+     *         in="query",
+     *         required=true,
+     *         description="查詢年份",
+     *         @OA\Schema(type="integer", example=2025)
+     *     ),
+     *     @OA\Parameter(
+     *         name="month",
+     *         in="query",
+     *         required=true,
+     *         description="查詢月份",
+     *         @OA\Schema(type="integer", example=3)
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="分頁頁碼（預設 1）",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="每頁顯示數量（預設 10）",
+     *         @OA\Schema(type="integer", example=10)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="成功獲取個人打卡紀錄",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="成功獲取個人打卡紀錄"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/AttendanceRecord")),
+     *                 @OA\Property(property="current_page", type="integer", example=1),
+     *                 @OA\Property(property="per_page", type="integer", example=10),
+     *                 @OA\Property(property="total", type="integer", example=10),
+     *                 @OA\Property(property="last_page", type="integer", example=1),
+     *                 @OA\Property(property="from", type="integer", example=1),
+     *                 @OA\Property(property="to", type="integer", example=10)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=400, description="請提供年份和月份"),
+     *     @OA\Response(response=401, description="未授權")
+     * )
      */
+
     public function getAllAttendanceRecords(Request $request)
     {
         // 確保使用者已登入
@@ -419,17 +437,19 @@ class PunchCorrectionController extends Controller
         if (!$user) {
             return response()->json(['message' => '未授權的請求'], 401);
         }
+        $employee = $user->employee; // 取得對應的 employees 資料
 
         // ✅ 取得使用者角色和 ID
         $requesterId = $user->id;
-        $requesterRole = $user->role; // HR, MANAGER, EMPLOYEE
+        $departmentId = optional($employee)->department_id; // 取得部門 ID
+        $managerId = optional($employee)->manager_id; // 取得 manager_id
 
         // 取得 Query 參數
-        $departmentName = $request->query('department_name'); // 部門名稱 (可選)
+        $requestedDepartmentId = $request->query('department_id'); // 讓 HR 可以指定要查詢的部門
         $userId = $request->query('user_id'); // 指定查詢的 user ID (可選)
         $year = $request->query('year');
         $month = $request->query('month');
-        $page = $request->query('page', 1); // 預設第一頁
+        $page = (int) $request->query('page', 1); // 預設第一頁
         $perPage = (int) $request->query('per_page', 10); //每頁顯示10個user_id
 
         // 驗證 year & month
@@ -441,9 +461,8 @@ class PunchCorrectionController extends Controller
         $page = max(1, $page);
         $perPage = max(1, 10);
 
-        // 確保 `departmentName` 在 SQL 查詢中不會導致 COLLATION 問題
         $totalUsersResult = DB::select("
-        SELECT COUNT(DISTINCT user_id) AS total_users
+            SELECT COUNT(DISTINCT user_id) AS total_users
             FROM (
                 SELECT user_id FROM punch_corrections 
                 WHERE status = 'approved' 
@@ -461,11 +480,8 @@ class PunchCorrectionController extends Controller
             ) AS all_users
             WHERE user_id IN (
                 SELECT e.id FROM employees e
-                LEFT JOIN departments d ON e.department_id = d.id
                 WHERE e.status != 'inactive'
-                AND (
-                    (? IS NULL OR d.name COLLATE utf8mb4_unicode_ci = COALESCE(?, d.name) COLLATE utf8mb4_unicode_ci)
-                )
+                AND ( ? IS NULL OR e.department_id = ? ) -- ✅ 直接比對 `department_id`
             )
         ", [
             $year,
@@ -474,24 +490,34 @@ class PunchCorrectionController extends Controller
             $month, // punch_ins
             $year,
             $month, // punch_outs
-            $departmentName,
-            $departmentName // 部門名稱 (兩個 `?`)
+            $departmentId,  // ✅ 直接用 `departmentId` 來過濾
+            $departmentId   // ✅ 避免 COLLATE 轉換，提升效能
         ]);
 
         // **獲取 `total_users`**
         $totalUsers = count($totalUsersResult) > 0 ? $totalUsersResult[0]->total_users : 0; // 計算總使用者數量
 
+        // **允許 HR 指定 department_id 進行查詢**
+        if ($departmentId == 1) {
+            $finalDepartmentId = $requestedDepartmentId ?? null; // HR 可以查詢所有部門 (NULL = 不限部門)
+        } else {
+            $finalDepartmentId = $departmentId; // 主管 & 員工只能查詢自己的部門
+        }
+
         // ✅ 呼叫 MySQL 預存程序，取得該分頁的資料
-        $records = DB::select('CALL GetAllFinalAttendanceRecords(?, ?, ?, ?, ?, ?, ?, ?)', [
-            $requesterId,
-            $requesterRole,
-            $departmentName ?? null,
-            $userId ?? null,
-            $year,
-            $month,
-            $page,
-            $perPage
+        $records = DB::select('CALL GetAllFinalAttendanceRecords(?, ?, ?, ?, ?, ?, ?, ?, ?)', [
+            $requesterId,     // 當前登入者的 user_id
+            $departmentId,    // 當前登入者的部門 ID
+            $managerId,       // 當前登入者的 manager_id
+            $finalDepartmentId,
+            $userId ?? null,  // 選擇性查詢特定 user_id
+            $year,            // 查詢年份
+            $month,           // 查詢月份
+            $page,            // 當前頁數
+            $perPage          // 每頁筆數
         ]);
+
+
 
         // **整理回傳格式**
         $groupedData = [];
