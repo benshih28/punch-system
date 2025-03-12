@@ -224,7 +224,7 @@ class PunchCorrectionController extends Controller
         $requesterRole = $user->role; // HR, MANAGER, EMPLOYEE
 
         // 取得 Query 參數
-        $departmentId = $request->query('department_id'); // 部門 ID (可選)
+        $departmentName = $request->query('department_name'); // 部門名稱 (可選)
         $userId = $request->query('user_id'); // 指定查詢的 user ID (可選)
         $year = $request->query('year');
         $month = $request->query('month');
@@ -240,32 +240,14 @@ class PunchCorrectionController extends Controller
         $page = max(1, $page);
         $perPage = max(1, 10);
 
-        // ✅ 轉換 `departmentId` → `departmentName`
-        $departmentName = null;
-        if ($departmentId) {
-            $dept = DB::table('departments')->where('id', $departmentId)->first();
-            if ($dept) {
-                $departmentName = $dept->name;
-            }
-        }
-
-        // ✅ 直接使用預存程序查詢 `totalUsers`
-        $totalUsersResult = DB::select('CALL GetAllFinalAttendanceRecords(?, ?, ?, ?, ?, ?, 0, 0)', [
-            $requesterId,
-            $requesterRole,
-            $departmentName,
-            $userId ?: null,
-            $year,
-            $month
-        ]);
-
+        // 確保 `departmentName` 在 SQL 查詢中不會導致 COLLATION 問題
         $totalUsersResult = DB::select("
-            SELECT COUNT(DISTINCT user_id) AS total_users
+        SELECT COUNT(DISTINCT user_id) AS total_users
             FROM (
                 SELECT user_id FROM punch_corrections 
                 WHERE status = 'approved' 
                 AND YEAR(punch_time) = ? AND MONTH(punch_time) = ?
-                
+
                 UNION
 
                 SELECT user_id FROM punch_ins 
@@ -277,20 +259,33 @@ class PunchCorrectionController extends Controller
                 WHERE YEAR(timestamp) = ? AND MONTH(timestamp) = ?
             ) AS all_users
             WHERE user_id IN (
-                SELECT id FROM employees WHERE status != 'inactive'
-                AND (? IS NULL OR department_id = ?)
+                SELECT e.id FROM employees e
+                LEFT JOIN departments d ON e.department_id = d.id
+                WHERE e.status != 'inactive'
+                AND (
+                    (? IS NULL OR d.name COLLATE utf8mb4_unicode_ci = COALESCE(?, d.name) COLLATE utf8mb4_unicode_ci)
+                )
             )
-        ", [$year, $month, $year, $month, $year, $month, $departmentId, $departmentId]);
+        ", [
+            $year,
+            $month, // punch_corrections
+            $year,
+            $month, // punch_ins
+            $year,
+            $month, // punch_outs
+            $departmentName,
+            $departmentName // 部門名稱 (兩個 `?`)
+        ]);
 
         // **獲取 `total_users`**
-        $totalUsers = $totalUsersResult[0]->total_users ?? 0; // 計算總使用者數量
+        $totalUsers = count($totalUsersResult) > 0 ? $totalUsersResult[0]->total_users : 0; // 計算總使用者數量
 
         // ✅ 呼叫 MySQL 預存程序，取得該分頁的資料
         $records = DB::select('CALL GetAllFinalAttendanceRecords(?, ?, ?, ?, ?, ?, ?, ?)', [
             $requesterId,
             $requesterRole,
-            $departmentName,
-            $userId ?: null,
+            $departmentName ?? null,
+            $userId ?? null,
             $year,
             $month,
             $page,
@@ -325,7 +320,7 @@ class PunchCorrectionController extends Controller
         $lastPage = max(1, ceil($totalUsers / $perPage));
         $nextPageUrl = $page < $lastPage ? url("/api/attendancerecords?page=" . ($page + 1) . "&per_page=" . $perPage) : null;
         $prevPageUrl = $page > 1 ? url("/api/attendancerecords?page=" . ($page - 1) . "&per_page=" . $perPage) : null;
-        
+
         // **統一 API 分頁格式**
         return response()->json([
             'message' => '成功獲取所有員工的打卡紀錄',
