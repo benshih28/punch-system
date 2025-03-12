@@ -76,7 +76,7 @@ class UserRoleController extends Controller
      *     description="根據 `userId` 取得該使用者的所有權限，包括直接擁有的權限和透過角色繼承的權限。",
      *     operationId="getUserPermissions",
      *     tags={"User Permissions"},
-     *     security={{"bearerAuth": {}}},  // 需要身份驗證 (JWT Token)
+     *     security={{"bearerAuth": {}}},
      *
      *     @OA\Parameter(
      *         name="userId",
