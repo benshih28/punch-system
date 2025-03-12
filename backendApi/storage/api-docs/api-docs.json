@@ -1163,6 +1163,57 @@
                 ]
             }
         },
+        "/api/avatar": {
+            "get": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "取得使用者大頭貼",
+                "description": "使用者先行登入後，取得使用者大頭貼",
+                "operationId": "bf401187bcf169398022be3742b9735b",
+                "responses": {
+                    "200": {
+                        "description": "成功取得大頭貼",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "avatar_url": {
+                                            "type": "string",
+                                            "example": "/storage/avatars/avatar_2.6da43bda2dfa8d30688b2136cc26d91d6d1280bed7b6cb08cbc55b6baa66359e",
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "沒有找到大頭貼",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "avatar_url": {
+                                            "type": "string",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/leavetypes/rules/add": {
             "post": {
                 "tags": [
@@ -2239,6 +2290,202 @@
                 ]
             }
         },
+        "/api/punch/in": {
+            "post": {
+                "tags": [
+                    "Attendance"
+                ],
+                "summary": "上班打卡",
+                "description": "員工使用此 API 來進行上班打卡，每天只能打卡一次。",
+                "operationId": "punchIn",
+                "responses": {
+                    "201": {
+                        "description": "打卡成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Punch in recorded"
+                                        },
+                                        "punch_in": {
+                                            "properties": {
+                                                "user_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "timestamp": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-03-12 08:30:00"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "今天已經完成上班打卡",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "今天已經完成上班打卡！"
+                                        },
+                                        "punch_in": {
+                                            "properties": {
+                                                "user_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "timestamp": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-03-12 08:30:00"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "未授權，請重新登入",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/punch/out": {
+            "post": {
+                "tags": [
+                    "Attendance"
+                ],
+                "summary": "下班打卡",
+                "description": "員工使用此 API 來進行下班打卡，系統會自動檢查當天是否已經有上班打卡紀錄。",
+                "operationId": "punchOut",
+                "responses": {
+                    "201": {
+                        "description": "打卡成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Punch out recorded"
+                                        },
+                                        "punch_out": {
+                                            "properties": {
+                                                "user_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "timestamp": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-03-12 17:30:00"
+                                                },
+                                                "is_valid": {
+                                                    "description": "是否為有效打卡",
+                                                    "type": "boolean",
+                                                    "example": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "無效的下班打卡，因為沒有對應的上班打卡紀錄",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "無效的下班打卡，請先上班打卡"
+                                        },
+                                        "punch_out": {
+                                            "properties": {
+                                                "user_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "timestamp": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-03-12 17:30:00"
+                                                },
+                                                "is_valid": {
+                                                    "description": "無效打卡",
+                                                    "type": "boolean",
+                                                    "example": false
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "未授權，請重新登入",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/punch/correction": {
             "get": {
                 "tags": [
@@ -2755,6 +3002,305 @@
                 ]
             }
         },
+        "/api/roles": {
+            "get": {
+                "tags": [
+                    "角色管理"
+                ],
+                "summary": "取得所有角色",
+                "description": "取得系統內的所有角色。",
+                "operationId": "getAllRoles",
+                "responses": {
+                    "200": {
+                        "description": "成功取得角色列表",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "name": {
+                                                "type": "string",
+                                                "example": "admin"
+                                            },
+                                            "guard_name": {
+                                                "type": "string",
+                                                "example": "api"
+                                            },
+                                            "created_at": {
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2025-03-12 10:28:47"
+                                            },
+                                            "updated_at": {
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2025-03-12 10:28:47"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "權限不足"
+                    },
+                    "401": {
+                        "description": "未授權"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Roles & Permissions"
+                ],
+                "summary": "建立新角色",
+                "description": "HR 或 Admin 可建立新角色，並一次性指派權限。",
+                "operationId": "createRole",
+                "requestBody": {
+                    "description": "角色名稱與權限",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "description": "角色名稱",
+                                        "type": "string",
+                                        "example": "manager"
+                                    },
+                                    "permissions": {
+                                        "description": "權限名稱陣列（可選）",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "punch_in"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "角色建立成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "角色建立成功"
+                                        },
+                                        "role": {
+                                            "type": "string",
+                                            "example": "manager"
+                                        },
+                                        "permissions": {
+                                            "description": "角色擁有的權限",
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string",
+                                                "example": "punch_in"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "請求格式錯誤"
+                    },
+                    "403": {
+                        "description": "沒有權限"
+                    },
+                    "422": {
+                        "description": "驗證失敗"
+                    },
+                    "500": {
+                        "description": "伺服器錯誤"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/roles/{role}/permissions": {
+            "get": {
+                "tags": [
+                    "角色管理"
+                ],
+                "summary": "取得角色的所有權限",
+                "description": "根據角色名稱取得該角色的所有權限。",
+                "operationId": "getRolePermissions",
+                "parameters": [
+                    {
+                        "name": "role",
+                        "in": "path",
+                        "description": "角色名稱",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "admin"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功取得角色的權限",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "role": {
+                                            "type": "string",
+                                            "example": "admin"
+                                        },
+                                        "permissions": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string",
+                                                "example": "manage_roles"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "找不到角色"
+                    },
+                    "403": {
+                        "description": "權限不足"
+                    },
+                    "401": {
+                        "description": "未授權"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Roles & Permissions"
+                ],
+                "summary": "更新角色的權限",
+                "description": "HR 或 Admin 可為角色指派新權限，並移除原本未包含的權限。",
+                "operationId": "assignPermission",
+                "parameters": [
+                    {
+                        "name": "role",
+                        "in": "path",
+                        "description": "角色名稱",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "manager"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "description": "權限名稱列表",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "permissions"
+                                ],
+                                "properties": {
+                                    "permissions": {
+                                        "description": "新權限列表，舊權限未包含在此清單內的會自動被移除",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "punch_in"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "角色權限更新成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "角色權限已更新"
+                                        },
+                                        "role": {
+                                            "type": "string",
+                                            "example": "manager"
+                                        },
+                                        "permissions": {
+                                            "description": "角色擁有的最新權限",
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string",
+                                                "example": "punch_in"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "請求格式錯誤"
+                    },
+                    "403": {
+                        "description": "沒有權限"
+                    },
+                    "404": {
+                        "description": "角色不存在"
+                    },
+                    "422": {
+                        "description": "驗證失敗"
+                    },
+                    "500": {
+                        "description": "伺服器錯誤"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/user/update/profile": {
             "post": {
                 "tags": [
@@ -3065,6 +3611,10 @@
             "description": "Employee"
         },
         {
+            "name": "User",
+            "description": "User"
+        },
+        {
             "name": "Leave Reset Rules",
             "description": "Leave Reset Rules"
         },
@@ -3077,16 +3627,20 @@
             "description": "Position"
         },
         {
-            "name": "Punch Correction",
-            "description": "Punch Correction"
-        },
-        {
             "name": "Attendance",
             "description": "Attendance"
         },
         {
-            "name": "User",
-            "description": "User"
+            "name": "Punch Correction",
+            "description": "Punch Correction"
+        },
+        {
+            "name": "Roles & Permissions",
+            "description": "Roles & Permissions"
+        },
+        {
+            "name": "角色管理",
+            "description": "角色管理"
         }
     ]
 }

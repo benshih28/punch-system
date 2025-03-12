@@ -78,10 +78,8 @@ Route::middleware('auth:api')->group(function () {
             Route::post('/', [RoleController::class, 'createRole']);
             // 取得所有角色
             Route::get('/', [RoleController::class, 'getAllRoles']);
-            // 指派 `permissions` 給角色
+            // 指派或更新 `permissions` 給角色（移除舊的，指派新的）
             Route::patch('/{role}/permissions', [RoleController::class, 'assignPermission']);
-            // 移除 `permissions`
-            Route::delete('/{role}/permissions', [RoleController::class, 'revokePermission']);
             // 取得角色permissions
             Route::get('/{role}/permissions', [RoleController::class, 'getRolePermissions']);
         });

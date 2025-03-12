@@ -9,14 +9,51 @@ use Illuminate\Support\Facades\Auth;
 
 class RoleController extends Controller
 {
+    /**
+     * @OA\Post(
+     *     path="/api/roles",
+     *     summary="建立新角色",
+     *     description="HR 或 Admin 可建立新角色，並一次性指派權限。",
+     *     operationId="createRole",
+     *     tags={"Roles & Permissions"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="角色名稱與權限",
+     *         @OA\JsonContent(
+     *             required={"name"},
+     *             @OA\Property(property="name", type="string", example="manager", description="角色名稱"),
+     *             @OA\Property(
+     *                 property="permissions",
+     *                 type="array",
+     *                 @OA\Items(type="string", example="punch_in"),
+     *                 description="權限名稱陣列（可選）"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="角色建立成功",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="角色建立成功"),
+     *             @OA\Property(property="role", type="string", example="manager"),
+     *             @OA\Property(
+     *                 property="permissions",
+     *                 type="array",
+     *                 @OA\Items(type="string", example="punch_in"),
+     *                 description="角色擁有的權限"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=400, description="請求格式錯誤"),
+     *     @OA\Response(response=403, description="沒有權限"),
+     *     @OA\Response(response=422, description="驗證失敗"),
+     *     @OA\Response(response=500, description="伺服器錯誤")
+     * )
+     */
     // ✅ 建立新角色並可選擇 `permissions`
     public function createRole(Request $request)
     {
-        // 檢查使用者是否擁有 HR 或 Admin 角色
-        if (!Auth::user() || !Auth::user()->hasRole(['HR', 'Admin'])) {
-            return response()->json(['message' => 'Permission denied'], 403);
-        }
-
         $request->validate([
             'name' => 'required|string|unique:roles,name',
             'permissions' => 'nullable|array',
@@ -25,18 +62,51 @@ class RoleController extends Controller
 
         $role = Role::create(['name' => $request->name]);
 
-        // 如果有 `permissions`，則直接同步
+        // ✅ 如果有 `permissions`，則同步更新
         if ($request->has('permissions')) {
             $role->syncPermissions($request->permissions);
         }
 
         return response()->json([
-            'message' => 'Role created successfully',
+            'message' => '角色建立成功',
             'role' => $role->name,
             'permissions' => $role->permissions
         ], 201);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/roles",
+     *     summary="取得所有角色",
+     *     description="取得系統內的所有角色。",
+     *     operationId="getAllRoles",
+     *     tags={"角色管理"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="成功取得角色列表",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="admin"),
+     *                 @OA\Property(property="guard_name", type="string", example="api"),
+     *                 @OA\Property(property="created_at", type="string", format="date-time", example="2025-03-12 10:28:47"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2025-03-12 10:28:47")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="權限不足"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="未授權"
+     *     )
+     * )
+     */
     // ✅ 取得所有角色
     public function getAllRoles()
     {
@@ -77,7 +147,56 @@ class RoleController extends Controller
         return response()->json(['message' => 'Permission deleted successfully']);
     }
 
-    // ✅ 指派 `permissions` 給角色 (批量)
+    /**
+     * @OA\Patch(
+     *     path="/api/roles/{role}/permissions",
+     *     summary="更新角色的權限",
+     *     description="HR 或 Admin 可為角色指派新權限，並移除原本未包含的權限。",
+     *     operationId="assignPermission",
+     *     tags={"Roles & Permissions"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="role",
+     *         in="path",
+     *         required=true,
+     *         description="角色名稱",
+     *         @OA\Schema(type="string", example="manager")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="權限名稱列表",
+     *         @OA\JsonContent(
+     *             required={"permissions"},
+     *             @OA\Property(
+     *                 property="permissions",
+     *                 type="array",
+     *                 @OA\Items(type="string", example="punch_in"),
+     *                 description="新權限列表，舊權限未包含在此清單內的會自動被移除"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="角色權限更新成功",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="角色權限已更新"),
+     *             @OA\Property(property="role", type="string", example="manager"),
+     *             @OA\Property(
+     *                 property="permissions",
+     *                 type="array",
+     *                 @OA\Items(type="string", example="punch_in"),
+     *                 description="角色擁有的最新權限"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=400, description="請求格式錯誤"),
+     *     @OA\Response(response=403, description="沒有權限"),
+     *     @OA\Response(response=404, description="角色不存在"),
+     *     @OA\Response(response=422, description="驗證失敗"),
+     *     @OA\Response(response=500, description="伺服器錯誤")
+     * )
+     */
+    // 更新角色的 `permissions` (覆蓋式更新)
     public function assignPermission(Request $request, $roleName)
     {
         $request->validate([
@@ -87,56 +206,73 @@ class RoleController extends Controller
 
         $role = Role::where('name', $roleName)->first();
         if (!$role) {
-            return response()->json(['error' => 'Role not found'], 404);
+            return response()->json(['error' => '找不到角色'], 404);
         }
 
-        // ✅ 批量更新 `permissions`
+        // ✅ 直接同步更新 `permissions` (移除舊的，指派新的)
         $role->syncPermissions($request->permissions);
 
         return response()->json([
-            'message' => 'Permissions assigned successfully',
+            'message' => '角色權限已更新',
             'role' => $role->name,
             'permissions' => $role->permissions
         ]);
     }
 
-    // ✅ 批量移除 `permissions` (刪除)
-    public function revokePermission(Request $request, $roleName)
+    /**
+     * @OA\Get(
+     *     path="/api/roles/{role}/permissions",
+     *     summary="取得角色的所有權限",
+     *     description="根據角色名稱取得該角色的所有權限。",
+     *     operationId="getRolePermissions",
+     *     tags={"角色管理"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="role",
+     *         in="path",
+     *         required=true,
+     *         description="角色名稱",
+     *         @OA\Schema(type="string", example="admin")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="成功取得角色的權限",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="role", type="string", example="admin"),
+     *             @OA\Property(
+     *                 property="permissions",
+     *                 type="array",
+     *                 @OA\Items(type="string", example="manage_roles")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="找不到角色"
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="權限不足"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="未授權"
+     *     )
+     * )
+     */
+    public function getRolePermissions($roleName)
     {
-        $request->validate([
-            'permissions' => 'required|array',
-            'permissions.*' => 'exists:permissions,name' // 確保權限名稱存在
-        ]);
-
+        // ✅ 確保角色存在
         $role = Role::where('name', $roleName)->first();
         if (!$role) {
             return response()->json(['error' => 'Role not found'], 404);
         }
 
-        // ✅ 批量刪除 `permissions`
-        foreach ($request->permissions as $permission) {
-            $role->revokePermissionTo($permission);
-        }
-
+        // ✅ 取得角色的所有權限
         return response()->json([
-            'message' => 'Permissions revoked successfully',
             'role' => $role->name,
-            'permissions' => $role->permissions
+            'permissions' => $role->permissions->pluck('name')
         ]);
-    }
-
-
-    public function getRolePermissions($roleName){
-    // ✅ 確保角色存在
-    $role = Role::where('name', $roleName)->first();
-    if (!$role) {
-        return response()->json(['error' => 'Role not found'], 404);
-    }
-
-    // ✅ 取得角色的所有權限
-    return response()->json([
-        'role' => $role->name,
-        'permissions' => $role->permissions->pluck('name')
-    ]);
     }
 }
