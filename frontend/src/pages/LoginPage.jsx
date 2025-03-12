@@ -40,26 +40,28 @@ function LoginPage() {
     try {
       // 發送登入請求
       const response = await API.post("/login", data);
+      const token = response.data.access_token; // 使用 "access_token" 而非 "token"
+      const user = response.data.user; // 存儲使用者資訊
+
+      if (!token) throw new Error("Token 未提供");
 
       // **更新 Jotai 全局狀態**
       setAuth({
-        isAuthenticated: true, // 標記為已登入
-        user: response.data.user, // 存儲使用者資訊
-        token: response.data.token, // 存儲 JWT Token
+        access_token: token, // 與 authAtom 一致
+        user: user,
       });
-
-      // **將 Token 存入 localStorage**
-      localStorage.setItem("token", response.data.token);
 
       // **導航到打卡頁面**
       navigate("/punchin");
     } catch (error) {
-      // **錯誤處理**
-      if (error.response?.data) {
-        setError("email", { message: "信箱或密碼錯誤，請重新輸入" });
-      } else {
-        setError("email", { message: "無法連線至伺服器，請稍後再試" });
+      const status = error.response?.status;
+      let errorMessage = "無法連線至伺服器，請稍後再試";
+      if (status === 401) {
+        errorMessage = error.response?.data?.error || "信箱或密碼錯誤";
+      } else if (status === 500) {
+        errorMessage = error.response?.data?.error || "伺服器錯誤";
       }
+      setError("email", { message: errorMessage });
     } finally {
       setLoading(false); // **請求完成後關閉 loading**
     }
@@ -152,7 +154,10 @@ function LoginPage() {
 
           {/* **忘記密碼連結** */}
           <Box textAlign="right" sx={{ mb: 2 }}>
-            <Link to="/ForgotPassword" style={{ fontSize: "14px", color: "#757575" }}>
+            <Link
+              to="/ForgotPassword"
+              style={{ fontSize: "14px", color: "#757575" }}
+            >
               忘記密碼
             </Link>
           </Box>
