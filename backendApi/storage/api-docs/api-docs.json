@@ -311,6 +311,157 @@
             }
         },
         "/api/employees": {
+            "get": {
+                "tags": [
+                    "Employees"
+                ],
+                "summary": "取得所有員工列表（HR 介面）",
+                "description": "HR 取得所有員工的資訊，包含部門、職位、員工姓名、主管 ID、角色、狀態。",
+                "operationId": "7fc06f144c1cd7925c5c391a6609f02d",
+                "parameters": [
+                    {
+                        "name": "department_id",
+                        "in": "query",
+                        "description": "篩選特定部門 ID 的員工",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 2
+                        }
+                    },
+                    {
+                        "name": "role_id",
+                        "in": "query",
+                        "description": "篩選特定角色 ID 的員工",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 3
+                        }
+                    },
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "description": "篩選特定使用者 ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "每頁顯示的筆數",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "目前頁數",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功取得員工列表",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "成功獲取員工列表"
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 50
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "department": {
+                                                        "type": "string",
+                                                        "example": "IT 部門"
+                                                    },
+                                                    "position": {
+                                                        "type": "string",
+                                                        "example": "軟體工程師"
+                                                    },
+                                                    "employee_name": {
+                                                        "type": "string",
+                                                        "example": "ben"
+                                                    },
+                                                    "manager_id": {
+                                                        "type": "integer",
+                                                        "example": 3
+                                                    },
+                                                    "roles": {
+                                                        "type": "string",
+                                                        "example": "員工"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "pending",
+                                                            "approved",
+                                                            "rejected",
+                                                            "inactive"
+                                                        ],
+                                                        "example": "approved"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "未授權，請提供有效 Token"
+                    },
+                    "403": {
+                        "description": "沒有權限存取"
+                    },
+                    "500": {
+                        "description": "伺服器錯誤"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
             "post": {
                 "tags": [
                     "Employees"
@@ -620,6 +771,140 @@
                     }
                 ]
             }
+        },
+        "/api/employees/{id}": {
+            "delete": {
+                "tags": [
+                    "Employees"
+                ],
+                "summary": "HR 刪除員工 (標記為離職)",
+                "description": "HR 可以將員工標記為離職 (inactive)，而不是真正刪除資料。",
+                "operationId": "deleteEmployee",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "員工 ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "員工已標記為離職",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "員工已標記為離職"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "找不到員工",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "找不到員工"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/my/employees": {
+            "get": {
+                "tags": [
+                    "Employee"
+                ],
+                "summary": "取得主管管理的員工 ID",
+                "description": "返回當前登入使用者作為主管時，所管理的員工 user_id 列表。",
+                "operationId": "getMyEmployees",
+                "responses": {
+                    "200": {
+                        "description": "成功獲取主管管理的員工 ID",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "成功獲取你管理的員工"
+                                        },
+                                        "user_ids": {
+                                            "description": "員工的 user_id 列表",
+                                            "type": "array",
+                                            "items": {
+                                                "type": "integer",
+                                                "example": 10
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "當前使用者沒有管理任何員工",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "你沒有管理任何員工"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "未授權，Token 無效或未提供",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -663,6 +948,10 @@
         {
             "name": "Employees",
             "description": "Employees"
+        },
+        {
+            "name": "Employee",
+            "description": "Employee"
         }
     ]
 }

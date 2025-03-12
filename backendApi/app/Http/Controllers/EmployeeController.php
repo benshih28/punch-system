@@ -89,7 +89,7 @@ class EmployeeController extends Controller
     {
         $departmentId = $request->query('department_id');
         $roleId = $request->query('role_id');
-        $userId = $request->query('user_id') ?: null;
+        $userId = $request->query('user_id');
         $perPage = $request->query('per_page', 10);
         $page = $request->query('page', 1);
         $offset = ($page - 1) * $perPage;
