@@ -1,4 +1,5 @@
 <?php
+
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use Illuminate\Support\Facades\Route;
@@ -18,9 +19,6 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\LeaveTypeController;
 use App\Http\Controllers\LeaveResetRuleController;
 use App\Http\Controllers\LeaveController;
-
-
-
 
 // 公開 API（不需要登入）
 // 註冊
