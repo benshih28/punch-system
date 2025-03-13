@@ -1,15 +1,116 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import LoginPage from "./pages/LoginPage"; // 引入登入頁面
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  Navigate,
+} from "react-router-dom";
+import { useAtom } from "jotai";
+import { authAtom } from "./state/authAtom";
+import Header from "./components/header";
+import Footer from "./components/footer";
+import LoginPage from "./pages/loginPage";
+import Register from "./pages/register";
+import Punchin from "./pages/punchin";
+import ApproveLeave from "./pages/approveLeave";
+import ProtectedRoute from "./components/protectedRoute";
+
+// 先預留這些路由
+const ProfilePage = () => <div>個人帳戶管理頁面 (尚未建立)</div>;
+const ClockHistoryPage = () => <div>查詢打卡紀錄頁面 (尚未建立)</div>;
+const ClockReissueHistoryPage = () => <div>查詢補打卡紀錄頁面 (尚未建立)</div>;
+const LeaveRecordsPage = () => <div>請假及查詢紀錄頁面 (尚未建立)</div>;
+const ApproveClockReissuePage = () => <div>補打卡審核頁面 (尚未建立)</div>;
+const UserManagementPage = () => <div>人員管理頁面 (尚未建立)</div>;
+const RolePermissionsPage = () => <div>權限修改頁面 (尚未建立)</div>;
+
+/**
+ * 受保護頁面的 Layout（包含 Header & Footer）
+ */
+const ProtectedLayout = ({ children }) => (
+  <>
+    <Header />
+    <main>{children}</main>
+    <Footer />
+  </>
+);
 
 function App() {
+  const [auth] = useAtom(authAtom);
+  const isAuthenticated =
+    auth?.isAuthenticated || !!localStorage.getItem("token");
+
   return (
     <Router>
       <Routes>
-        {/* 預設導向至登入頁面 */}
-        <Route path="/" element={<Navigate replace to="/login" />} />
-        
-        {/* 登入頁面 */}
-        <Route path="/login" element={<LoginPage />} />
+        {/* ✅ 未登入時顯示 LoginPage，並包含 Footer */}
+        <Route
+          path="/login"
+          element={
+            <>
+              <LoginPage />
+              <Footer />
+            </>
+          }
+        />
+
+        {/* ✅ 註冊頁面，不需要登入即可訪問 */}
+        <Route
+          path="/register"
+          element={
+            <>
+              <Register />
+              <Footer />
+            </>
+          }
+        />
+
+        {/* ✅ 已登入後的所有頁面（確保 Header 只出現在登入後的頁面） */}
+        <Route
+          path="*"
+          element={
+            isAuthenticated ? (
+              <ProtectedRoute>
+                <ProtectedLayout>
+                  <Routes>
+                    <Route path="/punchin" element={<Punchin />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route
+                      path="/clock-history"
+                      element={<ClockHistoryPage />}
+                    />
+                    <Route
+                      path="/clock-reissue-history"
+                      element={<ClockReissueHistoryPage />}
+                    />
+                    <Route
+                      path="/leave-and-inquiry-records"
+                      element={<LeaveRecordsPage />}
+                    />
+                    <Route path="/approve-leave" element={<ApproveLeave />} />
+                    <Route
+                      path="/approve-clock-reissue"
+                      element={<ApproveClockReissuePage />}
+                    />
+                    <Route
+                      path="/user-management"
+                      element={<UserManagementPage />}
+                    />
+                    <Route
+                      path="/role-permissions"
+                      element={<RolePermissionsPage />}
+                    />
+                    <Route path="*" element={<Navigate to="/punchin" />} />
+                  </Routes>
+                </ProtectedLayout>
+              </ProtectedRoute>
+            ) : (
+              <>
+                <Navigate to="/login" />
+                <Footer />
+              </>
+            )
+          }
+        />
       </Routes>
     </Router>
   );
