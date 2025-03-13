@@ -44,16 +44,13 @@ Route::middleware('auth:api')->group(function () {
 
     // 需要通過審核才能使用的 API
     Route::middleware('approved')->group(function () {
-        // 🟢 大頭貼
-        Route::post('/upload/avatar', [FileController::class, 'uploadAvatar'])->middleware('auth');
-        Route::get('/avatar', [FileController::class, 'getAvatar'])->middleware('auth');
 
         // 更新使用者個人資料(大頭貼、更改新密碼)
         Route::post('/user/update/profile', [UserController::class, 'updateProfile']);
 
         // 大頭貼
         // Route::post('/upload/avatar', [FileController::class, 'uploadAvatar'])->middleware('auth');
-        Route::get('/avatar', [FileController::class, 'getAvatar'])->middleware('auth');
+        Route::get('/avatar', [FileController::class, 'getAvatar']);
 
         // 🟢 打卡 API
         Route::prefix('/punch')->group(function () {
