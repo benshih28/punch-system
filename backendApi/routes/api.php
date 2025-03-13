@@ -68,7 +68,7 @@ Route::middleware('auth:api')->group(function () {
         });
 
         // 查詢當前使用者打卡紀錄 （需要 `view_attendance` 權限）
-        Route::get('/attendance/record', [PunchCorrectionController::class, 'getAttendanceRecords'])->middleware('can:view_attendance');
+        Route::get('/attendance/record', [PunchCorrectionController::class, 'ggetAllAttendanceRecords'])->middleware('can:view_attendance');
 
 
 
