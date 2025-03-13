@@ -68,7 +68,7 @@ Route::middleware('auth:api')->group(function () {
         });
 
         // 查詢當前使用者打卡紀錄 （需要 `view_attendance` 權限）
-        Route::get('/attendance/record', [PunchCorrectionController::class, 'getAttendanceRecords'])->middleware('can:view_attendance');
+        Route::get('/attendance/record', [PunchCorrectionController::class, 'ggetAllAttendanceRecords'])->middleware('can:view_attendance');
 
 
 
@@ -78,10 +78,8 @@ Route::middleware('auth:api')->group(function () {
             Route::post('/', [RoleController::class, 'createRole']);
             // 取得所有角色
             Route::get('/', [RoleController::class, 'getAllRoles']);
-            // 指派 `permissions` 給角色
+            // 指派或更新 `permissions` 給角色（移除舊的，指派新的）
             Route::patch('/{role}/permissions', [RoleController::class, 'assignPermission']);
-            // 移除 `permissions`
-            Route::delete('/{role}/permissions', [RoleController::class, 'revokePermission']);
             // 取得角色permissions
             Route::get('/{role}/permissions', [RoleController::class, 'getRolePermissions']);
         });
@@ -159,7 +157,6 @@ Route::middleware('auth:api')->group(function () {
             Route::patch('/{id}/review', [EmployeeController::class, 'reviewEmployee'])->middleware('can:review_employee');
             //分配&變更部門、職位、主管、角色（需要 `assign_employee_details` 權限）
             Route::patch('/{id}/assign', [EmployeeController::class, 'assignEmployeeDetails'])->middleware('can:assign_employee_details');
-
 
             // 刪除員工（需要 `delete_employee` 權限）
             Route::delete('/{id}', [EmployeeController::class, 'destroy'])->middleware('can:delete_employee');

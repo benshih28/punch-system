@@ -16,23 +16,26 @@ composer install
 
 ```
 
-生成 APP_KEY
+---
 
+composer install已合併以下指令
+1.生成 APP_KEY
 ```bash
 php artisan key:generate
-
 ```
-
-專案使用 JWT 驗證
+2.專案使用 JWT 驗證
 ```bash
 php artisan jwt:secret
-
 ```
-
-執行資料庫遷移
+3.執行資料庫遷移
 ```bash
 php artisan migrate
+```
+4.生成 人資部&人資主管  權限表 admin(有全權限)
+```bash
+php artisan make:seeder --class=DepartmentAndPositionSeeder
+php artisan make:seeder --class=PermissionsSeeder
+php artisan make:seeder --class=RolesSeeder
 
 ```
-
 確認沒問題就照版本控制筆記的作法開新分支
