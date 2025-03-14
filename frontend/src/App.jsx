@@ -13,6 +13,7 @@ import LoginPage from "./pages/LoginPage";
 // import Punchin from "./pages/punchin";
 // import ApproveLeave from "./pages/approveLeave";
 import ProtectedRoute from "./components/protectedRoute";
+import PropTypes from 'prop-types';
 
 // 先預留這些路由
 const Punchin = () => <div>個人打卡頁面 (尚未建立)</div>;
@@ -115,5 +116,9 @@ function App() {
           </Router>
   );
 }
+
+ProtectedLayout.propTypes = {
+  children: PropTypes.node.isRequired,
+};
 
 export default App;
