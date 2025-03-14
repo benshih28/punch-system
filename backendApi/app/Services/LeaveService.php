@@ -24,6 +24,23 @@ class LeaveService
     {
         $user = auth()->user();
 
+        // 檢查時間重疊邏輯
+        $isOverlap = Leave::where('user_id', $user->id)
+            ->where(function ($query) use ($data) {
+                $query->whereBetween('start_time', [$data['start_time'], $data['end_time']])
+                    ->orWhereBetween('end_time', [$data['start_time'], $data['end_time']])
+                    ->orWhere(function ($q) use ($data) {
+                        $q->where('start_time', '<=', $data['start_time'])
+                            ->where('end_time', '>=', $data['end_time']);
+                    });
+            })
+            ->whereIn('status', [0, 1]) // ✅ 只檢查待審核或已通過的請假
+            ->exists();
+
+        if ($isOverlap) {
+            throw new \Exception('您的請假時間與已有的請假紀錄重疊，請調整時間範圍後再重新申請。');
+        }
+
         // 1️⃣ 先計算這次請假有幾小時
         $leaveTypeId = $data['leave_type_id'];
         $hours = $this->calculateHours($data['start_time'], $data['end_time']);
@@ -58,7 +75,7 @@ class LeaveService
         $this->applyFilters($query, $filters);
 
         return $query->select('leaves.*')
-            ->orderByRaw('FIELD(status, 0, 1, 2, 3, 4)') // 依照 0 -> 1 -> 2 -> 3 -> 4 排序
+            ->orderByRaw('FIELD(status, 0, 1, 3, 2, 4)') // 依照 0 -> 1 -> 3 -> 2 -> 4 排序
             ->orderBy('created_at', 'asc') // 申請時間越早，排越前
             ->paginate(10);
     }
@@ -73,7 +90,7 @@ class LeaveService
         $this->applyFilters($query, $filters);
 
         return $query->select('leaves.*')
-            ->orderByRaw('FIELD(status, 0, 1, 2, 3, 4)') // 依照 0 -> 1 -> 2 -> 3 -> 4 排序
+            ->orderByRaw('FIELD(status, 0, 1, 3, 2, 4)') // 依照 0 -> 1 -> 3 -> 2 -> 4 排序
             ->orderBy('created_at', 'asc') // 申請時間越早，排越前
             ->paginate(10);
     }
@@ -90,7 +107,7 @@ class LeaveService
 
         // 查詢所有請假單，分頁 10 筆
         $leaves = $query->select('leaves.*')
-            ->orderByRaw('FIELD(status, 0, 1, 2, 3, 4)') // 指定狀態排序順序
+            ->orderByRaw('FIELD(status, 1, 0, 3, 2, 4)') // 指定狀態排序順序
             ->orderBy('created_at', 'asc') // 其次依據 start_time 排序
             ->paginate(10);
 
@@ -104,6 +121,29 @@ class LeaveService
     {
         // 1️⃣ **檢查是否有修改請假時數**
         $isUpdatingHours = isset($data['start_time']) && isset($data['end_time']);
+
+        // 新增更新時重疊檢查
+        if ($isUpdatingHours) {
+            $startTime = $data['start_time'];
+            $endTime = $data['end_time'];
+
+            $overlap = Leave::where('user_id', $leave->user_id)
+                ->where('id', '!=', $leave->id) // ✅ 排除目前修改的紀錄
+                ->where(function ($query) use ($startTime, $endTime) {
+                    $query->whereBetween('start_time', [$startTime, $endTime])
+                        ->orWhereBetween('end_time', [$startTime, $endTime])
+                        ->orWhere(function ($q) use ($startTime, $endTime) {
+                            $q->where('start_time', '<=', $startTime)
+                                ->where('end_time', '>=', $endTime);
+                        });
+                })
+                ->whereIn('status', [0, 1])
+                ->exists();
+
+            if ($overlap) {
+                throw new \Exception('修改後的請假時間與現有請假紀錄重疊，請重新調整。', 400);
+            }
+        }
 
         // 2️⃣ **如果有修改時數，才重新計算請假小時數**
         $hours = $isUpdatingHours
