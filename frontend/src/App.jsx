@@ -69,7 +69,6 @@ function App() {
         <Route
           path="*"
           element={
-            isAuthenticated ? ( // ✅ 改為用 `isAuthenticatedAtom`
               <ProtectedRoute>
                 <ProtectedLayout>
                   <Routes>
@@ -107,16 +106,13 @@ function App() {
                   </Routes>
                 </ProtectedLayout>
               </ProtectedRoute>
-            ) : (
-              <>
-                <Navigate to="/login" />
-                {/* <Footer /> */}
-              </>
-            )
-          }
-        />
-      </Routes>
-    </Router>
+            }
+          />
+
+          {/* 未登入時的默認跳轉 */}
+          <Route path="*" element={!isAuthenticated && <Navigate to="/login" replace />} />
+            </Routes>
+          </Router>
   );
 }
 

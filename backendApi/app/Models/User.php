@@ -106,5 +106,10 @@ class User extends Authenticatable implements JWTSubject  // 實作JWT
     {
         return $this->hasOne(Employee::class, 'user_id', 'id');
     }
-
+    
+    // 連動更新請假紀錄
+    public function leaves()
+    {
+        return $this->hasMany(Leave::class, 'user_id');
+    }
 }
