@@ -6,7 +6,7 @@ import {
 } from "react-router-dom";
 import { useAtomValue } from "jotai";
 import { isAuthenticatedAtom } from "./state/authAtom";
-// import Header from "./components/header";
+import Header from "./components/header";
 // import Footer from "./components/footer";
 import LoginPage from "./pages/LoginPage";
 // import Register from "./pages/register";
@@ -30,7 +30,7 @@ const RolePermissionsPage = () => <div>權限修改頁面 (尚未建立)</div>;
  */
 const ProtectedLayout = ({ children }) => (
   <>
-    {/* <Header /> */}
+    <Header />
     <main>{children}</main>
     {/* <Footer /> */}
   </>
