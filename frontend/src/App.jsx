@@ -4,17 +4,18 @@ import {
   Routes,
   Navigate,
 } from "react-router-dom";
-import {  useAtomValue } from "jotai";
+import { useAtomValue } from "jotai";
 import { isAuthenticatedAtom } from "./state/authAtom";
 // import Header from "./components/header";
 // import Footer from "./components/footer";
 import LoginPage from "./pages/LoginPage";
 // import Register from "./pages/register";
-import Punchin from "./pages/punchin";
+// import Punchin from "./pages/punchin";
 // import ApproveLeave from "./pages/approveLeave";
 import ProtectedRoute from "./components/protectedRoute";
 
 // 先預留這些路由
+const Punchin = () => <div>打卡頁面 (尚未建立)</div>;
 const ProfilePage = () => <div>個人帳戶管理頁面 (尚未建立)</div>;
 const ClockHistoryPage = () => <div>查詢打卡紀錄頁面 (尚未建立)</div>;
 const ClockReissueHistoryPage = () => <div>查詢補打卡紀錄頁面 (尚未建立)</div>;
@@ -37,7 +38,7 @@ const ProtectedLayout = ({ children }) => (
 
 function App() {
   // ✅ 透過 Jotai 讀取 `isAuthenticatedAtom`，用於判斷使用者是否已登入
-  const isAuthenticated = useAtomValue(isAuthenticatedAtom); 
+  const isAuthenticated = useAtomValue(isAuthenticatedAtom);
 
   return (
     <Router>
