@@ -142,22 +142,23 @@ class LeaveController extends Controller
 
             $leaves = $this->leaveService->getDepartmentLeaveList($user, $filters);
 
-            if ($leaves->isEmpty()) {
+            if ($leaves->total() === 0) {            //這裡開始
                 return response()->json([
                     'message' => '查無符合條件的請假紀錄',
                     'records' => [],
+                    'total' => 0,
                 ], 200);
             }
 
             return response()->json([
                 'message' => '查詢成功',
                 'records' => $leaves->map(fn($leave) => $this->formatLeave($leave)),
-                'total' => $leaves->count(), // 新增紀錄總數
+                'total' => $leaves->total(),
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => app()->isLocal() ? $e->getMessage() : '查詢失敗',
-            ], 403);
+            ], 500);
         }
     }
 
@@ -232,13 +233,13 @@ class LeaveController extends Controller
 
                 // **更新舊 `File` 紀錄，或新增新附件**
                 if ($oldFile) {
-                    $oldFile->update(['leave_attachment' => "storage/" . $attachmentPath]);
+                    $oldFile->update(['leave_attachment' => $attachmentPath]);
                     $fileRecord = $oldFile;
                 } else {
                     $fileRecord = File::create([
                         'user_id' => $user->id,
                         'leave_id' => $leave->id,
-                        'leave_attachment' => "storage/" . $attachmentPath,
+                        'leave_attachment' => $attachmentPath,
                     ]);
                 }
             }
@@ -342,7 +343,7 @@ class LeaveController extends Controller
             'end_time' => $leave->end_time,
             'reason' => $leave->reason,
             'status' => $leave->status,
-            'attachment' => $leave->file ? asset($leave->file->leave_attachment) : null,
+            'attachment' => $leave->file ? asset("storage/" . $leave->file->leave_attachment) : null,
         ];
     }
 
