@@ -1214,6 +1214,998 @@
                 ]
             }
         },
+        "/api/leave/request": {
+            "post": {
+                "tags": [
+                    "Leave"
+                ],
+                "summary": "請假申請",
+                "description": "員工請假申請。",
+                "operationId": "requestLeave",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "start_time",
+                                    "end_time",
+                                    "leave_type_id",
+                                    "reason"
+                                ],
+                                "properties": {
+                                    "start_time": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2025-03-14 09:00"
+                                    },
+                                    "end_time": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2025-03-14 18:00"
+                                    },
+                                    "leave_type_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "reason": {
+                                        "type": "string",
+                                        "example": "需要休息"
+                                    },
+                                    "attachment": {
+                                        "description": "選擇要上傳的附件檔案",
+                                        "type": "file",
+                                        "format": "binary",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "成功遞出假單",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "申請成功，假單已送出"
+                                        },
+                                        "leave": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 123
+                                                },
+                                                "start_time": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-03-14T09:00"
+                                                },
+                                                "end_time": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-03-14T17:00"
+                                                },
+                                                "leave_type": {
+                                                    "type": "string",
+                                                    "example": "Sick Leave"
+                                                },
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 0
+                                                },
+                                                "attachment": {
+                                                    "type": "file",
+                                                    "example": "attachment/yourfilesname.jpg"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "無法申請生理假，使用者非女性",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "您無法申請生理假"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "伺服器錯誤，請檢查資料是否正確",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "申請失敗，請檢查填入資料是否有誤"
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "資料格式錯誤",
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/leave/my-records": {
+            "get": {
+                "tags": [
+                    "Leave"
+                ],
+                "summary": "查詢個人請假紀錄",
+                "description": "查詢符合條件的請假紀錄。",
+                "operationId": "viewMyLeaveRecords",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "查詢開始日期 (格式: YYYY-MM-DD)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "查詢結束日期 (格式: YYYY-MM-DD)，需大於等於 start_date",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "leave_type",
+                        "in": "query",
+                        "description": "請假類型 (leave_types 表中的 ID)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "attachment",
+                        "in": "query",
+                        "description": "附件 ID (files 表中的 ID)，可選",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "請假狀態 (0: 待審核, 1: 主管通過, 2: 主管拒絕, 3: HR同意, 4: HR拒絕)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "enum": [
+                                0,
+                                1,
+                                2,
+                                3,
+                                4
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "請假紀錄查詢成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "查詢成功"
+                                        },
+                                        "records": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "start_date": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2024-03-01"
+                                                    },
+                                                    "end_date": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2024-03-03"
+                                                    },
+                                                    "leave_type": {
+                                                        "type": "string",
+                                                        "example": "病假"
+                                                    },
+                                                    "status": {
+                                                        "type": "integer",
+                                                        "example": 2
+                                                    },
+                                                    "attachment": {
+                                                        "type": "string",
+                                                        "example": "file_id_123"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2024-03-01T08:00:00Z"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "無權限查詢請假紀錄",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "無此權限，無法查詢請假紀錄"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "查詢失敗 (系統錯誤)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "查詢失敗"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/leave/department": {
+            "get": {
+                "tags": [
+                    "Leave"
+                ],
+                "summary": "查詢部門請假紀錄",
+                "description": "讓部門主管或 HR 查詢部門內所有請假紀錄，支援條件篩選。",
+                "operationId": "viewDepartmentLeaveRecords",
+                "parameters": [
+                    {
+                        "name": "leave_type_id",
+                        "in": "query",
+                        "description": "請假類型 ID (leave_types 表中的 ID)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "查詢開始日期 (格式: YYYY-MM-DD)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "查詢結束日期 (格式: YYYY-MM-DD)，需大於等於 start_date",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "請假狀態 (0: 待審核, 1: 主管通過, 2: 主管拒絕, 3: HR同意, 4: HR拒絕)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "enum": [
+                                0,
+                                1,
+                                2,
+                                3,
+                                4
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查詢成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "查詢成功"
+                                        },
+                                        "records": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "employee_name": {
+                                                        "type": "string",
+                                                        "example": "王小明"
+                                                    },
+                                                    "department": {
+                                                        "type": "string",
+                                                        "example": "技術部"
+                                                    },
+                                                    "start_date": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2024-03-01"
+                                                    },
+                                                    "end_date": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2024-03-03"
+                                                    },
+                                                    "leave_type": {
+                                                        "type": "string",
+                                                        "example": "病假"
+                                                    },
+                                                    "status": {
+                                                        "type": "integer",
+                                                        "example": 2
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2024-03-01T08:00:00Z"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "total": {
+                                            "description": "符合條件的請假紀錄總數",
+                                            "type": "integer",
+                                            "example": 5
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "無權限查詢請假紀錄",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "無此權限，無法查詢請假紀錄"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "伺服器錯誤",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "查詢失敗"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/leave/company": {
+            "get": {
+                "tags": [
+                    "Leave"
+                ],
+                "summary": "查詢全公司請假紀錄",
+                "description": "HR可查詢全公司員工的請假紀錄",
+                "operationId": "b19ee92917cbce96eca06c15adc6bfea",
+                "parameters": [
+                    {
+                        "name": "leave_type_id",
+                        "in": "query",
+                        "description": "請假類型ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "起始日期",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-03-01"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "結束日期",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-03-31"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "請假狀態 (0: 待審核, 1: 主管通過, 2: 主管拒絕, 3: HR同意, 4: HR拒絕)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查詢成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "查詢成功"
+                                        },
+                                        "records": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 456
+                                                    },
+                                                    "leave_type": {
+                                                        "type": "string",
+                                                        "example": "Annual Leave"
+                                                    },
+                                                    "start_date": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2025-03-15 09:00"
+                                                    },
+                                                    "end_date": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2025-03-17 18:00"
+                                                    },
+                                                    "status": {
+                                                        "description": "0: 待審核, 1: 主管通過, 2: 主管拒絕, 3: HR同意, 4: HR拒絕",
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "reason": {
+                                                        "type": "string",
+                                                        "example": "個人休假"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "pagination": {
+                                            "properties": {
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 100
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "無此權限，無法查詢請假紀錄",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "無此權限，無法查詢請假紀錄"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "查詢失敗，請稍後再試",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "系統發生錯誤，請稍後再試"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/leave/update/{id}": {
+            "post": {
+                "tags": [
+                    "Leave"
+                ],
+                "summary": "更新請假紀錄",
+                "description": "更新指定的請假單資料，包括假別、時間、原因及附件。",
+                "operationId": "updateLeave",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "請假單 ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "start_time",
+                                    "end_time",
+                                    "leave_type",
+                                    "reason"
+                                ],
+                                "properties": {
+                                    "start_time": {
+                                        "description": "請假開始時間",
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2024-03-15 09:00:00"
+                                    },
+                                    "end_time": {
+                                        "description": "請假結束時間",
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2024-03-15 18:00:00"
+                                    },
+                                    "leave_type": {
+                                        "description": "請假類型 ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "reason": {
+                                        "description": "請假原因",
+                                        "type": "string",
+                                        "example": "身體不適"
+                                    },
+                                    "attachment": {
+                                        "description": "可選的請假附件 (最大 10MB)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "假單更新成功",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "假單更新成功"
+                                        },
+                                        "leave": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "start_time": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2024-03-15 09:00:00"
+                                                },
+                                                "end_time": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2024-03-15 18:00:00"
+                                                },
+                                                "leave_type": {
+                                                    "type": "string",
+                                                    "example": "病假"
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "example": "身體不適"
+                                                },
+                                                "attachment": {
+                                                    "type": "string",
+                                                    "example": "file_id_123"
+                                                },
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2024-03-15T10:00:00Z"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "無權限修改此請假單或查無此假單",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "查無此假單或您無權限修改"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "請求格式錯誤",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "更新失敗，請重新檢查資料格式是否錯誤"
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "start_time": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "請假開始時間為必填"
+                                                    }
+                                                },
+                                                "leave_type": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "請假類型 ID 無效"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "伺服器錯誤",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "更新失敗，請重新檢查資料格式是否錯誤"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/leave/{id}": {
+            "delete": {
+                "tags": [
+                    "Leave"
+                ],
+                "summary": "刪除請假申請",
+                "description": "根據請假 ID 刪除請假申請，並同時刪除相關附件。",
+                "operationId": "deleteLeave",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "請假申請的 ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功刪除假單",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "假單刪除成功"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "查無此假單或無權限刪除",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "查無此假單或您無權限刪除"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "伺服器內部錯誤",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "系統發生錯誤，請稍後再試"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/leavetypes/hours/{leaveTypeId}": {
+            "get": {
+                "tags": [
+                    "Leave"
+                ],
+                "summary": "取得特殊假別剩餘小時數",
+                "description": "計算使用者的特定假別剩餘時數，確認是否足夠扣除。",
+                "operationId": "getRemainingLeaveHours",
+                "parameters": [
+                    {
+                        "name": "leaveTypeId",
+                        "in": "path",
+                        "description": "假別類型的 ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 4
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功取得剩餘假別小時數",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "remaining_hours": {
+                                            "type": "integer",
+                                            "example": 8
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "請求錯誤（例如無效的假別 ID）",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "無效的假別 ID"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "未授權或無權存取該假別資訊",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "您無權查看此假別資訊"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "伺服器內部錯誤",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "系統發生錯誤，請稍後再試"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/leavetypes/rules/add": {
             "post": {
                 "tags": [
@@ -2514,6 +3506,24 @@
                             "format": "date",
                             "example": "2025-03-10"
                         }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "分頁頁碼（預設 1）",
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "每頁顯示數量（預設 10）",
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
                     }
                 ],
                 "responses": {
@@ -3028,6 +4038,24 @@
                             "type": "string",
                             "format": "date",
                             "example": "2025-03-10"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "分頁頁碼（預設 1）",
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "每頁顯示數量（預設 10）",
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
                         }
                     }
                 ],
@@ -3786,6 +4814,10 @@
         {
             "name": "User",
             "description": "User"
+        },
+        {
+            "name": "Leave",
+            "description": "Leave"
         },
         {
             "name": "Leave Reset Rules",
