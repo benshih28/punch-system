@@ -15,7 +15,7 @@ import LoginPage from "./pages/LoginPage";
 import ProtectedRoute from "./components/protectedRoute";
 
 // 先預留這些路由
-const Punchin = () => <div>打卡頁面 (尚未建立)</div>;
+const Punchin = () => <div>個人打卡頁面 (尚未建立)</div>;
 const ProfilePage = () => <div>個人帳戶管理頁面 (尚未建立)</div>;
 const ClockHistoryPage = () => <div>查詢打卡紀錄頁面 (尚未建立)</div>;
 const ClockReissueHistoryPage = () => <div>查詢補打卡紀錄頁面 (尚未建立)</div>;
@@ -69,7 +69,6 @@ function App() {
         <Route
           path="*"
           element={
-            isAuthenticated ? ( // ✅ 改為用 `isAuthenticatedAtom`
               <ProtectedRoute>
                 <ProtectedLayout>
                   <Routes>
@@ -107,16 +106,13 @@ function App() {
                   </Routes>
                 </ProtectedLayout>
               </ProtectedRoute>
-            ) : (
-              <>
-                <Navigate to="/login" />
-                {/* <Footer /> */}
-              </>
-            )
-          }
-        />
-      </Routes>
-    </Router>
+            }
+          />
+
+          {/* 未登入時的默認跳轉 */}
+          <Route path="*" element={!isAuthenticated && <Navigate to="/login" replace />} />
+            </Routes>
+          </Router>
   );
 }
 
