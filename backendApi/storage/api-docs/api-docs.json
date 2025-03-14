@@ -3360,12 +3360,13 @@
                 "tags": [
                     "User"
                 ],
-                "summary": "更新使用者個人資料（可選擇修改密碼或上傳大頭貼）",
+                "summary": "更新使用者個人資料",
+                "description": "使用者登入後，可選擇修改密碼或上傳大頭貼",
                 "operationId": "3afa599300f8a249999b004020ea5d33",
                 "requestBody": {
                     "required": false,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "properties": {
                                     "old_password": {
@@ -3384,6 +3385,12 @@
                                         "description": "確認新密碼 (修改密碼時必填)",
                                         "type": "string",
                                         "example": "NewPass456!",
+                                        "nullable": true
+                                    },
+                                    "avatar": {
+                                        "description": "大頭貼 (可單獨上傳，不影響密碼)",
+                                        "type": "string",
+                                        "format": "binary",
                                         "nullable": true
                                     }
                                 },
