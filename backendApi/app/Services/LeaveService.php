@@ -24,6 +24,23 @@ class LeaveService
     {
         $user = auth()->user();
 
+        // 🔥🔥 檢查時間重疊邏輯 🔥🔥
+        $isOverlap = Leave::where('user_id', $user->id)
+            ->where(function ($query) use ($data) {
+                $query->whereBetween('start_time', [$data['start_time'], $data['end_time']])
+                    ->orWhereBetween('end_time', [$data['start_time'], $data['end_time']])
+                    ->orWhere(function ($q) use ($data) {
+                        $q->where('start_time', '<=', $data['start_time'])
+                            ->where('end_time', '>=', $data['end_time']);
+                    });
+            })
+            ->whereIn('status', [0, 1]) // ✅ 只檢查待審核或已通過的請假
+            ->exists();
+
+        if ($isOverlap) {
+            throw new \Exception('您的請假時間與已有的請假紀錄重疊，請調整時間範圍後再重新申請。');
+        }
+
         // 1️⃣ 先計算這次請假有幾小時
         $leaveTypeId = $data['leave_type_id'];
         $hours = $this->calculateHours($data['start_time'], $data['end_time']);
