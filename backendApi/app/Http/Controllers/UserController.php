@@ -16,22 +16,10 @@ use Illuminate\Support\Facades\Validator;
 /**
  * @OA\Post(
  *     path="/api/user/update/profile",
- *     summary="更新使用者個人資料（可選擇修改密碼或上傳大頭貼）",
+ *     summary="更新使用者個人資料",
+ *     description="使用者登入後，可選擇修改密碼或上傳大頭貼",
  *     tags={"User"},
  *     security={{"bearerAuth":{}}},
- *     
- *     @OA\RequestBody(
- *         required=false,
- *         @OA\MediaType(
- *             mediaType="application/json",
- *             @OA\Schema(
- *                 type="object",
- *                 @OA\Property(property="old_password", type="string", nullable=true, example="OldPass123!", description="舊密碼 (修改密碼時必填)"),
- *                 @OA\Property(property="new_password", type="string", nullable=true, example="NewPass456!", description="新密碼 (修改密碼時必填)"),
- *                 @OA\Property(property="new_password_confirmation", type="string", nullable=true, example="NewPass456!", description="確認新密碼 (修改密碼時必填)")
- *             )
- *         )
- *     ),
  *     
  *     @OA\RequestBody(
  *         required=false,
@@ -39,10 +27,14 @@ use Illuminate\Support\Facades\Validator;
  *             mediaType="multipart/form-data",
  *             @OA\Schema(
  *                 type="object",
+ *                 @OA\Property(property="old_password", type="string", nullable=true, example="OldPass123!", description="舊密碼 (修改密碼時必填)"),
+ *                 @OA\Property(property="new_password", type="string", nullable=true, example="NewPass456!", description="新密碼 (修改密碼時必填)"),
+ *                 @OA\Property(property="new_password_confirmation", type="string", nullable=true, example="NewPass456!", description="確認新密碼 (修改密碼時必填)"),
  *                 @OA\Property(property="avatar", type="string", format="binary", nullable=true, description="大頭貼 (可單獨上傳，不影響密碼)")
  *             )
  *         )
  *     ),
+ *     
  *     
  *     @OA\Response(
  *         response=200,
@@ -115,7 +107,11 @@ class UserController extends Controller
         }
 
         // 新密碼
-        if ($request->filled('new_password')) {
+        //當輸入了舊密碼，強制要求新密碼
+        if ($request->filled('old_password')) {
+            if (!$request->filled('new_password')|| !$request->filled('new_password_confirmation')) {
+                return response()->json(['message' => '未填寫新密碼或確認密碼'], 400);
+            }
             // 1.檢查是否輸入舊密碼
             if (!$request->filled('old_password') || !Hash::check($request->old_password, $user->password)) {
                 return response()->json(['message' => '舊密碼錯誤'], 404);
@@ -127,6 +123,10 @@ class UserController extends Controller
             // 3.更新密碼
             $user->password = Hash::make($request->new_password);
         }
+        // 防止沒輸入舊密碼，卻輸入新密碼
+        if (!$request->filled('old_password') && ($request->filled('new_password') || $request->filled('new_password_confirmation'))) {
+        return response()->json(['message' => '請輸入舊密碼才能變更密碼'], 400);
+}
 
         // Debug 記錄
         // Log::info('User profile updated: ' . $user->id);
