@@ -27,7 +27,7 @@ class ForgotPasswordService
         $user->save();
 
         // 發送 Email
-        Mail::to($user->email)->send(new ForgotPasswordMail($newPassword));
+        Mail::to($user->email)->queue(new ForgotPasswordMail($newPassword));
 
         return response()->json(['message' => '新密碼已發送至您的信箱，請查收']);
     }
