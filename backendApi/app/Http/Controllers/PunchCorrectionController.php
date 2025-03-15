@@ -233,6 +233,18 @@ class PunchCorrectionController extends Controller
      *     security={{ "bearerAuth":{} }},
      *     @OA\Parameter(name="start_date", in="query", description="開始日期", @OA\Schema(type="string", format="date", example="2025-03-01")),
      *     @OA\Parameter(name="end_date", in="query", description="結束日期", @OA\Schema(type="string", format="date", example="2025-03-10")),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="分頁頁碼（預設 1）",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="每頁顯示數量（預設 10）",
+     *         @OA\Schema(type="integer", example=10)
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="成功獲取補登紀錄",
@@ -257,7 +269,7 @@ class PunchCorrectionController extends Controller
 
         // 確保 page 和 perPage 為正數
         $page = max(1, $page);
-        $perPage = max(1, min($perPage, 10));
+        $perPage = max(1, $perPage);
 
         // **呼叫 MySQL 預存程序**
         $records = DB::select('CALL GetUserPunchCorrections(?, ?, ?, ?, ?)', [
@@ -273,8 +285,8 @@ class PunchCorrectionController extends Controller
 
         // **計算分頁資訊**
         $lastPage = max(1, ceil($totalRecords / $perPage));
-        $nextPageUrl = $page < $lastPage ? url("/api/user/corrections?page=" . ($page + 1) . "&per_page=" . $perPage) : null;
-        $prevPageUrl = $page > 1 ? url("/api/user/corrections?page=" . ($page - 1) . "&per_page=" . $perPage) : null;
+        $nextPageUrl = $page < $lastPage ? url("/api/punch/corrections?page=" . ($page + 1) . "&per_page=" . $perPage) : null;
+        $prevPageUrl = $page > 1 ? url("/api/punch/corrections?page=" . ($page - 1) . "&per_page=" . $perPage) : null;
 
         // **統一 API 分頁格式**
         return response()->json([
@@ -287,11 +299,11 @@ class PunchCorrectionController extends Controller
                 'last_page' => $lastPage,
                 'from' => ($page - 1) * $perPage + 1,
                 'to' => min($page * $perPage, $totalRecords),
-                'first_page_url' => url("/api/user/corrections?page=1&per_page=" . $perPage),
-                'last_page_url' => url("/api/user/corrections?page=" . $lastPage . "&per_page=" . $perPage),
+                'first_page_url' => url("/api/punch/corrections?page=1&per_page=" . $perPage),
+                'last_page_url' => url("/api/punch/corrections?page=" . $lastPage . "&per_page=" . $perPage),
                 'next_page_url' => $nextPageUrl,
                 'prev_page_url' => $prevPageUrl,
-                'path' => url("/api/user/corrections")
+                'path' => url("/api/punch/corrections")
             ]
         ], 200);
     }
@@ -579,6 +591,12 @@ class PunchCorrectionController extends Controller
      *     security={{ "bearerAuth":{} }},
      *     @OA\Parameter(name="start_date", in="query", description="開始日期", @OA\Schema(type="string", format="date", example="2025-03-01")),
      *     @OA\Parameter(name="end_date", in="query", description="結束日期", @OA\Schema(type="string", format="date", example="2025-03-10")),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="分頁頁碼（預設 1）",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="成功獲取補登紀錄",
