@@ -27,7 +27,7 @@ class LeaveController extends Controller
     }
 
     // 1. 員工申請請假
-     /**
+    /**
      * @OA\Post(
      *     path="/api/leave/request",
      *     summary="請假申請",
@@ -264,7 +264,7 @@ class LeaveController extends Controller
     }
 
     // 3. 查詢「部門」請假紀錄（主管 & HR）
-     /**
+    /**
      * @OA\Get(
      *     path="/api/leave/department",
      *     summary="查詢部門請假紀錄",
@@ -813,8 +813,15 @@ class LeaveController extends Controller
     // 9.部門主管審核通過
     public function approveDepartmentLeave(Request $request, $id)
     {
-        $leave = Leave::findOrFail($id);
+        $leave = Leave::find($id);
+        if (!$leave) {
+            return response()->json(['error' => '查無此請假單'], 404);
+        }
+
         $user = auth()->user();
+        if (!$user) {
+            return response()->json(['error' => '未授權請求，請先登入'], 401);
+        }
 
         // 確保使用者擁有 `approve_department_leave` 權限
         if (!$user->can('approve_department_leave')) {
@@ -824,7 +831,7 @@ class LeaveController extends Controller
         // 找出請假員工
         $leaveEmployee = Employee::where('user_id', $leave->user_id)->first();
         if (!$leaveEmployee) {
-            return response()->json(['error' => '查無此員工'], 404);
+            return response()->json(['error' => '請假單存在，但查無該員工'], 404);
         }
 
         // 確保主管只能審核自己部門的員工
@@ -843,14 +850,21 @@ class LeaveController extends Controller
         $leave->approved_by = $user->id;
         $leave->save();
 
-        return response()->json(['message' => '假單已被主管審核，等待 HR 審核']);
+        return response()->json(['message' => '假單已被主管審核，等待 HR 審核'], 200);
     }
 
     // 10.部門主管審核拒絕
     public function rejectDepartmentLeave(Request $request, $id)
     {
-        $leave = Leave::findOrFail($id);
+        $leave = Leave::find($id);
+        if (!$leave) {
+            return response()->json(['error' => '查無此請假單'], 404);
+        }
+
         $user = auth()->user();
+        if (!$user) {
+            return response()->json(['error' => '未授權請求，請先登入'], 401);
+        }
 
         // 確保使用者擁有 `approve_department_leave` 權限
         if (!$user->can('approve_department_leave')) {
@@ -860,7 +874,7 @@ class LeaveController extends Controller
         // 找出請假員工
         $leaveEmployee = Employee::where('user_id', $leave->user_id)->first();
         if (!$leaveEmployee) {
-            return response()->json(['error' => '查無此員工'], 404);
+            return response()->json(['error' => '請假單存在，但查無該員工'], 404);
         }
 
         // 確保主管只能審核自己部門的員工
@@ -874,9 +888,9 @@ class LeaveController extends Controller
             return response()->json(['error' => '此假單已審核，無法修改'], 403);
         }
 
-        // 確保拒絕理由存在
-        $rejectReason = $request->input('reject_reason');
-        if (!$rejectReason) {
+        // 確保拒絕理由存在且不是空字串
+        $rejectReason = trim($request->input('reject_reason'));
+        if (empty($rejectReason)) {
             return response()->json(['error' => '請填寫拒絕原因'], 400);
         }
 
@@ -886,14 +900,21 @@ class LeaveController extends Controller
         $leave->approved_by = $user->id;
         $leave->save();
 
-        return response()->json(['message' => '假單已被主管拒絕']);
+        return response()->json(['message' => '假單已被主管拒絕'], 200);
     }
 
     // 11.HR審核通過
     public function approveLeave(Request $request, $id)
     {
-        $leave = Leave::findOrFail($id);
+        $leave = Leave::find($id);
+        if (!$leave) {
+            return response()->json(['error' => '請假單不存在'], 404);
+        }
+
         $user = auth()->user();
+        if (!$user) {
+            return response()->json(['error' => '未授權請求，請先登入'], 401);
+        }
 
         // 確保使用者擁有 `approve_leave` 權限
         if (!$user->can('approve_leave')) {
@@ -915,18 +936,30 @@ class LeaveController extends Controller
         $leave->approved_by = $user->id;
         $leave->save();
 
-        return response()->json(['message' => '假單已最終批准']);
+        return response()->json(['message' => '假單已最終批准'], 200);
     }
 
     // 12.HR審核拒絕
     public function rejectLeave(Request $request, $id)
     {
-        $leave = Leave::findOrFail($id);
+        $leave = Leave::find($id);
+        if (!$leave) {
+            return response()->json(['error' => '請假單不存在'], 404);
+        }
+
         $user = auth()->user();
+        if (!$user) {
+            return response()->json(['error' => '未授權請求，請先登入'], 401);
+        }
 
         // 確保使用者擁有 `approve_leave` 權限
         if (!$user->can('approve_leave')) {
             return response()->json(['error' => '你沒有權限駁回假單'], 403);
+        }
+
+        // 確保請假單尚未被批准
+        if ($leave->status === 3 || $leave->status === 4) {
+            return response()->json(['error' => '此假單已被批准，不可重複審核'], 403);
         }
 
         // 確保請假單已經經過主管審核
@@ -934,14 +967,9 @@ class LeaveController extends Controller
             return response()->json(['error' => '請假單必須先經過主管審核'], 403);
         }
 
-        // 不能駁回已經被拒絕的請假
-        if ($leave->status === 4) {
-            return response()->json(['error' => '此假單已被拒絕'], 403);
-        }
-
-        // 確保拒絕理由存在
-        $rejectReason = $request->input('reject_reason');
-        if (!$rejectReason) {
+        // 確保拒絕理由存在且非空白字串
+        $rejectReason = trim($request->input('reject_reason'));
+        if (empty($rejectReason)) {
             return response()->json(['error' => '請填寫拒絕原因'], 400);
         }
 
@@ -951,6 +979,6 @@ class LeaveController extends Controller
         $leave->approved_by = $user->id;
         $leave->save();
 
-        return response()->json(['message' => '假單已被 HR 拒絕']);
+        return response()->json(['message' => '假單已被 HR 拒絕'], 200);
     }
 }
