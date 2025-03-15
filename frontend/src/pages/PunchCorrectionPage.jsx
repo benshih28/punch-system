@@ -108,7 +108,7 @@ function PunchCorrectionPage() {
     <Box
       sx={{
         width: "100%", // 佔滿整個視口寬度
-        height: "100vh", // 佔滿整個視口高度
+        height: "100%", // 佔滿整個視口高度
         display: "flex", // 啟用 Flexbox
         flexDirection: "column", // 讓內容垂直排列
         alignItems: "center",
@@ -346,7 +346,16 @@ function PunchCorrectionPage() {
         </Paper>
       </Paper>
       {/* 頁尾 */}
-      <Box sx={{ width: "100%", mt: "auto", textAlign: "center", pt: 2 }}>
+      <Box
+        sx={{
+          width: "100%",
+          mt: "auto",
+          textAlign: "center",
+          position: "absolute", // 讓頁尾固定在底部
+          bottom: 0, // 設定在底部
+          overflow: "hidden", // ✅ 隱藏滾動條
+        }}
+      >
         <hr style={{ width: "100%", marginBottom: "10px" }} />
         <Typography sx={{ fontSize: "20px", fontWeight: "bold" }}>
           聯絡我們
@@ -357,7 +366,7 @@ function PunchCorrectionPage() {
         <Fab
           sx={{
             position: "fixed",
-            bottom: 20,
+            bottom: "5%",
             right: 20,
             backgroundColor: "#4A4A4A",
             color: "white",
