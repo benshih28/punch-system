@@ -811,6 +811,68 @@ class LeaveController extends Controller
     }
 
     // 9.部門主管審核通過
+    /**
+     * @OA\Patch(
+     *     path="/api/leave/{id}/department/approve",
+     *     summary="主管審核部門請假單",
+     *     description="此 API 允許部門主管審核請假單，只有擁有 `approve_department_leave` 權限的主管才能執行。",
+     *     tags={"Leave-review"},
+     *     security={{ "bearerAuth": {} }},
+     * 
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="請假單 ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     * 
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="integer", example=1, description="審核狀態（1=主管批准）")
+     *         )
+     *     ),
+     * 
+     *     @OA\Response(
+     *         response=200,
+     *         description="成功審核請假單",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="假單已被主管審核，等待 HR 審核")
+     *         )
+     *     ),
+     * 
+     *     @OA\Response(
+     *         response=401,
+     *         description="未授權請求，使用者未登入",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="未授權請求，請先登入")
+     *         )
+     *     ),
+     * 
+     *     @OA\Response(
+     *         response=403,
+     *         description="權限不足或假單狀態錯誤",
+     *         @OA\JsonContent(
+     *             oneOf={
+     *                 @OA\Property(property="error", type="string", example="你沒有權限審核本部門請假單"),
+     *                 @OA\Property(property="error", type="string", example="此假單已審核，無法修改")
+     *             }
+     *         )
+     *     ),
+     * 
+     *     @OA\Response(
+     *         response=404,
+     *         description="請假單或員工資料不存在",
+     *         @OA\JsonContent(
+     *             oneOf={
+     *                 @OA\Property(property="error", type="string", example="查無此請假單"),
+     *                 @OA\Property(property="error", type="string", example="請假單存在，但查無該員工")
+     *             }
+     *         )
+     *     )
+     * )
+     */
     public function approveDepartmentLeave(Request $request, $id)
     {
         $leave = Leave::findOrFail($id);
@@ -847,6 +909,77 @@ class LeaveController extends Controller
     }
 
     // 10.部門主管審核拒絕
+    /**
+     * @OA\Patch(
+     *     path="/api/leave/{id}/department/reject",
+     *     summary="主管駁回部門請假單",
+     *     description="此 API 允許部門主管駁回請假單，只有擁有 `approve_department_leave` 權限的主管才能執行。",
+     *     tags={"Leave-review"},
+     *     security={{ "bearerAuth": {} }},
+     * 
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="請假單 ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     * 
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="reject_reason", type="string", example="假期已超過可核准天數", description="駁回原因，必填")
+     *         )
+     *     ),
+     * 
+     *     @OA\Response(
+     *         response=200,
+     *         description="成功駁回請假單",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="假單已被主管拒絕")
+     *         )
+     *     ),
+     * 
+     *     @OA\Response(
+     *         response=400,
+     *         description="請求格式錯誤，例如未填寫拒絕原因",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="請填寫拒絕原因")
+     *         )
+     *     ),
+     * 
+     *     @OA\Response(
+     *         response=401,
+     *         description="未授權請求，使用者未登入",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="未授權請求，請先登入")
+     *         )
+     *     ),
+     * 
+     *     @OA\Response(
+     *         response=403,
+     *         description="權限不足或請假單狀態錯誤",
+     *         @OA\JsonContent(
+     *             oneOf={
+     *                 @OA\Property(property="error", type="string", example="你沒有權限駁回請假單"),
+     *                 @OA\Property(property="error", type="string", example="你只能拒絕自己部門的員工"),
+     *                 @OA\Property(property="error", type="string", example="此假單已審核，無法修改")
+     *             }
+     *         )
+     *     ),
+     * 
+     *     @OA\Response(
+     *         response=404,
+     *         description="請假單或員工資料不存在",
+     *         @OA\JsonContent(
+     *             oneOf={
+     *                 @OA\Property(property="error", type="string", example="查無此請假單"),
+     *                 @OA\Property(property="error", type="string", example="請假單存在，但查無該員工")
+     *             }
+     *         )
+     *     )
+     * )
+     */
     public function rejectDepartmentLeave(Request $request, $id)
     {
         $leave = Leave::findOrFail($id);
@@ -890,6 +1023,59 @@ class LeaveController extends Controller
     }
 
     // 11.HR審核通過
+    /**
+     * @OA\Patch(
+     *     path="/api/leave/{id}/approve",
+     *     summary="HR 最終批准請假單",
+     *     description="此 API 允許 HR 人員最終批准請假單，只有擁有 `approve_leave` 權限的使用者才能執行。",
+     *     tags={"Leave-review"},
+     *     security={{ "bearerAuth": {} }},
+     * 
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="請假單 ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     * 
+     *     @OA\Response(
+     *         response=200,
+     *         description="成功批准請假單",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="假單已最終批准")
+     *         )
+     *     ),
+     * 
+     *     @OA\Response(
+     *         response=401,
+     *         description="未授權請求，使用者未登入",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="未授權請求，請先登入")
+     *         )
+     *     ),
+     * 
+     *     @OA\Response(
+     *         response=403,
+     *         description="權限不足或請假單狀態錯誤",
+     *         @OA\JsonContent(
+     *             oneOf={
+     *                 @OA\Property(property="error", type="string", example="你沒有權限最終批准假單"),
+     *                 @OA\Property(property="error", type="string", example="此假單已被批准，不可重複審核"),
+     *                 @OA\Property(property="error", type="string", example="請假單必須先經過主管審核")
+     *             }
+     *         )
+     *     ),
+     * 
+     *     @OA\Response(
+     *         response=404,
+     *         description="請假單不存在",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="請假單不存在")
+     *         )
+     *     )
+     * )
+     */
     public function approveLeave(Request $request, $id)
     {
         $leave = Leave::findOrFail($id);
@@ -919,6 +1105,74 @@ class LeaveController extends Controller
     }
 
     // 12.HR審核拒絕
+    /**
+     * @OA\Patch(
+     *     path="/api/leave/{id}/reject",
+     *     summary="HR 最終駁回請假單",
+     *     description="此 API 允許 HR 最終駁回請假單，只有擁有 `approve_leave` 權限的使用者才能執行。",
+     *     tags={"Leave-review"},
+     *     security={{ "bearerAuth": {} }},
+     * 
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="請假單 ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     * 
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="reject_reason", type="string", example="請假時間過長，影響工作安排", description="駁回理由，必填")
+     *         )
+     *     ),
+     * 
+     *     @OA\Response(
+     *         response=200,
+     *         description="成功駁回請假單",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="假單已被 HR 拒絕")
+     *         )
+     *     ),
+     * 
+     *     @OA\Response(
+     *         response=400,
+     *         description="請求格式錯誤，例如未填寫拒絕原因",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="請填寫拒絕原因")
+     *         )
+     *     ),
+     * 
+     *     @OA\Response(
+     *         response=401,
+     *         description="未授權請求，使用者未登入",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="未授權請求，請先登入")
+     *         )
+     *     ),
+     * 
+     *     @OA\Response(
+     *         response=403,
+     *         description="權限不足或請假單狀態錯誤",
+     *         @OA\JsonContent(
+     *             oneOf={
+     *                 @OA\Property(property="error", type="string", example="你沒有權限駁回假單"),
+     *                 @OA\Property(property="error", type="string", example="請假單必須先經過主管審核"),
+     *                 @OA\Property(property="error", type="string", example="此假單已被拒絕")
+     *             }
+     *         )
+     *     ),
+     * 
+     *     @OA\Response(
+     *         response=404,
+     *         description="請假單不存在",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="請假單不存在")
+     *         )
+     *     )
+     * )
+     */
     public function rejectLeave(Request $request, $id)
     {
         $leave = Leave::findOrFail($id);
