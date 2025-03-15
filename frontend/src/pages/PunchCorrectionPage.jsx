@@ -49,16 +49,18 @@ function PunchCorrectionPage() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
+  // 存放當前選中的資料
+  const [selectedRow, setSelectedRow] = useState(null);
+  // 開啟 & 關閉 Dialog
+  const [openDetailsDialog, setOpenDetailsDialog] = useState(false); // 申請詳情視窗
+  const [openAddDialog, setOpenAddDialog] = useState(false); // 新增申請視窗
+
   // 控制 Dialog 開關
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState(null);
   const [time, setTime] = useState(null);
   const [shift, setShift] = useState("上班"); // 預設為 "上班"
   const [reason, setReason] = useState("忘記打卡");
-
-  // 開啟 & 關閉 Dialog
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
 
   const columns = [
     { id: "applicant", label: "申請人", minwidth: 100 },
@@ -93,6 +95,15 @@ function PunchCorrectionPage() {
       reason: "忘記打卡",
       applicationDate: "2024/07/04",
       status: "審核通過",
+    },
+    {
+      id: 3,
+      applicant: "王小美",
+      date: "2024/07/01",
+      time: "18:00",
+      reason: "忘記打卡",
+      applicationDate: "2024/07/02",
+      status: "審核未通過",
     },
   ];
   const handleChangePage = (event, newPage) => {
@@ -314,6 +325,10 @@ function PunchCorrectionPage() {
                                     backgroundColor: "#D2B48C",
                                     color: "white",
                                   }}
+                                  onClick={() => {
+                                    setSelectedRow(row); // 設定選中的那一列
+                                    setOpenDetailsDialog(true); // 只開啟申請詳情視窗
+                                  }}
                                 >
                                   查詢
                                 </Button>
@@ -361,6 +376,143 @@ function PunchCorrectionPage() {
           聯絡我們
         </Typography>
       </Box>
+      {/* 查詢原因彈出視窗 */}
+      <Dialog
+        open={openDetailsDialog}
+        onClose={() => setOpenDetailsDialog(false)}
+      >
+        <DialogContent
+          sx={{
+            backgroundColor: "#D2E4F0",
+            padding: "20px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+          }}
+        >
+          {/* 申請人 & 日期 */}
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Box sx={{ flex: 1 }}>
+              <b>申請人：</b>
+              <TextField
+                value={selectedRow?.applicant || ""}
+                variant="outlined"
+                size="small"
+                fullWidth
+                InputProps={{ readOnly: true }}
+                sx={{ backgroundColor: "white" }}
+              />
+            </Box>
+
+            <Box sx={{ flex: 1 }}>
+              <b>日期：</b>
+              <TextField
+                value={selectedRow?.date || ""}
+                variant="outlined"
+                size="small"
+                fullWidth
+                InputProps={{ readOnly: true }}
+                sx={{ backgroundColor: "white" }}
+              />
+            </Box>
+          </Box>
+
+          {/* 時間 & 原因 */}
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Box sx={{ flex: 1 }}>
+              <b>時間：</b>
+              <TextField
+                value={selectedRow?.time || ""}
+                variant="outlined"
+                size="small"
+                fullWidth
+                InputProps={{ readOnly: true }}
+                sx={{ backgroundColor: "white" }}
+              />
+            </Box>
+
+            <Box sx={{ flex: 1 }}>
+              <b>原因：</b>
+              <TextField
+                value={selectedRow?.reason || ""}
+                variant="outlined"
+                size="small"
+                fullWidth
+                InputProps={{ readOnly: true }}
+                sx={{
+                  color: "red",
+                  fontWeight: "bold",
+                  backgroundColor: "white",
+                }}
+              />
+            </Box>
+          </Box>
+
+          {/* 申請日期 & 申請狀態 */}
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Box sx={{ flex: 1 }}>
+              <b>申請日期：</b>
+              <TextField
+                value={selectedRow?.applicationDate || ""}
+                variant="outlined"
+                size="small"
+                fullWidth
+                InputProps={{ readOnly: true }}
+                sx={{ backgroundColor: "white" }}
+              />
+            </Box>
+
+            <Box sx={{ flex: 1 }}>
+              <b>申請狀態：</b>
+              <TextField
+                value={selectedRow?.status || "N/A"}
+                variant="outlined"
+                size="small"
+                fullWidth
+                InputProps={{ readOnly: true }}
+                sx={{ backgroundColor: "white" }}
+              />
+            </Box>
+          </Box>
+
+          {/* 拒絕原因（僅在申請被拒絕時顯示，獨立一行） */}
+          {selectedRow?.status === "審核未通過" && (
+            <Box>
+              <b>拒絕原因：</b>
+              <TextField
+                variant="outlined"
+                size="small"
+                fullWidth
+                placeholder="輸入拒絕原因"
+                sx={{ backgroundColor: "white" }}
+              />
+            </Box>
+          )}
+        </DialogContent>
+
+        {/* 按鈕 */}
+        <DialogActions
+          sx={{
+            justifyContent: "center",
+            backgroundColor: "#D2E4F0",
+            padding: "10px",
+          }}
+        >
+          <Button
+            variant="contained"
+            sx={{
+              backgroundColor: "#AB9681",
+              color: "white",
+              fontWeight: "bold",
+              width: "80%",
+              marginBottom: "5px",
+            }}
+            onClick={() => setOpenDetailsDialog(false)}
+          >
+            送出
+          </Button>
+        </DialogActions>
+      </Dialog>
       {/* 右下角浮動按鈕 */}
       <Box>
         <Fab
@@ -371,12 +523,12 @@ function PunchCorrectionPage() {
             backgroundColor: "#4A4A4A",
             color: "white",
           }}
-          onClick={handleOpen}
+          onClick={() => setOpenAddDialog(true)} // 只開啟新增申請視窗
         >
           <AddIcon />
         </Fab>
-        {/* 彈跳視窗 (Dialog) */}
-        <Dialog open={open} onClose={handleClose}>
+        {/* 右下浮動按鈕的彈跳視窗 (Dialog) */}
+        <Dialog open={openAddDialog} onClose={() => setOpenAddDialog(false)}>
           <DialogContent
             sx={{
               backgroundColor: "#D2E4F0",
@@ -478,7 +630,7 @@ function PunchCorrectionPage() {
                 width: "80%",
                 marginBottom: "5px",
               }}
-              onClick={handleClose}
+              onClick={() => setOpenAddDialog(false)}
             >
               送出
             </Button>
