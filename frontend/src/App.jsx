@@ -13,6 +13,7 @@ import LoginPage from "./pages/LoginPage";
 import Punchin from "./pages/punchin";
 // import ApproveLeave from "./pages/approveLeave";
 import ProtectedRoute from "./components/protectedRoute";
+import ForgotPassword from "./pages/ForgotPasswordPage";
 
 // 先預留這些路由
 const ProfilePage = () => <div>個人帳戶管理頁面 (尚未建立)</div>;
@@ -63,6 +64,9 @@ function App() {
             </>
           }
         />
+
+        {/* 忘記密碼頁面，不需要登入 */}
+        <Route path="/forgot/password" element={<ForgotPassword />} />
 
         {/* ✅ 已登入後的所有頁面（確保 Header 只出現在登入後的頁面） */}
         <Route
