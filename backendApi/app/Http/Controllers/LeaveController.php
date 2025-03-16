@@ -31,7 +31,7 @@ class LeaveController extends Controller
      * @OA\Post(
      *     path="/api/leave/request",
      *     summary="請假申請",
-     *     description="員工請假申請。",
+     *     description="申請請假。",
      *     operationId="requestLeave",
      *     tags={"Leave"},
      *     security={{ "bearerAuth": {} }},
@@ -42,24 +42,54 @@ class LeaveController extends Controller
      *             @OA\Schema(
      *                 type="object",
      *                 required={"start_time", "end_time", "leave_type_id", "reason"},
-     *                 @OA\Property(property="start_time", type="string", format="date-time", example="2025-03-14 09:00"),
-     *                 @OA\Property(property="end_time", type="string", format="date-time", example="2025-03-14 18:00"),
-     *                 @OA\Property(property="leave_type_id", type="integer", example=1),
-     *                 @OA\Property(property="reason", type="string", example="需要休息"),
-     *                 @OA\Property(property="attachment", type="file", format="binary", nullable=true, description="選擇要上傳的附件檔案")
+     *                 @OA\Property(
+     *                     property="start_time",
+     *                     type="string",
+     *                     format="date-time",
+     *                     example="2025-03-14 09:00",
+     *                     description="請假開始時間"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="end_time",
+     *                     type="string",
+     *                     format="date-time",
+     *                     example="2025-03-14 18:00",
+     *                     description="請假結束時間"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="leave_type_id",
+     *                     type="integer",
+     *                     example=1,
+     *                     description="請假類型的ID"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="reason",
+     *                     type="string",
+     *                     example="需要休息",
+     *                     description="請假原因"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="attachment",
+     *                     type="file",
+     *                     format="binary",
+     *                     nullable=true,
+     *                     description="選擇要上傳的附件檔案"
+     *                 )
      *             )
      *         )
      *     ),
      *     @OA\Response(
      *         response=201,
-     *         description="成功遞出假單",
+     *         description="成功申請請假",
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="message", type="string", example="申請成功，假單已送出"),
-     *             @OA\Property(property="leave", type="object", 
+     *             @OA\Property(
+     *                 property="leave",
+     *                 type="object",
      *                 @OA\Property(property="id", type="integer", example=123),
      *                 @OA\Property(property="start_time", type="string", format="date-time", example="2025-03-14T09:00"),
-     *                 @OA\Property(property="end_time", type="string", format="date-time", example="2025-03-14T17:00"),
+     *                 @OA\Property(property="end_time", type="string", format="date-time", example="2025-03-14T18:00"),
      *                 @OA\Property(property="leave_type", type="string", example="Sick Leave"),
      *                 @OA\Property(property="status", type="integer", example=0),
      *                 @OA\Property(property="attachment", type="file", example="attachment/yourfilesname.jpg")
@@ -151,79 +181,97 @@ class LeaveController extends Controller
      * @OA\Get(
      *     path="/api/leave/my-records",
      *     summary="查詢個人請假紀錄",
-     *     description="查詢符合條件的請假紀錄。",
+     *     description="員工查詢個人請假紀錄。",
      *     operationId="viewMyLeaveRecords",
      *     tags={"Leave"},
-     *     security={{"bearerAuth":{}}},
-     * 
+     *     security={{ "bearerAuth": {} }},
      *     @OA\Parameter(
      *         name="start_date",
      *         in="query",
-     *         description="查詢開始日期 (格式: YYYY-MM-DD)",
      *         required=true,
-     *         @OA\Schema(type="string", format="date")
+     *         description="查詢起始日期",
+     *         @OA\Schema(
+     *             type="string",
+     *             format="date",
+     *             example="2025-03-01"
+     *         )
      *     ),
      *     @OA\Parameter(
      *         name="end_date",
      *         in="query",
-     *         description="查詢結束日期 (格式: YYYY-MM-DD)，需大於等於 start_date",
      *         required=true,
-     *         @OA\Schema(type="string", format="date")
+     *         description="查詢結束日期",
+     *         @OA\Schema(
+     *             type="string",
+     *             format="date",
+     *             example="2025-03-31"
+     *         )
      *     ),
      *     @OA\Parameter(
      *         name="leave_type",
      *         in="query",
-     *         description="請假類型 (leave_types 表中的 ID)",
-     *         required=true,
-     *         @OA\Schema(type="integer")
+     *         required=false,
+     *         description="請假類型 ID (必須為 leave_types 表中的有效 id)",
+     *         @OA\Schema(
+     *             type="integer",
+     *             example=1
+     *         )
      *     ),
      *     @OA\Parameter(
      *         name="attachment",
      *         in="query",
-     *         description="附件 ID (files 表中的 ID)，可選",
      *         required=false,
-     *         @OA\Schema(type="integer")
+     *         description="附件 ID (選填，必須為 files 表中的有效 id)",
+     *         @OA\Schema(
+     *             type="integer",
+     *             example=10
+     *         )
      *     ),
      *     @OA\Parameter(
      *         name="status",
      *         in="query",
-     *         description="請假狀態 (0: 待審核, 1: 主管通過, 2: 主管拒絕, 3: HR同意, 4: HR拒絕)",
      *         required=false,
-     *         @OA\Schema(type="integer", enum={0,1,2,3,4})
+     *         description="審核狀態: 0:待審核, 1:主管通過, 2:主管拒絕, 3:HR同意, 4:HR拒絕",
+     *         @OA\Schema(
+     *             type="integer",
+     *             enum={0,1,2,3,4,},
+     *             example=1
+     *         )
      *     ),
-     * 
      *     @OA\Response(
      *         response=200,
-     *         description="請假紀錄查詢成功",
+     *         description="查詢成功或查無符合條件的請假紀錄",
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="message", type="string", example="查詢成功"),
-     *             @OA\Property(property="records", type="array",
-     *                 @OA\Items(type="object",
-     *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="start_date", type="string", format="date", example="2024-03-01"),
-     *                     @OA\Property(property="end_date", type="string", format="date", example="2024-03-03"),
-     *                     @OA\Property(property="leave_type", type="string", example="病假"),
-     *                     @OA\Property(property="status", type="integer", example=2),
-     *                     @OA\Property(property="attachment", type="string", example="file_id_123"),
-     *                     @OA\Property(property="created_at", type="string", format="date-time", example="2024-03-01T08:00:00Z")
+     *             @OA\Property(
+     *                 property="records",
+     *                 type="array",
+     *                 description="請假紀錄列表",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=123),
+     *                     @OA\Property(property="start_time", type="string", format="date-time", example="2025-03-14T09:00:00"),
+     *                     @OA\Property(property="end_time", type="string", format="date-time", example="2025-03-14T17:00:00"),
+     *                     @OA\Property(property="leave_type", type="string", example="Sick Leave"),
+     *                     @OA\Property(property="status", type="integer", example=0),
+     *                     @OA\Property(property="attachment", type="string", example="attachment/yourfilesname.jpg")
      *                 )
-     *             )
+     *             ),
+     *             @OA\Property(property="total", type="integer", example=10)
      *         )
      *     ),
-     * 
      *     @OA\Response(
      *         response=403,
-     *         description="無權限查詢請假紀錄",
+     *         description="無此權限，無法查詢請假紀錄",
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="message", type="string", example="無此權限，無法查詢請假紀錄")
      *         )
      *     ),
-     * 
      *     @OA\Response(
      *         response=500,
-     *         description="查詢失敗 (系統錯誤)",
+     *         description="查詢失敗",
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="message", type="string", example="查詢失敗")
@@ -267,75 +315,119 @@ class LeaveController extends Controller
     /**
      * @OA\Get(
      *     path="/api/leave/department",
-     *     summary="查詢部門請假紀錄",
-     *     description="讓部門主管或 HR 查詢部門內所有請假紀錄，支援條件篩選。",
+     *     summary="查詢部門請假紀錄（主管 & HR）",
+     *     description="主管或 HR 查詢部門內的請假紀錄",
      *     operationId="viewDepartmentLeaveRecords",
      *     tags={"Leave"},
-     *     security={{"bearerAuth":{}}},
-     * 
+     *     security={{ "bearerAuth": {} }},
      *     @OA\Parameter(
      *         name="leave_type_id",
      *         in="query",
-     *         description="請假類型 ID (leave_types 表中的 ID)",
      *         required=false,
-     *         @OA\Schema(type="integer")
+     *         description="請假類型ID (選填，必須為 leave_types 表中的有效 id)",
+     *         @OA\Schema(
+     *             type="integer",
+     *             example=1
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="employee_id",
+     *         in="query",
+     *         required=false,
+     *         description="員工ID (選填，若要查詢特定員工的請假紀錄)",
+     *         @OA\Schema(
+     *             type="integer",
+     *             example=5
+     *         )
      *     ),
      *     @OA\Parameter(
      *         name="start_date",
      *         in="query",
-     *         description="查詢開始日期 (格式: YYYY-MM-DD)",
      *         required=true,
-     *         @OA\Schema(type="string", format="date")
+     *         description="查詢起始日期",
+     *         @OA\Schema(
+     *             type="string",
+     *             format="date",
+     *             example="2025-03-01"
+     *         )
      *     ),
      *     @OA\Parameter(
      *         name="end_date",
      *         in="query",
-     *         description="查詢結束日期 (格式: YYYY-MM-DD)，需大於等於 start_date",
      *         required=true,
-     *         @OA\Schema(type="string", format="date")
+     *         description="查詢結束日期，必須大於或等於起始日期",
+     *         @OA\Schema(
+     *             type="string",
+     *             format="date",
+     *             example="2025-03-31"
+     *         )
      *     ),
      *     @OA\Parameter(
      *         name="status",
      *         in="query",
-     *         description="請假狀態 (0: 待審核, 1: 主管通過, 2: 主管拒絕, 3: HR同意, 4: HR拒絕)",
      *         required=false,
-     *         @OA\Schema(type="integer", enum={0,1,2,3,4})
+     *         description="審核狀態: 0:待審核, 1:主管通過, 2:主管拒絕, 3:HR同意, 4:HR拒絕",
+     *         @OA\Schema(
+     *             type="integer",
+     *             enum={0,1,2,3,4},
+     *             example=1
+     *         )
      *     ),
-     * 
+     *     @OA\Parameter(
+     *         name="leave_hours",
+     *         in="query",
+     *         required=false,
+     *         description="請假時數 (選填)",
+     *         @OA\Schema(
+     *             type="number",
+     *             example=8
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="created_at",
+     *         in="query",
+     *         required=false,
+     *         description="申請日期 (選填)",
+     *         @OA\Schema(
+     *             type="string",
+     *             format="date",
+     *             example="2025-03-01"
+     *         )
+     *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="查詢成功",
+     *         description="查詢成功或查無符合條件的請假紀錄",
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="message", type="string", example="查詢成功"),
-     *             @OA\Property(property="records", type="array",
-     *                 @OA\Items(type="object",
-     *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="employee_name", type="string", example="王小明"),
-     *                     @OA\Property(property="department", type="string", example="技術部"),
-     *                     @OA\Property(property="start_date", type="string", format="date", example="2024-03-01"),
-     *                     @OA\Property(property="end_date", type="string", format="date", example="2024-03-03"),
-     *                     @OA\Property(property="leave_type", type="string", example="病假"),
-     *                     @OA\Property(property="status", type="integer", example=2),
-     *                     @OA\Property(property="created_at", type="string", format="date-time", example="2024-03-01T08:00:00Z")
+     *             @OA\Property(
+     *                 property="records",
+     *                 type="array",
+     *                 description="請假紀錄列表",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=123),
+     *                     @OA\Property(property="start_time", type="string", format="date-time", example="2025-03-14T09:00:00"),
+     *                     @OA\Property(property="end_time", type="string", format="date-time", example="2025-03-14T18:00:00"),
+     *                     @OA\Property(property="leave_type", type="string", example="Sick Leave"),
+     *                     @OA\Property(property="status", type="integer", example=0),
+     *                     @OA\Property(property="attachment", type="string", example="attachment/yourfilesname.jpg")
      *                 )
      *             ),
-     *             @OA\Property(property="total", type="integer", example=5, description="符合條件的請假紀錄總數")
+     *             @OA\Property(property="total", type="integer", example=10)
      *         )
      *     ),
-     * 
      *     @OA\Response(
      *         response=403,
-     *         description="無權限查詢請假紀錄",
+     *         description="無此權限，無法查詢請假紀錄",
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="message", type="string", example="無此權限，無法查詢請假紀錄")
      *         )
      *     ),
-     * 
      *     @OA\Response(
      *         response=500,
-     *         description="伺服器錯誤",
+     *         description="查詢失敗",
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="message", type="string", example="查詢失敗")
@@ -387,63 +479,123 @@ class LeaveController extends Controller
     /**
      * @OA\Get(
      *     path="/api/leave/company",
-     *     summary="查詢全公司請假紀錄",
-     *     description="HR可查詢全公司員工的請假紀錄",
+     *     summary="查詢全公司請假紀錄 (HR)",
+     *     description="HR 查詢全公司的請假紀錄。",
+     *     operationId="viewCompanyLeaveRecords",
      *     tags={"Leave"},
      *     security={{ "bearerAuth": {} }},
      *     @OA\Parameter(
      *         name="leave_type_id",
      *         in="query",
-     *         description="請假類型ID",
      *         required=false,
-     *         @OA\Schema(type="integer")
+     *         description="請假類型ID (選填，必須為 leave_types 表中的有效 id)",
+     *         @OA\Schema(
+     *             type="integer",
+     *             example=1
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="department_id",
+     *         in="query",
+     *         required=false,
+     *         description="部門ID (選填，必須為 departments 表中的有效 id)",
+     *         @OA\Schema(
+     *             type="integer",
+     *             example=2
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="employee_id",
+     *         in="query",
+     *         required=false,
+     *         description="員工ID (選填，必須為 employees 表中的有效 id)",
+     *         @OA\Schema(
+     *             type="integer",
+     *             example=5
+     *         )
      *     ),
      *     @OA\Parameter(
      *         name="start_date",
      *         in="query",
-     *         description="起始日期",
      *         required=true,
-     *         @OA\Schema(type="string", format="date", example="2025-03-01")
+     *         description="查詢起始日期",
+     *         @OA\Schema(
+     *             type="string",
+     *             format="date",
+     *             example="2025-03-01"
+     *         )
      *     ),
      *     @OA\Parameter(
      *         name="end_date",
      *         in="query",
-     *         description="結束日期",
      *         required=true,
-     *         @OA\Schema(type="string", format="date", example="2025-03-31")
+     *         description="查詢結束日期，必須大於或等於起始日期",
+     *         @OA\Schema(
+     *             type="string",
+     *             format="date",
+     *             example="2025-03-31"
+     *         )
      *     ),
      *     @OA\Parameter(
      *         name="status",
      *         in="query",
-     *         description="請假狀態 (0: 待審核, 1: 主管通過, 2: 主管拒絕, 3: HR同意, 4: HR拒絕)",
      *         required=false,
-     *         @OA\Schema(type="integer")
+     *         description="審核狀態: 0:待審核, 1:主管通過, 2:主管拒絕, 3:HR同意, 4:HR拒絕",
+     *         @OA\Schema(
+     *             type="integer",
+     *             enum={0,1,2,3,4},
+     *             example=1
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="leave_hours",
+     *         in="query",
+     *         required=false,
+     *         description="請假時數 (選填)",
+     *         @OA\Schema(
+     *             type="number",
+     *             example=8
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="created_at",
+     *         in="query",
+     *         required=false,
+     *         description="申請日期 (選填)",
+     *         @OA\Schema(
+     *             type="string",
+     *             format="date",
+     *             example="2025-03-01"
+     *         )
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="查詢成功",
+     *         description="查詢成功或查無符合條件的請假紀錄",
      *         @OA\JsonContent(
+     *             type="object",
      *             @OA\Property(property="message", type="string", example="查詢成功"),
-     *             @OA\Property(property="records", type="array", @OA\Items(
-     *                 @OA\Property(property="id", type="integer", example=456),
-     *                 @OA\Property(property="leave_type", type="string", example="Annual Leave"),
-     *                 @OA\Property(property="start_date", type="string", format="date", example="2025-03-15 09:00"),
-     *                 @OA\Property(property="end_date", type="string", format="date", example="2025-03-17 18:00"),
-     *                 @OA\Property(property="status", type="integer", example=1, description="0: 待審核, 1: 主管通過, 2: 主管拒絕, 3: HR同意, 4: HR拒絕"),
-     *                 @OA\Property(property="reason", type="string", example="個人休假")
-     *             )),
-     *             @OA\Property(property="pagination", type="object",
-     *                 @OA\Property(property="total", type="integer", example=100),
-     *                 @OA\Property(property="per_page", type="integer", example=10),
-     *                 @OA\Property(property="current_page", type="integer", example=1),
-     *                 @OA\Property(property="last_page", type="integer", example=10)
-     *             )
+     *             @OA\Property(
+     *                 property="records",
+     *                 type="array",
+     *                 description="請假紀錄列表",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=123),
+     *                     @OA\Property(property="start_time", type="string", format="date-time", example="2025-03-14T09:00:00"),
+     *                     @OA\Property(property="end_time", type="string", format="date-time", example="2025-03-14T17:00:00"),
+     *                     @OA\Property(property="leave_type", type="string", example="Sick Leave"),
+     *                     @OA\Property(property="status", type="integer", example=1),
+     *                     @OA\Property(property="attachment", type="string", example="attachment/yourfilesname.jpg")
+     *                 )
+     *             ),
+     *             @OA\Property(property="total", type="integer", example=100)
      *         )
      *     ),
      *     @OA\Response(
      *         response=403,
      *         description="無此權限，無法查詢請假紀錄",
      *         @OA\JsonContent(
+     *             type="object",
      *             @OA\Property(property="message", type="string", example="無此權限，無法查詢請假紀錄")
      *         )
      *     ),
@@ -451,7 +603,8 @@ class LeaveController extends Controller
      *         response=500,
      *         description="查詢失敗，請稍後再試",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="系統發生錯誤，請稍後再試")
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="查詢失敗，請稍後再試")
      *         )
      *     )
      * )
@@ -495,83 +648,101 @@ class LeaveController extends Controller
     /**
      * @OA\Post(
      *     path="/api/leave/update/{id}",
-     *     summary="更新請假紀錄",
-     *     description="更新指定的請假單資料，包括假別、時間、原因及附件。",
+     *     summary="修改請假申請",
+     *     description="HR 或員工可以修改請假申請。",
      *     operationId="updateLeave",
      *     tags={"Leave"},
-     *     security={{"bearerAuth":{}}},
-     * 
+     *     security={{ "bearerAuth": {} }},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         description="請假單 ID",
+     *         description="假單 ID",
      *         required=true,
-     *         @OA\Schema(type="integer")
+     *         @OA\Schema(
+     *             type="integer",
+     *             example=123
+     *         )
      *     ),
-     * 
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\MediaType(
      *             mediaType="multipart/form-data",
      *             @OA\Schema(
-     *                 required={"start_time", "end_time", "leave_type", "reason"},
-     *                 @OA\Property(property="start_time", type="string", format="date-time", example="2024-03-15 09:00:00", description="請假開始時間"),
-     *                 @OA\Property(property="end_time", type="string", format="date-time", example="2024-03-15 18:00:00", description="請假結束時間"),
-     *                 @OA\Property(property="leave_type", type="integer", example=1, description="請假類型 ID"),
-     *                 @OA\Property(property="reason", type="string", example="身體不適", description="請假原因"),
-     *                 @OA\Property(property="attachment", type="string", format="binary", description="可選的請假附件 (最大 10MB)"),
+     *                 type="object",
+     *                 required={"start_time", "end_time", "leave_type_id", "reason"},
+     *                 @OA\Property(
+     *                     property="leave_type_id",
+     *                     type="integer",
+     *                     description="請假類型 ID",
+     *                     example=1
+     *                 ),
+     *                 @OA\Property(
+     *                     property="start_time",
+     *                     type="string",
+     *                     format="date-time",
+     *                     description="請假開始時間",
+     *                     example="2025-03-14 09:00"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="end_time",
+     *                     type="string",
+     *                     format="date-time",
+     *                     description="請假結束時間",
+     *                     example="2025-03-14 17:00"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="reason",
+     *                     type="string",
+     *                     description="請假原因",
+     *                     example="調整休假時間"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="attachment",
+     *                     type="file",
+     *                     format="binary",
+     *                     nullable=true,
+     *                     description="更新的附件檔案 (選填，允許上傳最大 10MB 的文件)"
+     *                 )
      *             )
      *         )
      *     ),
-     * 
      *     @OA\Response(
      *         response=200,
      *         description="假單更新成功",
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="message", type="string", example="假單更新成功"),
-     *             @OA\Property(property="leave", type="object",
-     *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="start_time", type="string", format="date-time", example="2024-03-15 09:00:00"),
-     *                 @OA\Property(property="end_time", type="string", format="date-time", example="2024-03-15 18:00:00"),
-     *                 @OA\Property(property="leave_type", type="string", example="病假"),
-     *                 @OA\Property(property="reason", type="string", example="身體不適"),
-     *                 @OA\Property(property="attachment", type="string", example="file_id_123"),
-     *                 @OA\Property(property="status", type="integer", example=2),
-     *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2024-03-15T10:00:00Z")
+     *             @OA\Property(
+     *                 property="leave",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=123),
+     *                 @OA\Property(property="start_time", type="string", format="date-time", example="2025-03-14T09:00:00"),
+     *                 @OA\Property(property="end_time", type="string", format="date-time", example="2025-03-14T17:00:00"),
+     *                 @OA\Property(property="leave_type", type="string", example="Sick Leave"),
+     *                 @OA\Property(property="reason", type="string", example="調整休假時間"),
+     *                 @OA\Property(property="attachment", type="string", example="attachment/newfilename.jpg")
      *             )
      *         )
      *     ),
-     * 
      *     @OA\Response(
      *         response=403,
-     *         description="無權限修改此請假單或查無此假單",
+     *         description="查無此假單或無權限修改",
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="message", type="string", example="查無此假單或您無權限修改")
      *         )
      *     ),
-     * 
      *     @OA\Response(
      *         response=422,
-     *         description="請求格式錯誤",
+     *         description="請假結束時間必須大於開始時間",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="message", type="string", example="更新失敗，請重新檢查資料格式是否錯誤"),
-     *             @OA\Property(property="errors", type="object",
-     *                 @OA\Property(property="start_time", type="array",
-     *                     @OA\Items(type="string", example="請假開始時間為必填")
-     *                 ),
-     *                 @OA\Property(property="leave_type", type="array",
-     *                     @OA\Items(type="string", example="請假類型 ID 無效")
-     *                 )
-     *             )
+     *             @OA\Property(property="message", type="string", example="請假結束時間必須大於開始時間")
      *         )
      *     ),
-     * 
      *     @OA\Response(
      *         response=500,
-     *         description="伺服器錯誤",
+     *         description="更新失敗，請重新檢查資料格式是否錯誤",
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="message", type="string", example="更新失敗，請重新檢查資料格式是否錯誤")
@@ -653,21 +824,25 @@ class LeaveController extends Controller
      * @OA\Delete(
      *     path="/api/leave/{id}",
      *     summary="刪除請假申請",
-     *     description="根據請假 ID 刪除請假申請，並同時刪除相關附件。",
+     *     description=" HR 或員工可刪除請假申請。",
      *     operationId="deleteLeave",
      *     tags={"Leave"},
-     *     security={{"bearerAuth":{}}},
+     *     security={{ "bearerAuth": {} }},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
-     *         required=true,
      *         description="請假申請的 ID",
-     *         @OA\Schema(type="integer", example=1)
+     *         required=true,
+     *         @OA\Schema(
+     *             type="integer",
+     *             example=123
+     *         )
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="成功刪除假單",
+     *         description="假單刪除成功",
      *         @OA\JsonContent(
+     *             type="object",
      *             @OA\Property(property="message", type="string", example="假單刪除成功")
      *         )
      *     ),
@@ -675,13 +850,15 @@ class LeaveController extends Controller
      *         response=403,
      *         description="查無此假單或無權限刪除",
      *         @OA\JsonContent(
+     *             type="object",
      *             @OA\Property(property="message", type="string", example="查無此假單或您無權限刪除")
      *         )
      *     ),
      *     @OA\Response(
      *         response=500,
-     *         description="伺服器內部錯誤",
+     *         description="系統發生錯誤，請稍後再試",
      *         @OA\JsonContent(
+     *             type="object",
      *             @OA\Property(property="message", type="string", example="系統發生錯誤，請稍後再試")
      *         )
      *     )
@@ -732,48 +909,48 @@ class LeaveController extends Controller
         }
     }
 
-    // 7. 取得特殊假別剩餘小時數 (計算假夠不夠扣)
+    // 7. 取得特殊假別剩餘小時數
     /**
      * @OA\Get(
-     *     path="/api/leavetypes/hours/{leaveTypeId}",
+     *     path="/api/leavetypes/hours/{leave_type_id}",
      *     summary="取得特殊假別剩餘小時數",
-     *     description="計算使用者的特定假別剩餘時數，確認是否足夠扣除。",
+     *     description="指定假別的剩餘可用請假小時數。",
      *     operationId="getRemainingLeaveHours",
      *     tags={"Leave"},
-     *     security={{"bearerAuth":{}}},
+     *     security={{ "bearerAuth": {} }},
      *     @OA\Parameter(
-     *         name="leaveTypeId",
+     *         name="leave_type_id",
      *         in="path",
+     *         description="假別 ID (必須為有效的假別 ID)",
      *         required=true,
-     *         description="假別類型的 ID",
-     *         @OA\Schema(type="integer", example=4)
+     *         @OA\Schema(
+     *             type="integer",
+     *             example=5
+     *         )
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="成功取得剩餘假別小時數",
+     *         description="取得剩餘時數成功",
      *         @OA\JsonContent(
-     *             @OA\Property(property="remaining_hours", type="integer", example=8)
+     *             type="object",
+     *             @OA\Property(property="leave_type", type="string", example="Annual Leave"),
+     *             @OA\Property(property="remaining_hours", type="number", example=5)
      *         )
      *     ),
      *     @OA\Response(
      *         response=400,
-     *         description="請求錯誤（例如無效的假別 ID）",
+     *         description="請假類型無效",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="無效的假別 ID")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=403,
-     *         description="未授權或無權存取該假別資訊",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="您無權查看此假別資訊")
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="請假類型無效")
      *         )
      *     ),
      *     @OA\Response(
      *         response=500,
-     *         description="伺服器內部錯誤",
+     *         description="系統發生錯誤",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="系統發生錯誤，請稍後再試")
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Internal Server Error")
      *         )
      *     )
      * )
