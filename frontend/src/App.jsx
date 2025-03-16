@@ -13,6 +13,7 @@ import LoginPage from "./pages/LoginPage";
 // import Punchin from "./pages/punchin";
 // import ApproveLeave from "./pages/approveLeave";
 import ProtectedRoute from "./components/protectedRoute";
+import ApproveClockReissuePage from "./pages/ApproveClockReissuePage";
 
 // 先預留這些路由
 const Punchin = () => <div>個人打卡頁面 (尚未建立)</div>;
@@ -20,7 +21,7 @@ const ProfilePage = () => <div>個人帳戶管理頁面 (尚未建立)</div>;
 const ClockHistoryPage = () => <div>查詢打卡紀錄頁面 (尚未建立)</div>;
 const ClockReissueHistoryPage = () => <div>查詢補打卡紀錄頁面 (尚未建立)</div>;
 const LeaveRecordsPage = () => <div>請假及查詢紀錄頁面 (尚未建立)</div>;
-const ApproveClockReissuePage = () => <div>補打卡審核頁面 (尚未建立)</div>;
+// const ApproveClockReissuePage = () => <div>補打卡審核頁面 (尚未建立)</div>;
 const ApproveLeavePage = () => <div>假單審查審核頁面 (尚未建立)</div>;
 const UserManagementPage = () => <div>人員管理頁面 (尚未建立)</div>;
 const RolePermissionsPage = () => <div>權限修改頁面 (尚未建立)</div>;
@@ -39,6 +40,7 @@ const ProtectedLayout = ({ children }) => (
 function App() {
   // ✅ 透過 Jotai 讀取 `isAuthenticatedAtom`，用於判斷使用者是否已登入
   const isAuthenticated = useAtomValue(isAuthenticatedAtom);
+  // return <ApproveClockReissuePage />;
 
   return (
     <Router>
@@ -69,50 +71,47 @@ function App() {
         <Route
           path="*"
           element={
-              <ProtectedRoute>
-                <ProtectedLayout>
-                  <Routes>
-                    <Route path="/punchin" element={<Punchin />} />
-                    <Route path="/profile" element={<ProfilePage />} />
-                    <Route
-                      path="/clock-history"
-                      element={<ClockHistoryPage />}
-                    />
-                    <Route
-                      path="/clock-reissue-history"
-                      element={<ClockReissueHistoryPage />}
-                    />
-                    <Route
-                      path="/leave-and-inquiry-records"
-                      element={<LeaveRecordsPage />}
-                    />
-                    <Route
-                      path="/approve-leave"
-                      element={<ApproveLeavePage />}
-                    />
-                    <Route
-                      path="/approve-clock-reissue"
-                      element={<ApproveClockReissuePage />}
-                    />
-                    <Route
-                      path="/user-management"
-                      element={<UserManagementPage />}
-                    />
-                    <Route
-                      path="/role-permissions"
-                      element={<RolePermissionsPage />}
-                    />
-                    <Route path="*" element={<Navigate to="/punchin" />} />
-                  </Routes>
-                </ProtectedLayout>
-              </ProtectedRoute>
-            }
-          />
+            <ProtectedRoute>
+              <ProtectedLayout>
+                <Routes>
+                  <Route path="/punchin" element={<Punchin />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/clock-history" element={<ClockHistoryPage />} />
+                  <Route
+                    path="/clock-reissue-history"
+                    element={<ClockReissueHistoryPage />}
+                  />
+                  <Route
+                    path="/leave-and-inquiry-records"
+                    element={<LeaveRecordsPage />}
+                  />
+                  <Route path="/approve-leave" element={<ApproveLeavePage />} />
+                  <Route
+                    path="/approve-clock-reissue"
+                    element={<ApproveClockReissuePage />}
+                  />
+                  <Route
+                    path="/user-management"
+                    element={<UserManagementPage />}
+                  />
+                  <Route
+                    path="/role-permissions"
+                    element={<RolePermissionsPage />}
+                  />
+                  <Route path="*" element={<Navigate to="/punchin" />} />
+                </Routes>
+              </ProtectedLayout>
+            </ProtectedRoute>
+          }
+        />
 
-          {/* 未登入時的默認跳轉 */}
-          <Route path="*" element={!isAuthenticated && <Navigate to="/login" replace />} />
-            </Routes>
-          </Router>
+        {/* 未登入時的默認跳轉 */}
+        <Route
+          path="*"
+          element={!isAuthenticated && <Navigate to="/login" replace />}
+        />
+      </Routes>
+    </Router>
   );
 }
 
