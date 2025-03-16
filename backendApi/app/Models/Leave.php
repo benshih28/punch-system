@@ -5,41 +5,44 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-// 新增leave資料表
 class Leave extends Model
 {
     use HasFactory;
-    
-    protected $table = 'leaves';
 
     protected $fillable = [
-        'user_id',
-        'leave_type_id',
-        'start_time',
-        'end_time',
-        'leave_hours',
+        'employee_id',
+        'leave_type_id', // **修正：改為 `leave_type_id` 而非 `type`**
+        'start_date',
+        'end_date',
+        'start_time', // **新增開始時間**
+        'end_time', // **新增結束時間**
+        'hours', // **新增請假總時數**
         'reason',
-        'reject_reason',
-        'status',
-        'attachment',
+        'manager_status',
+        'manager_remarks',
+        'hr_status',
+        'hr_remarks',
+        'final_status',
     ];
 
-    public const STATUSES = [
-        0,1,2,3,4
-    ];
-
-    public function user()
+    /**
+     * **關聯：請假單屬於某位員工**
+     */
+    public function employee()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(Employee::class);
     }
 
-    public function file()
-    {
-        return $this->hasOne(File::class, 'id', 'attachment');
-    }
-
+    /**
+     * **關聯：請假單屬於某個假別**
+     */
     public function leaveType()
     {
-        return $this->belongsTo(LeaveType::class, 'leave_type_id');
+        return $this->belongsTo(LeaveType::class);
+    }
+
+    public function files()
+    {
+        return $this->hasMany(File::class, 'leave_id');
     }
 }

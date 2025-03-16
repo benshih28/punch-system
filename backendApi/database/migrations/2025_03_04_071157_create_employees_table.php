@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('position_id')->nullable()->constrained('positions')->onDelete('set null'); // 職位
             $table->foreignId('manager_id')->nullable()->constrained('users')->onDelete('set null'); // 主管
             $table->enum('status', ['pending', 'approved', 'rejected','inactive'])->default('pending'); // 員工審核狀態
+            $table->date('start_date')->nullable(); // 新增到職日期
             $table->timestamps();
         });
     }

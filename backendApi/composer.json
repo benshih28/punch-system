@@ -60,6 +60,7 @@
             "@php artisan key:generate",
             "@php artisan jwt:secret --force",
             "@php artisan migrate --force",
+            "@php artisan db:seed --class=LeaveTypesSeeder --force",
             "@php artisan db:seed --class=DepartmentAndPositionSeeder --force",
             "@php artisan db:seed --class=PermissionsSeeder --force",
             "@php artisan db:seed --class=RolesSeeder --force"

@@ -13,9 +13,10 @@ return new class extends Migration
     {
         Schema::create('leave_types', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
-            $table->string('description')->unique(); // 填入假別中文
-            $table->integer('total_hours')->nullable(); // 每年總可用小時數
+            $table->string('name'); // 假別名稱（如：特休假）
+            $table->string('code')->unique(); // 假別代碼（如：annual, sick）
+            $table->integer('default_hours')->nullable(); // 預設時數 (有些假沒有固定時數)
+            $table->enum('gender_limit', ['male', 'female'])->nullable(); // 限定性別
             $table->timestamps();
         });
     }

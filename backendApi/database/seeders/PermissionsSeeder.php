@@ -28,6 +28,7 @@ class PermissionsSeeder extends Seeder
             'view_department_leave_records', // 主管/HR 可以「查看部門請假紀錄」
             'view_company_leave_records', // HR 可以「查看全公司請假紀錄」
             'approve_department_leave', // 主管/HR 可以「核准/駁回本部門請假單」
+            'view_leave_balance', // 員工可以「查詢請假餘額」
 
             // 🔹 3️⃣ 角色與權限管理（HR 專用）
             'manage_roles', // HR 可以「建立角色、取得所有角色、指派權限、移除權限、取得角色權限」

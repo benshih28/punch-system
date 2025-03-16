@@ -9,14 +9,13 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    // 假別規則資料表
     public function up(): void
     {
-        Schema::create('leave_reset_rules', function (Blueprint $table) {
+        Schema::create('leave_balances', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('leave_type_id')->constrained('leave_types')->cascadeOnDelete();
-            $table->string('rule_type');  // yearly, monthly
-            $table->string('rule_value')->nullable();  // 01-01 / 1 / 90
+            $table->foreignId('employee_id')->constrained('employees')->onDelete('cascade'); // 員工ID
+            $table->foreignId('leave_type_id')->constrained('leave_types')->onDelete('cascade'); // 假別ID
+            $table->integer('remaining_hours'); // 剩餘時數
             $table->timestamps();
         });
     }
@@ -26,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('leave_reset_rules');
+        Schema::dropIfExists('leave_balances');
     }
 };

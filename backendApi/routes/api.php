@@ -16,8 +16,6 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\LeaveTypeController;
-use App\Http\Controllers\LeaveResetRuleController;
 use App\Http\Controllers\LeaveController;
 
 // 公開 API（不需要登入）
@@ -165,60 +163,47 @@ Route::middleware('auth:api')->group(function () {
         // 主管查詢自己管理的員工（需要 `view_manager` 權限）
         Route::get('/my/employees', [EmployeeController::class, 'getMyEmployees'])->middleware('can:view_manager');
 
-        // 假別功能API (需要加上Admin權限) 
-        Route::middleware('auth:api')->prefix('leavetypes')->group(function () {
-            // 1. 新增假別API
-            Route::post('/add', [LeaveTypeController::class, 'store']);
-            // 2. 修改假別API
-            Route::put('/update/{id}', [LeaveTypeController::class, 'update']);
-            // 3. 刪除假別API
-            Route::delete('/{id}', [LeaveTypeController::class, 'destroy']);
-            // 4. 假別選單API (放下拉式選單內)
-            Route::get('/', [LeaveTypeController::class, 'index']);
-            // 5. 取得假別剩餘小時數
-            Route::get('/hours/{leaveTypeId}', [LeaveController::class, 'getRemainingLeaveHours']);
-        });
 
-        // 假別規則API (需要加上Admin權限)
-        Route::middleware('auth:api')->prefix('leavetypes')->group(function () {
-            // 1. 增加假規
-            Route::post('/rules/add', [LeaveResetRuleController::class, 'store']);
-            // 2. 更新假規
-            Route::patch('/rules/{id}', [LeaveResetRuleController::class, 'update']);
-            // 3. 查詢假規
-            Route::get('/rules', [LeaveResetRuleController::class, 'index']);
-            // 4. 刪除假規
-            Route::delete('/rules/{id}', [LeaveResetRuleController::class, 'destroy']);
-        });
+        //【請假管理 API】
 
-        // 請假功能
-        Route::middleware('auth:api')->prefix('leave')->group(function () {
-            // 1. 員工可以申請請假（需要 `request_leave` 權限）
-            Route::post('/request', [LeaveController::class, 'requestLeave'])->middleware('can:request_leave');
+        // 取得請假餘額
+        Route::get('/leave/balances', [LeaveController::class, 'getLeaveBalances'])
+            ->can('view_leave_records');
 
-            // 2. 員工、主管、HR 可以查詢自己的請假紀錄（需要 `view_leave_records` 權限）
-            Route::get('/my-records', [LeaveController::class, 'viewMyLeaveRecords'])->middleware('can:view_leave_records');
+        // 申請請假 (含附件)
+        Route::post('/leave/request', [LeaveController::class, 'requestLeave'])
+            ->can('request_leave');
 
-            // 3. 員工或 HR 可以刪除請假資料（需要 `delete_leave` 權限）
-            Route::delete('/{id}', [LeaveController::class, 'deleteLeave'])->middleware('can:delete_leave');
+        // 修改請假申請
+        Route::put('/leave/update/{id}', [LeaveController::class, 'updateLeave'])
+            ->can('update_leave');
 
-            // 4. 員工或 HR 可以更新請假資料（需要 `update_leave` 權限）
-            Route::post('/update/{id}', [LeaveController::class, 'updateLeave'])->middleware('can:update_leave');
+        // 取消請假
+        Route::delete('/leave/cancel/{id}', [LeaveController::class, 'cancelLeave'])
+            ->can('delete_leave');
 
-            // 5. 主管或 HR 可以查看本部門請假紀錄（需要 `view_department_leave_records` 權限）
-            Route::get('/department', [LeaveController::class, 'viewDepartmentLeaveRecords'])->middleware('can:view_department_leave_records');
+        //【請假審核 API】
 
-            // 6. HR 可以查看全公司的請假紀錄（需要 `view_company_leave_records` 權限）
-            Route::get('/company', [LeaveController::class, 'viewCompanyLeaveRecords'])->middleware('can:view_company_leave_records');
+        // 主管審核請假
+        Route::post('/leave/approve/manager/{id}', [LeaveController::class, 'approveLeaveByManager'])
+            ->can('approve_department_leave');
 
+        // HR 審核請假
+        Route::post('/leave/approve/hr/{id}', [LeaveController::class, 'approveLeaveByHR'])
+            ->can('approve_leave');
 
-        //     // 7.HR 可以審核/駁回請假（需要 `approve_leave` 權限）
-        //     Route::patch('/{id}/approve', [LeaveController::class, 'approveLeave'])->middleware('can:approve_leave');
-        //     Route::patch('/{id}/reject', [LeaveController::class, 'rejectLeave'])->middleware('can:approve_leave');
+        // HR 修正請假紀錄
+        Route::put('/leave/correct/{id}', [LeaveController::class, 'correctLeave'])
+            ->can('approve_leave');
 
-        //     // 8.主管可以核准/駁回本部門請假單（需要 `approve_department_leave` 權限）
-        //     Route::patch('/{id}/department/approve', [LeaveController::class, 'approveDepartmentLeave'])->middleware('can:approve_department_leave');
-        //     Route::patch('/{id}/department/reject', [LeaveController::class, 'rejectDepartmentLeave'])->middleware('can:approve_department_leave');
-        });
+        //【請假查詢 API】
+
+        // 員工個人請假紀錄查詢
+        Route::get('/leave/personal-records', [LeaveController::class, 'getPersonalLeaveRecords'])
+            ->can('view_leave_records');
+
+        // 假單審核查詢 (主管 & HR)
+        Route::get('/leave/approvals', [LeaveController::class, 'getLeaveApplicationsForApproval'])
+            ->can('view_department_leave_records');
     });
 });

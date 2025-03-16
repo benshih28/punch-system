@@ -8,15 +8,21 @@ use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\DB;
-
+use App\Services\LeaveBalanceService;
 
 class EmployeeController extends Controller
 {
+    protected $leaveBalanceService;
+
+    public function __construct(LeaveBalanceService $leaveBalanceService)
+    {
+        $this->leaveBalanceService = $leaveBalanceService;
+    }
     /**
      * @OA\Get(
      *     path="/api/employees",
      *     summary="取得所有員工列表（HR 介面）",
-     *     description="HR 取得所有員工的資訊，包含部門、職位、員工姓名、主管 ID、角色、狀態。",
+     *     description="HR 取得所有員工的資訊，包含部門、職位、員工姓名、主管、角色、狀態。",
      *     tags={"Employees"},
      *     security={{ "bearerAuth": {} }},
      *
@@ -73,8 +79,10 @@ class EmployeeController extends Controller
      *                     @OA\Property(property="department", type="string", example="IT 部門"),
      *                     @OA\Property(property="position", type="string", example="軟體工程師"),
      *                     @OA\Property(property="employee_name", type="string", example="ben"),
-     *                     @OA\Property(property="manager_id", type="integer", example=3),
-     *                     @OA\Property(property="roles", type="string", example="員工"),
+     *                     @OA\Property(property="manager_name", type="string", example="Alice Wang"),
+     *                     @OA\Property(property="roles", type="array",
+     *                         @OA\Items(type="string", example="員工")
+     *                     ),
      *                     @OA\Property(property="status", type="string", enum={"pending", "approved", "rejected", "inactive"}, example="approved")
      *                 )
      *             )
@@ -87,16 +95,24 @@ class EmployeeController extends Controller
      */
     public function index(Request $request) // 取得所有員工列表（HR 介面）
     {
-        $departmentId = $request->query('department_id');
-        $roleId = $request->query('role_id');
-        $userId = $request->query('user_id');
-        $perPage = $request->query('per_page', 10);
-        $page = $request->query('page', 1);
+        $departmentId = $request->query('department_id', null);
+        $roleId = $request->query('role_id', null);
+        $userId = $request->query('user_id', null);
+        $perPage = (int) $request->query('per_page', 10);
+        $page = (int) $request->query('page', 1);
         $offset = ($page - 1) * $perPage;
 
+        // **查詢總數**
+        $totalEmployees = DB::selectOne('CALL CountEmployees(?, ?, ?)', [
+            $departmentId,
+            $roleId,
+            $userId
+        ])->total;
+
+        // **查詢員工資料**
         $employees = DB::select('CALL GetEmployees(?, ?, ?, ?, ?)', [
-            $departmentId ?: null,
-            $roleId ?: null,
+            $departmentId,
+            $roleId,
             $userId,
             $perPage,
             $offset
@@ -107,22 +123,24 @@ class EmployeeController extends Controller
             'meta' => [
                 'current_page' => $page,
                 'per_page' => $perPage,
-                'total' => count($employees), // 這裡需要額外查詢總數
-                'last_page' => ceil(count($employees) / $perPage),
+                'total' => $totalEmployees,
+                'last_page' => ceil($totalEmployees / $perPage),
             ],
             'data' => $employees
         ], 200);
     }
 
 
+
     /**
      * @OA\Post(
      *     path="/api/employees",
      *     summary="HR 註冊新員工",
-     *     description="HR 註冊新員工，會建立 `User` 帳號並在 `Employee` 記錄中標記 `pending` 狀態。",
+     *     description="HR 註冊新員工，會建立 `User` 帳號並在 `Employee` 記錄中標記 `pending` 狀態。HR 可選擇設定 `start_date` (入職日期)，否則為 NULL。",
      *     operationId="registerEmployeeByHR",
      *     tags={"Employees"},
-     *     security={{"bearerAuth": {}}},
+     *     security={{"bearerAuth": {}}}, 
+     * 
      *     @OA\RequestBody(
      *         required=true,
      *         description="HR 註冊新員工資訊",
@@ -132,25 +150,39 @@ class EmployeeController extends Controller
      *             @OA\Property(property="email", type="string", format="email", example="john.doe@example.com", description="員工電子郵件"),
      *             @OA\Property(property="password", type="string", example="Password123!", description="密碼"),
      *             @OA\Property(property="password_confirmation", type="string", example="Password123!", description="確認密碼"),
-     *             @OA\Property(property="gender", type="string", enum={"male", "female"}, example="male", description="性別")
+     *             @OA\Property(property="gender", type="string", enum={"male", "female"}, example="male", description="性別"),
+     *             @OA\Property(property="start_date", type="string", format="date", example="2024-03-10", description="(選填) 入職日期，若未提供則為 NULL")
      *         )
      *     ),
+     * 
      *     @OA\Response(
      *         response=201,
      *         description="員工註冊成功，等待 HR 審核",
      *         @OA\JsonContent(
      *             @OA\Property(property="message", type="string", example="員工已註冊，等待審核"),
      *             @OA\Property(property="user", type="object", description="使用者資訊"),
-     *             @OA\Property(property="employee", type="object", description="員工資訊")
+     *             @OA\Property(property="employee", type="object",
+     *                 @OA\Property(property="user_id", type="integer", example=5, description="對應 `users` 表的 ID"),
+     *                 @OA\Property(property="status", type="string", example="pending", description="員工目前狀態"),
+     *                 @OA\Property(property="start_date", type="string", format="date", example="2024-03-10", description="入職日期，可能為 NULL")
+     *             )
      *         )
      *     ),
+     * 
      *     @OA\Response(
      *         response=422,
-     *         description="驗證失敗"
+     *         description="驗證失敗",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="請確認欄位格式是否正確")
+     *         )
      *     ),
+     * 
      *     @OA\Response(
      *         response=403,
-     *         description="權限不足"
+     *         description="權限不足",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="權限不足，僅限 HR 操作")
+     *         )
      *     )
      * )
      */
@@ -161,6 +193,7 @@ class EmployeeController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', Password::min(8)->letters()->numbers()->mixedCase()->symbols(), 'confirmed'],
             'gender' => ['required', 'in:male,female'],
+            'start_date' => ['nullable', 'date'], // 新增 `start_date` 驗證
         ]);
 
         // **建立 `User` 帳號**
@@ -175,6 +208,7 @@ class EmployeeController extends Controller
         $employee = Employee::create([
             'user_id' => $user->id,
             'status' => 'pending',
+            'start_date' => $request->start_date, // HR 可選擇設定入職日，否則為 NULL
         ]);
 
         return response()->json([
@@ -188,7 +222,7 @@ class EmployeeController extends Controller
      * @OA\Patch(
      *     path="/api/employees/{id}/review",
      *     summary="HR 批准 / 拒絕 員工註冊",
-     *     description="HR 可以批准或拒絕員工註冊申請。",
+     *     description="HR 可以批准或拒絕員工註冊申請，批准後員工可正式入職，且第一次批准時會自動設定 `start_date`。",
      *     operationId="reviewEmployee",
      *     tags={"Employees"},
      *     security={{"bearerAuth": {}}}, 
@@ -206,18 +240,33 @@ class EmployeeController extends Controller
      *         description="選擇批准或拒絕員工註冊",
      *         @OA\JsonContent(
      *             required={"status"},
-     *             @OA\Property(property="status", type="string", enum={"approved", "rejected"}, example="approved", description="批准或拒絕")
+     *             @OA\Property(
+     *                 property="status", 
+     *                 type="string", 
+     *                 enum={"approved", "rejected"}, 
+     *                 example="approved", 
+     *                 description="批准 (approved) 或 拒絕 (rejected)"
+     *             )
+     *         )
+     *     ),
+     * 
+     *     @OA\Response(
+     *         response=201,
+     *         description="審核成功",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="員工已批准"),
+     *             @OA\Property(property="start_date", type="string", format="date", example="2024-03-10", description="員工正式入職日期")
      *         )
      *     ),
      * 
      *     @OA\Response(
      *         response=200,
-     *         description="操作成功",
+     *         description="員工申請已拒絕",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="員工已批准")
+     *             @OA\Property(property="message", type="string", example="員工申請已拒絕")
      *         )
      *     ),
-     * 
+     *
      *     @OA\Response(
      *         response=404,
      *         description="找不到員工",
@@ -228,12 +277,18 @@ class EmployeeController extends Controller
      * 
      *     @OA\Response(
      *         response=422,
-     *         description="驗證失敗"
+     *         description="驗證失敗",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="請提供有效的 status 值 (approved 或 rejected)")
+     *         )
      *     ),
      * 
      *     @OA\Response(
      *         response=403,
-     *         description="權限不足"
+     *         description="權限不足",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="權限不足，僅限 HR 操作")
+     *         )
      *     )
      * )
      */
@@ -251,9 +306,21 @@ class EmployeeController extends Controller
 
         if ($request->status === 'approved') {
             $employee->status = 'approved';
+
+            // 如果 `start_date` 為 NULL，則補上當天日期
+            if (!$employee->start_date) {
+                $employee->start_date = now()->toDateString();
+            }
+
             $employee->save();
 
-            return response()->json(['message' => '員工已批准'], 200);
+            //  員工審核通過後初始化請假餘額
+            $this->leaveBalanceService->initializeLeaveBalances($employee);
+
+            return response()->json([
+                'message' => '員工已批准，入職日期為 ' . $employee->start_date,
+                'start_date' => $employee->start_date,
+            ], 200);
         } elseif ($request->status === 'rejected') {
             // 🔹 **不刪除員工，只是標記為 rejected**
             $employee->status = 'rejected';
@@ -262,6 +329,7 @@ class EmployeeController extends Controller
             return response()->json(['message' => '員工申請已拒絕'], 200);
         }
     }
+   
 
     /**
      * @OA\Patch(

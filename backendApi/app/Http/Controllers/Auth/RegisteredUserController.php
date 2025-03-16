@@ -82,6 +82,7 @@ class RegisteredUserController extends Controller
         $employee = Employee::create([
             'user_id' => $user->id,
             'status' => 'pending', // 預設狀態為待審核
+            'start_date' => null,  // 外部註冊不填入職日期，HR 審核時再補
         ]);
 
         event(new Registered($user));
