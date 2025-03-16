@@ -42,4 +42,9 @@ class Leave extends Model
     {
         return $this->belongsTo(LeaveType::class, 'leave_type_id');
     }
+
+    public function employee()
+    {
+        return $this->hasOneThrough(Employee::class, User::class, 'id', 'user_id', 'user_id', 'id');
+    }    
 }

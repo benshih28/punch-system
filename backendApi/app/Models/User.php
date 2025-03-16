@@ -112,4 +112,10 @@ class User extends Authenticatable implements JWTSubject  // 實作JWT
     {
         return $this->hasMany(Leave::class, 'user_id');
     }
+
+    // users表跟departments表關聯
+    public function department()
+    {
+        return $this->employee->belongsTo(Department::class, 'department_id', 'id');
+    }
 }

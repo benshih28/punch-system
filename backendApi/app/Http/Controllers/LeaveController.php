@@ -15,15 +15,18 @@ use App\Models\Leave;
 use App\Models\File;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use App\Services\LeaveResetService;
 
 
 class LeaveController extends Controller
 {
     protected $leaveService;
+    protected $leaveResetService;
 
-    public function __construct(LeaveService $leaveService)
+    public function __construct(LeaveService $leaveService, LeaveResetService $leaveResetService)
     {
         $this->leaveService = $leaveService;
+        $this->leaveResetService = $leaveResetService;
     }
 
     // 1. 員工申請請假
@@ -96,11 +99,43 @@ class LeaveController extends Controller
             $data = $request->validated();
             $data['user_id'] = $user->id; // 由後端自動填入 `user_id`
             $data['status'] = 0;
+            $data['start_time'] = $request->input('start_time');
             $data['attachment'] = null; // **預設 `attachment` 為 `null`，避免未定義錯誤**
+
+            // 檢查時間重疊邏輯
+            $startTime = $data['start_time'];
+            $endTime = $data['end_time'];
+            $isOverlap = Leave::where('user_id', $user->id)
+                ->where(function ($query) use ($startTime, $endTime) {
+                    $query->where('start_time', '<', $endTime)
+                        ->where('end_time', '>', $startTime);
+                })
+                ->whereIn('status', [0, 1]) // 只檢查待審核或已通過的請假
+                ->exists();
+
+            if ($isOverlap) {
+                throw new \Exception('您的請假時間與已有的請假紀錄重疊，請調整時間範圍後再重新申請。');
+            }
+            if ($data['start_time'] >= $data['end_time']) {
+                return response()->json(['message' => '請假結束時間必須大於開始時間'], 422);
+            }
 
             // **如果是假別是生理假，但使用者不是女性，則拒絕請假**
             if ($leaveType->name === 'Menstrual Leave' && $user->gender !== 'female') {
                 return response()->json(['message' => '您無法申請生理假'], 403);
+            }
+
+            // 3️⃣ **預先檢查剩餘時數，減少 Service 負擔**
+            $remainingHours = match ($leaveType->name) {
+                'Annual leave' => $this->leaveResetService->getRemainingAnnualLeaveHours($user->id, $data['start_time']),
+                'Menstrual Leave' => $this->leaveResetService->getRemainingMenstrualLeaveHours($user->id, $data['start_time']), // ✅ 傳入 `start_time`
+                default => $this->leaveResetService->getRemainingLeaveHours($data['leave_type_id'], $user->id)
+            };
+
+            if ($remainingHours < $request->input('leave_hours')) {
+                return response()->json([
+                    'message' => "剩餘時數不足，無法申請",
+                ], 400);
             }
 
             // 3️⃣ **處理附件**（如果沒有附件，`attachment` 保持 `null`）
@@ -245,13 +280,13 @@ class LeaveController extends Controller
 
             $leaves = $this->leaveService->getLeaveList($user, $filters);
 
-            if ($leaves->isEmpty()) {
+            if ($leaves->total() === 0) {            //這裡開始
                 return response()->json([
-                    'message' => '查無符合條件的資料',
+                    'message' => '查無符合條件的請假紀錄',
                     'records' => [],
+                    'total' => 0,
                 ], 200);
             }
-
             return response()->json([
                 'message' => '查詢成功',
                 'records' => $leaves->map(fn($leave) => $this->formatLeave($leave)),
@@ -354,16 +389,19 @@ class LeaveController extends Controller
         try {
             $filters = $request->validate([
                 'leave_type_id' => 'nullable|exists:leave_types,id',
+                'employee_id' => 'nullable|exists:employees,id',
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after_or_equal:start_date',
                 'status' => 'nullable|integer|in:0,1,2,3,4',
+                'leave_hours' => 'nullable',
+                'created_at' => 'nullable|date',
             ]);
 
             // Log::info('查詢部門請假紀錄', ['user_id' => $user->id, 'filters' => $filters]);
 
             $leaves = $this->leaveService->getDepartmentLeaveList($user, $filters);
 
-            if ($leaves->total() === 0) {            //這裡開始
+            if ($leaves->total() === 0) { 
                 return response()->json([
                     'message' => '查無符合條件的請假紀錄',
                     'records' => [],
@@ -467,26 +505,35 @@ class LeaveController extends Controller
             // ✅ 查詢所有請假紀錄
             $filters = $request->validate([
                 'leave_type_id' => 'nullable|exists:leave_types,id',
+                'department_id' => 'nullable|exists:departments,id',
+                'employee_id' => 'nullable|exists:employees,id',
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after_or_equal:start_date',
                 'status' => 'nullable|integer|in:0,1,2,3,4',
+                'leave_hours' => 'nullable',
+                'created_at' => 'nullable|date',
             ]);
 
             $leaves = $this->leaveService->getCompanyLeaveList($filters);
-            $formattedRecords = $leaves->map(fn($leave) => $this->formatLeave($leave));
+
+            // 如果沒有任何符合條件的紀錄
+            if ($leaves->total() === 0) {
+                return response()->json([
+                    'message' => '查無符合條件的請假紀錄',
+                    'records' => [],
+                    'total' => 0,
+                ], 200);
+            }
+
+            // 有紀錄時的回應
             return response()->json([
                 'message' => '查詢成功',
-                'records' => $formattedRecords,
-                'pagination' => [
-                    'total' => $leaves->total(),
-                    'per_page' => $leaves->perPage(),
-                    'current_page' => $leaves->currentPage(),
-                    'last_page' => $leaves->lastPage(),
-                ],
+                'records' => $leaves->map(fn($leave) => $this->formatLeave($leave)),
+                'total' => $leaves->total(),
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => '查詢失敗，請稍後再試',
+                'message' => app()->isLocal() ? $e->getMessage() : '查詢失敗，請稍後再試',
             ], 500);
         }
     }
@@ -593,6 +640,33 @@ class LeaveController extends Controller
                 return response()->json(['message' => '查無此假單或您無權限修改'], 403);
             }
 
+            //  // 2️⃣ **資料驗證**
+            $data = $request->validated();
+            $data['start_time'] = $request->input('start_time');
+            $data['end_time'] = $request->input('end_time');
+            $data['leave_type_id'] = $request->input('leave_type_id', $leave->leave_type_id); // 預設為原本的假別
+
+            // 檢查時間重疊邏輯
+            $startTime = $data['start_time'];
+            $endTime = $data['end_time'];
+
+            $isOverlap = Leave::where('user_id', $user->id)
+                ->where('id', '!=', $id) // 排除當前假單
+                ->where(function ($query) use ($startTime, $endTime) {
+                    $query->where('start_time', '<', $endTime)
+                        ->where('end_time', '>', $startTime);
+                })
+                ->whereIn('status', [0, 1]) // 只檢查待審核或已通過的請假
+                ->exists();
+
+            if ($isOverlap) {
+                throw new \Exception('您的請假時間與已有的請假紀錄重疊，請調整時間範圍後再重新申請。');
+            }
+
+            if ($data['start_time'] >= $data['end_time']) {
+                return response()->json(['message' => '請假結束時間必須大於開始時間'], 422);
+            }
+
             // 2️⃣ **處理附件**（如果沒有新附件，保持原本的 `attachment_id`）
             $fileRecord = null;
             if ($request->hasFile('attachment')) {
@@ -626,13 +700,13 @@ class LeaveController extends Controller
 
             // 3️⃣ **呼叫 Service 層更新請假**
             $updatedLeave = $this->leaveService->updateLeave($leave, [
-                'leave_type' => $request->input('leave_type'),
+                'leave_type_id' => $request->input('leave_type_id'),
                 'start_time' => $request->input('start_time'),
                 'end_time' => $request->input('end_time'),
                 'reason' => $request->input('reason'),
                 'status' => $request->input('status'),
-                'attachment' => $fileRecord ? $fileRecord->id : $leave->attachment, // **如果有新附件就更新，否則保持原值**
-            ]);
+                'attachment' => $fileRecord ? $fileRecord->id : $leave->attachment,
+            ], $user, $data['start_time']); // ✅ 修正傳遞 `start_time`
 
             // 4️⃣ **回傳成功訊息**
             return response()->json([
@@ -778,13 +852,24 @@ class LeaveController extends Controller
      *     )
      * )
      */
-    public function getRemainingLeaveHours($leaveTypeId)
+    public function getRemainingLeaveHours(Request $request, int $leave_type_id): JsonResponse
     {
         try {
             $user = auth()->user(); // 取得當前用戶
-            $remainingHours = $this->leaveService->getRemainingLeaveHours($leaveTypeId, $user->id);
+
+            // 先確保該假別存在，避免查詢無效 ID
+            $leaveType = LeaveType::find($leave_type_id);
+            if (!$leaveType) {
+                return response()->json([
+                    'message' => '請假類型無效',
+                ], 400);
+            }
+
+            // ✅ **直接使用 Service 層的 getRemainingLeaveHours()**
+            $remainingHours = $this->leaveService->getRemainingLeaveHours($leave_type_id, $user->id);
 
             return response()->json([
+                'leave_type' => $leaveType->name,
                 'remaining_hours' => $remainingHours,
             ], 200);
         } catch (\Exception $e) {
@@ -802,11 +887,13 @@ class LeaveController extends Controller
             'user_id' => $leave->user_id,
             'user_name' => $leave->user->name,
             'leave_type' => optional($leave->leaveType)->name, // 確保讀取關聯名稱
+            'leave_type_name' => optional($leave->leaveType)->description, 
             'start_time' => $leave->start_time,
             'end_time' => $leave->end_time,
             'reason' => $leave->reason,
             'status' => $leave->status,
             'attachment' => $leave->file ? asset("storage/" . $leave->file->leave_attachment) : null,
+            'create_at' => $leave->create_at,
         ];
     }
 

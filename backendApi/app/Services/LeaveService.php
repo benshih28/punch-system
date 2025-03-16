@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Models\Leave;
 use App\Models\LeaveType;
+use App\Models\Employee;
 use Illuminate\Support\Facades\Log;
 use App\Services\LeaveResetService;
+use Carbon\Carbon;
 
 class LeaveService
 {
@@ -29,11 +31,11 @@ class LeaveService
         $hours = $this->calculateHours($data['start_time'], $data['end_time']);
 
         // 2️⃣ 拿到這個假別的總時數
-        $remainingHours = $this->leaveResetService->getRemainingLeaveHours($leaveTypeId, $user->id);
+        $remainingHours = $this->getRemainingLeaveHours($leaveTypeId, $user->id, $data['start_time']);
 
         // 3️⃣ 判斷剩餘時數夠不夠
         if (!is_null($remainingHours) && $remainingHours < $hours) {
-            throw new \Exception("剩餘時數不足，僅剩 {$remainingHours} 小時", 400);
+            throw new \Exception("剩餘時數不足，無法修改", 400);
         }
 
         // 4️⃣ **建立請假單**
@@ -44,7 +46,7 @@ class LeaveService
             'end_time' => $data['end_time'],
             'leave_hours' => $hours,
             'reason' => $data['reason'] ?? '',
-            'status' => $data['status'],
+            'status' => $data['status'] ?? 0,
             'attachment' => isset($data['attachment']) ? $data['attachment'] : null, // **如果有附件才更新**
         ]);
 
@@ -58,7 +60,7 @@ class LeaveService
         $this->applyFilters($query, $filters);
 
         return $query->select('leaves.*')
-            ->orderByRaw('FIELD(status, 0, 1, 2, 3, 4)') // 依照 0 -> 1 -> 2 -> 3 -> 4 排序
+            ->orderByRaw('FIELD(status, 0, 1, 3, 2, 4)') // 依照 0 -> 1 -> 3 -> 2 -> 4 排序
             ->orderBy('created_at', 'asc') // 申請時間越早，排越前
             ->paginate(10);
     }
@@ -66,14 +68,14 @@ class LeaveService
     // 3. 查詢「部門」請假紀錄（主管 & HR）
     public function getDepartmentLeaveList($user, array $filters)
     {
-        $query = Leave::with(['user', 'file']) // ✅ 同時載入 `user` 和 `file`
+        $query = Leave::with(['user', 'file', 'employee']) // ✅ 同時載入 `user` 和 `file`
             ->whereHas('user.employee', fn($q) => $q->where('department_id', $user->employee->department_id));
 
         // ✅ 確保過濾條件生效
         $this->applyFilters($query, $filters);
 
         return $query->select('leaves.*')
-            ->orderByRaw('FIELD(status, 0, 1, 2, 3, 4)') // 依照 0 -> 1 -> 2 -> 3 -> 4 排序
+            ->orderByRaw('FIELD(status, 0, 1, 3, 2, 4)') // 依照 0 -> 1 -> 3 -> 2 -> 4 排序
             ->orderBy('created_at', 'asc') // 申請時間越早，排越前
             ->paginate(10);
     }
@@ -83,14 +85,14 @@ class LeaveService
     {
         // Log::info('getCompanyLeaveList called with filters:', $filters);
 
-        $query = Leave::with(['user', 'file']); // ✅ 同時載入 `user` 和 `file`
+        $query = Leave::with(['user', 'file']); // ✅ 同時載入 `user` 和 `file` 和 `employee`
 
         // ✅ 確保過濾條件生效
         $this->applyFilters($query, $filters);
 
         // 查詢所有請假單，分頁 10 筆
-        $leaves = $query->select('leaves.*')
-            ->orderByRaw('FIELD(status, 0, 1, 2, 3, 4)') // 指定狀態排序順序
+        $leaves = $query->select('*')
+            ->orderByRaw('FIELD(status, 1, 0, 3, 2, 4)') // 指定狀態排序順序
             ->orderBy('created_at', 'asc') // 其次依據 start_time 排序
             ->paginate(10);
 
@@ -100,30 +102,50 @@ class LeaveService
     }
 
     // 5. 更新單筆紀錄
-    public function updateLeave(Leave $leave, array $data): Leave
+    public function updateLeave(Leave $leave, array $data, $user, $leaveStartTime): Leave
     {
-        // 1️⃣ **檢查是否有修改請假時數**
-        $isUpdatingHours = isset($data['start_time']) && isset($data['end_time']);
+        Log::info("📅 更新請假 - 傳遞 leaveStartTime", ['leaveStartTime' => $leaveStartTime]);
 
-        // 2️⃣ **如果有修改時數，才重新計算請假小時數**
+        // 1️⃣ **是否有修改請假時數**
+        $isUpdatingHours = isset($data['start_time'], $data['end_time']);
+
+        if ($isUpdatingHours) {
+            $startTime = Carbon::parse($data['start_time']);
+            $endTime = Carbon::parse($data['end_time']);
+
+            if ($startTime->greaterThanOrEqualTo($endTime)) {
+                throw new \Exception("請假結束時間必須大於開始時間", 400);
+            }
+        }
+
+        // 2️⃣ **取得假別資訊**
+        $leaveTypeId = $data['leave_type_id'] ?? $leave->leave_type_id;
+        $leaveType = LeaveType::find($leaveTypeId);
+
+        if (!$leaveType) {
+            throw new \Exception("請假類型無效", 400);
+        }
+
+        // 3️⃣ **生理假檢查**
+        if ($leaveType->name === 'Menstrual Leave' && $user->gender !== 'female') {
+            throw new \Exception('您無法申請生理假', 403);
+        }
+
+        // 4️⃣ **計算新的請假時數**
         $hours = $isUpdatingHours
             ? $this->calculateHours($data['start_time'], $data['end_time'])
             : $leave->leave_hours;
 
-        // 3️⃣ **取得假別資訊**
-        $leaveTypeId = $data['leave_type'] ?? $leave->leave_type_id;
-        $leaveType = LeaveType::find($leaveTypeId);
-
-        // 4️⃣ **如果是生理假，且有修改請假時數，才檢查剩餘時數**
-        if ($isUpdatingHours && $leaveType->name === 'Menstrual Leave') {
-            $remainingHours = $this->leaveResetService->getRemainingLeaveHours($leaveTypeId, $leave->user_id);
+        // 6️⃣ **檢查剩餘請假時數**
+        if ($isUpdatingHours) {
+            $remainingHours = $this->leaveResetService->getRemainingLeaveHours($leaveTypeId, $leave->user_id, $leaveStartTime, $leave->id);
 
             if ($remainingHours < $hours) {
-                throw new \Exception("生理假每月最多 8 小時，剩餘 {$remainingHours} 小時，無法修改", 400);
+                throw new \Exception("剩餘時數不足，無法修改", 400);
             }
         }
 
-        // 5️⃣ **更新 `leaves` 表**
+        // 7️⃣ **更新 `leaves` 表**
         $leave->update([
             'leave_type_id' => $leaveTypeId,
             'start_time' => $data['start_time'] ?? $leave->start_time,
@@ -131,18 +153,11 @@ class LeaveService
             'leave_hours' => $hours,
             'reason' => $data['reason'] ?? $leave->reason,
             'status' => $data['status'] ?? $leave->status,
-            'attachment' => $data['attachment'] ?? $leave->attachment, // **如果有新附件就更新，否則保持原值**
+            'attachment' => isset($data['attachment']) ? $data['attachment'] : null,
         ]);
 
-        // 6️⃣ **記錄更新 Log**
-        Log::info("leaves.attachment 更新完成", [
-            'leave_id' => $leave->id,
-            'attachment_id' => $leave->attachment
-        ]);
-
-        return $leave->fresh(); // 確保回傳最新資料
+        return $leave->fresh();
     }
-
 
     // 5. 計算跨天請假時數 (支援單日、跨日)
     private function calculateHours(string $startTime, string $endTime): float
@@ -197,8 +212,22 @@ class LeaveService
     }
 
     // 7. 計算特殊假別剩餘小時數
-    public function getRemainingLeaveHours($leaveTypeId, $userId)
+    public function getRemainingLeaveHours($leaveTypeId, $userId, $leaveStartTime = null)
     {
+        $leaveType = LeaveType::find($leaveTypeId);
+
+        if (!$leaveType) {
+            return null; // 假別不存在
+        }
+
+        // 針對特休和生理假使用專門的方法計算
+        if ($leaveType->name === 'Annual leave') {
+            return $this->leaveResetService->getRemainingAnnualLeaveHours($userId, $leaveStartTime);
+        } elseif ($leaveType->name === 'Menstrual Leave') {
+            return $this->leaveResetService->getRemainingMenstrualLeaveHours($userId, $leaveStartTime);
+        }
+
+        // 其他假別使用通用計算方式
         return $this->leaveResetService->getRemainingLeaveHours($leaveTypeId, $userId);
     }
 
@@ -214,14 +243,26 @@ class LeaveService
                             ->where('end_time', '>=', $filters['end_date'] . ' 23:59:59');
                     });
             });
-        }
 
-        if (!empty($filters['leave_type'])) {
-            $query->where('leave_type_id', $filters['leave_type']);
-        }
+            if (!empty($filters['leave_type'])) {
+                $query->whereHas('leaveType', function ($q) use ($filters) {
+                    $q->where('id', $filters['leave_type']);
+                });
+            }
 
-        if (!empty($filters['status'])) {
-            $query->where('status', $filters['status']);
+            if (!empty($filters['status'])) {
+                $query->where('status', $filters['status']);
+            }
+
+            if (!empty($filters['employee_id'])) {
+                $query->where('user_id', $filters['employee_id']);
+            }
+
+            if (!empty($filters['department_id'])) {
+                $query->whereHas('employee', function ($q) use ($filters) {
+                    $q->where('department_id', $filters['department_id']);
+                });
+            }
         }
     }
 }
