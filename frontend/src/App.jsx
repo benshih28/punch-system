@@ -12,7 +12,7 @@ import PropTypes from 'prop-types';
 import LoginPage from "./pages/LoginPage";
 // import Register from "./pages/register";
 // import Punchin from "./pages/punchin";
-// import ApproveLeave from "./pages/approveLeave";
+import ApproveLeave from "./pages/approveLeave";
 import ProtectedRoute from "./components/protectedRoute";
 import ForgotPassword from "./pages/ForgotPasswordPage";
 import ApproveClockReissuePage from "./pages/ApproveClockReissuePage";
@@ -23,7 +23,6 @@ const Punchin = () => <div>個人打卡頁面 (尚未建立)</div>;
 const ProfilePage = () => <div>個人帳戶管理頁面 (尚未建立)</div>;
 const ClockHistoryPage = () => <div>查詢打卡紀錄頁面 (尚未建立)</div>;
 const LeaveRecordsPage = () => <div>請假及查詢紀錄頁面 (尚未建立)</div>;
-const ApproveLeavePage = () => <div>假單審查審核頁面 (尚未建立)</div>;
 const UserManagementPage = () => <div>人員管理頁面 (尚未建立)</div>;
 const RolePermissionsPage = () => <div>權限修改頁面 (尚未建立)</div>;
 
@@ -93,7 +92,7 @@ function App() {
                     />
                     <Route
                       path="/approve-leave"
-                      element={<ApproveLeavePage />}
+                      element={<ApproveLeave />}
                     />
                     <Route
                       path="/approve-clock-reissue"
