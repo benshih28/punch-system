@@ -292,13 +292,6 @@ function ApproveLeave() {
           </TableBody>
         </Table>
       </TableContainer>
-
-      {/* <Pagination
-        count={10} // 總頁數
-        page={page}
-        onChange={handleChange}
-        color="primary"
-      /> */}
       {/* 分頁按鈕 */}
       <Box
         sx={{
