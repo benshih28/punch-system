@@ -49,10 +49,17 @@ function DepartmentManagement() {
     // 點擊「保存」，更新部門名稱
     const handleSave = () => {
         setDepartments(departments.map(dept =>
-            dept.id === editDepartment.id ? { ...dept, name: editName, updated_at: new Date().toISOString().split("T")[0] } : dept
+            dept.id === editDepartment.id ? { ...dept, name: editName, updated_at: formattedDate } : dept
         ));
         setOpenEditDialog(false); // 關閉 Dialog
     };
+
+    // 格式化日期為 yyyy/MM/dd
+    const formattedDate = new Date().toLocaleDateString("zh-TW", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    });
 
     // 點擊「刪除」，過濾掉該筆資料
     const handleDelete = (id) => {
@@ -122,8 +129,8 @@ function DepartmentManagement() {
         const newDepartment = {
             id: newId,
             name: newDepartmentName,
-            created_at: new Date().toISOString().split("T")[0], // 取得當前日期
-            updated_at: new Date().toISOString().split("T")[0],
+            created_at: formattedDate, // 設定格式化日期
+            updated_at: formattedDate,
             selected: false,
         };
 
