@@ -16,12 +16,12 @@ import LoginPage from "./pages/LoginPage";
 import ProtectedRoute from "./components/protectedRoute";
 import ForgotPassword from "./pages/ForgotPasswordPage";
 import ApproveClockReissuePage from "./pages/ApproveClockReissuePage";
+import ClockReissueHistoryPage from "./pages/ClockReissueHistoryPage";
 
 // 先預留這些路由
 const Punchin = () => <div>個人打卡頁面 (尚未建立)</div>;
 const ProfilePage = () => <div>個人帳戶管理頁面 (尚未建立)</div>;
 const ClockHistoryPage = () => <div>查詢打卡紀錄頁面 (尚未建立)</div>;
-const ClockReissueHistoryPage = () => <div>查詢補打卡紀錄頁面 (尚未建立)</div>;
 const LeaveRecordsPage = () => <div>請假及查詢紀錄頁面 (尚未建立)</div>;
 const ApproveLeavePage = () => <div>假單審查審核頁面 (尚未建立)</div>;
 const UserManagementPage = () => <div>人員管理頁面 (尚未建立)</div>;
