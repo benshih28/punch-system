@@ -51,14 +51,14 @@ class LeaveController extends Controller
      *                     type="string",
      *                     format="date-time",
      *                     example="2025-03-14 09:00",
-     *                     description="請假開始時間"
+     *                     description="請假開始時間 （格式：YYYY-MM-DD HH:MM）"
      *                 ),
      *                 @OA\Property(
      *                     property="end_time",
      *                     type="string",
      *                     format="date-time",
      *                     example="2025-03-14 18:00",
-     *                     description="請假結束時間"
+     *                     description="請假結束時間 （格式：YYYY-MM-DD HH:MM）"
      *                 ),
      *                 @OA\Property(
      *                     property="leave_type_id",
@@ -697,7 +697,7 @@ class LeaveController extends Controller
      * @OA\Post(
      *     path="/api/leave/update/{id}",
      *     summary="修改請假申請",
-     *     description="HR 或員工可修改請假申請。",
+     *     description="HR 或員工可修改請假申請，生理假只能由女性申請。",
      *     operationId="updateLeave",
      *     tags={"Leave"},
      *     security={{ "bearerAuth": {} }},
@@ -728,14 +728,14 @@ class LeaveController extends Controller
      *                     property="start_time",
      *                     type="string",
      *                     format="date-time",
-     *                     description="請假開始時間",
+     *                     description="請假開始時間（格式：YYYY-MM-DD HH:MM）",
      *                     example="2025-03-14 09:00"
      *                 ),
      *                 @OA\Property(
      *                     property="end_time",
      *                     type="string",
      *                     format="date-time",
-     *                     description="請假結束時間",
+     *                     description="請假結束時間（格式：YYYY-MM-DD HH:MM，必須大於 `start_time`）",
      *                     example="2025-03-14 17:00"
      *                 ),
      *                 @OA\Property(
@@ -749,7 +749,7 @@ class LeaveController extends Controller
      *                     type="file",
      *                     format="binary",
      *                     nullable=true,
-     *                     description="更新的附件檔案 (選填，允許上傳最大 10MB 的文件)"
+     *                     description="更新的附件檔案（選填，允許上傳最大 10MB 的 JPG、PNG、PDF 文件）"
      *                 )
      *             )
      *         )
@@ -781,19 +781,19 @@ class LeaveController extends Controller
      *         )
      *     ),
      *     @OA\Response(
+     *         response=400,
+     *         description="無法申請生理假，使用者非女性",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="您無法申請生理假")
+     *         )
+     *     ),
+     *     @OA\Response(
      *         response=422,
      *         description="請假結束時間必須大於開始時間",
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="message", type="string", example="請假結束時間必須大於開始時間")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=500,
-     *         description="更新失敗，請重新檢查資料格式是否錯誤",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="message", type="string", example="更新失敗，請重新檢查資料格式是否錯誤")
      *         )
      *     )
      * )
@@ -818,7 +818,7 @@ class LeaveController extends Controller
 
             // **檢查是否修改為生理假，且申請者必須是女性**
             if ($leaveType && $leaveType->name === 'Menstrual Leave' && $user->gender !== 'female') {
-                return response()->json(['message' => '您無法申請生理假'], 403);
+                return response()->json(['message' => '您無法申請生理假'], 400);
             }
 
             //  // 2️⃣ **資料驗證**
