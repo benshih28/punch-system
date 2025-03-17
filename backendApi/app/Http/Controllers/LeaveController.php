@@ -697,7 +697,7 @@ class LeaveController extends Controller
      * @OA\Post(
      *     path="/api/leave/update/{id}",
      *     summary="修改請假申請",
-     *     description="此 API 讓 HR 或員工修改請假申請。系統會檢查請假時間是否重疊、驗證輸入資料，並處理附件更新。",
+     *     description="HR 或員工可修改請假申請。",
      *     operationId="updateLeave",
      *     tags={"Leave"},
      *     security={{ "bearerAuth": {} }},
@@ -810,6 +810,15 @@ class LeaveController extends Controller
 
             if (!$leave) {
                 return response()->json(['message' => '查無此假單或您無權限修改'], 403);
+            }
+
+            // 取得新的請假類型
+            $newLeaveTypeId = $request->input('leave_type_id', $leave->leave_type_id);
+            $leaveType = LeaveType::find($newLeaveTypeId);
+
+            // **檢查是否修改為生理假，且申請者必須是女性**
+            if ($leaveType && $leaveType->name === 'Menstrual Leave' && $user->gender !== 'female') {
+                return response()->json(['message' => '您無法申請生理假'], 403);
             }
 
             //  // 2️⃣ **資料驗證**
@@ -984,12 +993,12 @@ class LeaveController extends Controller
         }
     }
 
-    // 7. 取得特殊假別剩餘小時數 (計算假夠不夠扣)
+    // 7. 取得特殊假別剩餘小時數
     /**
      * @OA\Get(
      *     path="/api/leavetypes/hours/{leave_type_id}",
-     *     summary="取得特殊假別剩餘小時數 (計算假夠不夠扣)",
-     *     description="指定假別的剩餘可用請假小時數。",
+     *     summary="查詢特殊假別剩餘小時數",
+     *     description="查詢假別的剩餘可用請假小時數。",
      *     operationId="getRemainingLeaveHours",
      *     tags={"Leave"},
      *     security={{ "bearerAuth": {} }},
