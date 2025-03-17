@@ -87,7 +87,7 @@ class LeaveController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/leave/request",
+     *     path="/api/leave/request",
      *     summary="申請請假",
      *     description="員工提交請假申請，MySQL 預存程序自動計算請假時數、檢查時間衝突及性別限制。",
      *     tags={"Leave"},
@@ -197,7 +197,7 @@ class LeaveController extends Controller
 
     /**
      * @OA\Put(
-     *     path="/leave/update/{id}",
+     *     path="/api/leave/update/{id}",
      *     summary="更新請假申請",
      *     description="員工修改已提交但尚未審核的請假申請，支援更新時間、假別、附件等。若請假類型有性別限制，則需符合條件。",
      *     tags={"Leave"},
@@ -350,7 +350,7 @@ class LeaveController extends Controller
 
     /**
      * @OA\Delete(
-     *     path="/leave/cancel/{id}",
+     *     path="/api/leave/cancel/{id}",
      *     summary="取消請假",
      *     description="員工取消請假申請。若假單已被批准，則恢復對應的請假餘額。請假已開始則無法取消。",
      *     tags={"Leave"},
@@ -617,7 +617,7 @@ class LeaveController extends Controller
 
     /**
      * @OA\Put(
-     *     path="/leave/correct/{id}",
+     *     path="/api/leave/correct/{id}",
      *     summary="HR 更正請假",
      *     description="HR 可更正已審核的請假單，包括修改假別、日期、時數等，並提供更正原因。若請假時數變更，則會自動更新請假餘額。",
      *     tags={"Leave"},
@@ -766,7 +766,7 @@ class LeaveController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/leave/personal-records",
+     *     path="/api/leave/personal-records",
      *     summary="查詢個人請假紀錄",
      *     description="根據員工 ID 取得個人請假紀錄，支援依據假別、日期範圍篩選，確保跨日假單也能正確顯示。",
      *     tags={"Leave"},
@@ -860,7 +860,7 @@ class LeaveController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/leave/approvals",
+     *     path="/api/leave/approvals",
      *     summary="查詢待審核請假申請",
      *     description="根據部門或員工 ID 查詢待審核的請假單，確保跨日假單能正確顯示。",
      *     tags={"Leave"},
