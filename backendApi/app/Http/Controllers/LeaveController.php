@@ -1107,6 +1107,11 @@ class LeaveController extends Controller
             return response()->json(['error' => '你沒有權限最終批准假單'], 403);
         }
 
+        // 假單如果已經由主管拒絕，就顯示 此假單主管已拒絕不可審核
+        if ($leave->status === 2) {
+            return response()->json(['error' => '此假單主管已拒絕不可審核'], 403);
+        }
+
         // 確保請假單尚未被批准
         if ($leave->status === 3 || $leave->status === 4) {
             return response()->json(['error' => '此假單已被批准，不可重複審核'], 403);
@@ -1209,6 +1214,11 @@ class LeaveController extends Controller
         // 確保使用者擁有 `approve_leave` 權限
         if (!$user->can('approve_leave')) {
             return response()->json(['error' => '你沒有權限駁回假單'], 403);
+        }
+
+        // 假單如果已經由主管拒絕，就顯示 此假單主管已拒絕不可審核
+        if ($leave->status === 2) {
+            return response()->json(['error' => '此假單主管已拒絕不可審核'], 403);
         }
 
         // 確保請假單尚未被批准
