@@ -12,7 +12,7 @@ import PropTypes from 'prop-types';
 import LoginPage from "./pages/LoginPage";
 // import Register from "./pages/register";
 // import Punchin from "./pages/punchin";
-import ApproveLeave from "./pages/approveLeave";
+import ApproveLeavePage from "./pages/ApproveLeavePage";
 import ProtectedRoute from "./components/protectedRoute";
 import ForgotPassword from "./pages/ForgotPasswordPage";
 import ApproveClockReissuePage from "./pages/ApproveClockReissuePage";
@@ -92,7 +92,7 @@ function App() {
                     />
                     <Route
                       path="/approve-leave"
-                      element={<ApproveLeave />}
+                      element={<ApproveLeavePage />}
                     />
                     <Route
                       path="/approve-clock-reissue"
