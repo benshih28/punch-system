@@ -307,23 +307,6 @@ function DepartmentManagement() {
                     </Button>
                 </DialogActions>
             </Dialog>
-
-            {/* 頁尾 */}
-            <Box
-                sx={{
-                    width: "100%",
-                    mt: "auto",
-                    textAlign: "center",
-                    position: "absolute", // 讓頁尾固定在底部
-                    bottom: 0, // 設定在底部
-                    overflow: "hidden", // ✅ 隱藏滾動條
-                }}
-            >
-                <hr style={{ width: "100%", marginBottom: "10px" }} />
-                <Typography sx={{ fontSize: "20px", fontWeight: "bold" }}>
-                    聯絡我們
-                </Typography>
-            </Box>
         </Box>
     );
 }
