@@ -17,6 +17,7 @@ import ProtectedRoute from "./components/protectedRoute";
 import ForgotPassword from "./pages/ForgotPasswordPage";
 import ApproveClockReissuePage from "./pages/ApproveClockReissuePage";
 import ClockReissueHistoryPage from "./pages/ClockReissueHistoryPage";
+import DepartmentManagementPage from "./pages/DepartmentManagementPage";
 
 // 先預留這些路由
 const Punchin = () => <div>個人打卡頁面 (尚未建立)</div>;
@@ -26,6 +27,7 @@ const LeaveRecordsPage = () => <div>請假及查詢紀錄頁面 (尚未建立)</
 const ApproveLeavePage = () => <div>假單審查審核頁面 (尚未建立)</div>;
 const UserManagementPage = () => <div>人員管理頁面 (尚未建立)</div>;
 const RolePermissionsPage = () => <div>權限修改頁面 (尚未建立)</div>;
+const PositionManagementPage = () => <div>職位管理頁面 (尚未建立)</div>
 
 /**
  * 受保護頁面的 Layout（包含 Header & Footer）
@@ -98,6 +100,14 @@ function App() {
                     <Route
                       path="/approve-clock-reissue"
                       element={<ApproveClockReissuePage />}
+                    />
+                    <Route
+                      path="/department-management"
+                      element={<DepartmentManagementPage />}
+                    />
+                    <Route 
+                      path="/position-management"
+                      element={<PositionManagementPage />}
                     />
                     <Route
                       path="/user-management"
