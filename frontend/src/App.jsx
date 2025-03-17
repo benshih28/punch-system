@@ -7,6 +7,7 @@ import {
 import { useAtomValue } from "jotai";
 import { isAuthenticatedAtom } from "./state/authAtom";
 import Header from "./components/header";
+import PropTypes from 'prop-types';
 // import Footer from "./components/footer";
 import LoginPage from "./pages/LoginPage";
 // import Register from "./pages/register";
@@ -119,5 +120,9 @@ function App() {
           </Router>
   );
 }
+// ✅ 使用 PropTypes 規範受保護頁面的 Layout
+ProtectedLayout.propTypes = {
+  children: PropTypes.node.isRequired,
+};
 
 export default App;
