@@ -1,4 +1,5 @@
 import { useState } from "react";
+import PropTypes from "prop-types";
 import { Link, useNavigate } from "react-router-dom";
 import { useAtom } from "jotai";
 import { authAtom } from "../state/authAtom";
@@ -24,7 +25,7 @@ import ExpandMore from "@mui/icons-material/ExpandMore";
 import LogoutIcon from "@mui/icons-material/Logout";
 
 function Sidebar({ isOpen, toggleSidebar }) {
-  const [auth, setAuth] = useAtom(authAtom);
+  const [auth, setAuth] = useAtom(authAtom); // 讀取全局狀態
   const navigate = useNavigate();
   const [openMenus, setOpenMenus] = useState({});
 
@@ -178,5 +179,10 @@ function Sidebar({ isOpen, toggleSidebar }) {
     </Drawer>
   );
 }
+// 🔹 側邊欄組件的 PropTypes
+Sidebar.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  toggleSidebar: PropTypes.func.isRequired,
+};
 
 export default Sidebar;
