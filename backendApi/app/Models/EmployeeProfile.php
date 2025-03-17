@@ -22,9 +22,16 @@ class EmployeeProfile extends Model
     }
 
     // ⭐ 自動計算年資
-    public function getYearsOfServiceAttribute()
+    public function getYearsOfServiceAttribute($date = null)
     {
-        return $this->hire_date ? Carbon::parse($this->hire_date)->diffInYears(Carbon::now()) : null;
+        $date = $date ? Carbon::parse($date) : Carbon::now();
+        return $this->hire_date ? Carbon::parse($this->hire_date)->diffInYears($date) : 0;
+    }
+
+    public function getMonthsOfServiceAttribute($date = null)
+    {
+        $date = $date ? Carbon::parse($date) : Carbon::now();
+        return $this->hire_date ? (Carbon::parse($this->hire_date)->diffInMonths($date) % 12) : 0;
     }
 
 }
