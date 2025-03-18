@@ -17,6 +17,7 @@ import ProtectedRoute from "./components/protectedRoute";
 import ForgotPassword from "./pages/ForgotPasswordPage";
 import ApproveClockReissuePage from "./pages/ApproveClockReissuePage";
 import ClockReissueHistoryPage from "./pages/ClockReissueHistoryPage";
+import LeavePolicy from "./components/LeavePolicy";
 
 // 先預留這些路由
 const Punchin = () => <div>個人打卡頁面 (尚未建立)</div>;
@@ -69,6 +70,9 @@ function App() {
 
         {/* 忘記密碼頁面，不需要登入 */}
         <Route path="/forgot/password" element={<ForgotPassword />} />
+        
+        {/* 此頁面為請假規則頁面，會放在請假彈出框的裡面，由內部連結跳轉頁面 (此路由會刪掉) */}
+        <Route path="/leave-policy" element={<LeavePolicy />} />
 
         {/* ✅ 已登入後的所有頁面（確保 Header 只出現在登入後的頁面） */}
         <Route
