@@ -10,7 +10,7 @@ import Header from "./components/header";
 import PropTypes from 'prop-types';
 // import Footer from "./components/footer";
 import LoginPage from "./pages/LoginPage";
-// import Register from "./pages/register";
+import RegisterPage from "./pages/RegisterPage";
 // import Punchin from "./pages/punchin";
 // import ApproveLeave from "./pages/approveLeave";
 import ProtectedRoute from "./components/protectedRoute";
@@ -61,7 +61,7 @@ function App() {
           path="/register"
           element={
             <>
-              {/* <Register /> */}
+              <RegisterPage />
               {/* <Footer /> */}
             </>
           }
