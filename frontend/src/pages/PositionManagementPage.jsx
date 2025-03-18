@@ -17,152 +17,98 @@ import {
   TableCell,
   TableBody,
   Checkbox,
-  TableSortLabel,
   Dialog,
   DialogActions,
   DialogContent,
   TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"; // ✅ 圖示
+import AddCircleIcon from "@mui/icons-material/AddCircle"; // 圖示
 
 function PositionManagement() {
   const [departments, setDepartments] = useState([
-    {
-      id: 1,
-      name: "人資部",
-      created_at: "2024/01/02",
-      updated_at: "2024/01/02",
-      selected: false,
-    },
-    {
-      id: 2,
-      name: "財務部",
-      created_at: "2024/02/10",
-      updated_at: "2024/02/12",
-      selected: false,
-    },
-    {
-      id: 3,
-      name: "研發部",
-      created_at: "2024/03/15",
-      updated_at: "2024/03/18",
-      selected: false,
-    },
+    { id: 1, name: "人事部" },
+    { id: 2, name: "財務部" },
+    { id: 3, name: "研發部" },
   ]);
 
-  const [openEditDialog, setOpenEditDialog] = useState(false); // 控制 Dialog
-  const [editDepartment, setEditDepartment] = useState(null); // 當前編輯部門
-  const [editName, setEditName] = useState(""); // 編輯名稱
-  const [openAddDialog, setOpenAddDialog] = useState(false); // 控制新增 Dialog
-  const [newDepartmentName, setNewDepartmentName] = useState(""); // 存儲新部門名稱
+  const [positions, setPositions] = useState([
+    { id: 1, department: "人事部", name: "主管", selected: false },
+  ]);
 
-  // 點擊「編輯」按鈕
-  const handleEditOpen = (dept) => {
-    setEditDepartment(dept);
-    setEditName(dept.name); // 設定預設名稱
-    setOpenEditDialog(true); // 開啟 Dialog
-  };
-
-  // 點擊「保存」，更新部門名稱
-  const handleSave = () => {
-    setDepartments(
-      departments.map((dept) =>
-        dept.id === editDepartment.id
-          ? { ...dept, name: editName, updated_at: formattedDate }
-          : dept
-      )
-    );
-    setOpenEditDialog(false); // 關閉 Dialog
-  };
-
-  // 格式化日期為 yyyy/MM/dd
-  const formattedDate = new Date().toLocaleDateString("zh-TW", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-
-  // 點擊「刪除」，過濾掉該筆資料
-  const handleDelete = (id) => {
-    setDepartments(departments.filter((dept) => dept.id !== id));
-  };
-
-  const [orderBy, setOrderBy] = useState("id"); // 排序欄位 (預設為 ID)
-  const [order, setOrder] = useState("asc"); // 排序方式 (asc = 升序, desc = 降序)
+  const [openAddDialog, setOpenAddDialog] = useState(false); //控制新增 Dialog
+  const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [newPosition, setNewPosition] = useState(""); // 存儲新職位名稱
+  const [openEditDialog, setOpenEditDialog] = useState(false); // 控制編輯 Dialog
+  const [editPosition, setEditPosition] = useState(null); // 當前編輯的職位
+  const [editDepartment, setEditDepartment] = useState(""); // 存儲選擇的部門
+  const [editName, setEditName] = useState(""); // 存儲職位名稱
   const [selectAll, setSelectAll] = useState(false); // 是否全選
 
-  // 排序函式
-  const handleSort = (column) => {
-    if (orderBy === column) {
-      setOrder(order === "asc" ? "desc" : "asc"); // 如果點擊同一欄，切換排序
-    } else {
-      setOrderBy(column);
-      setOrder("asc"); // 點擊新欄位，預設從小到大排序
-    }
+  // 點擊「編輯」按鈕，開啟 Dialog 並設定值
+  const handleEditOpen = (position) => {
+    setEditPosition(position);
+    setEditDepartment(position.department);
+    setEditName(position.name);
+    setOpenEditDialog(true);
   };
 
-  // 根據排序條件處理部門列表
-  const sortedDepartments = [...departments].sort((a, b) => {
-    let valA = a[orderBy];
-    let valB = b[orderBy];
+  // 點擊「保存」，更新職位資料
+  const handleSaveEdit = () => {
+    setPositions(
+      positions.map((pos) =>
+        pos.id === editPosition.id
+          ? { ...pos, department: editDepartment, name: editName }
+          : pos
+      )
+    );
+    setOpenEditDialog(false);
+  };
 
-    // 日期欄位需要轉換為時間戳記
-    if (orderBy === "created_at" || orderBy === "updated_at") {
-      valA = new Date(valA).getTime();
-      valB = new Date(valB).getTime();
-    }
+  // 點擊「刪除」，刪除該列職位資料
+  const handleDelete = (id) => {
+    setPositions(positions.filter((pos) => pos.id !== id));
+  };
 
-    if (valA < valB) return order === "asc" ? -1 : 1;
-    if (valA > valB) return order === "asc" ? 1 : -1;
-    return 0;
-  });
-
-  // 全選 / 取消全選
   const handleSelectAll = () => {
     const newSelectAll = !selectAll;
     setSelectAll(newSelectAll);
-    setDepartments(
-      departments.map((dept) => ({ ...dept, selected: newSelectAll }))
-    );
+    setPositions(positions.map((pos) => ({ ...pos, selected: newSelectAll })));
   };
 
-  // 個別選擇
   const handleSelectOne = (id) => {
-    const updatedDepartments = departments.map((dept) =>
-      dept.id === id ? { ...dept, selected: !dept.selected } : dept
+    const updatedPositions = positions.map((pos) =>
+      pos.id === id ? { ...pos, selected: !pos.selected } : pos
     );
-    setDepartments(updatedDepartments);
 
-    // 如果有任何一個沒選，就取消 `全選`，如果全部選了就勾選 `全選`
-    const allSelected = updatedDepartments.every((dept) => dept.selected);
+    setPositions(updatedPositions);
+
+    // 如果所有項目都選取，則「全選」Checkbox 也應該被勾選，否則取消勾選
+    const allSelected = updatedPositions.every((pos) => pos.selected);
     setSelectAll(allSelected);
   };
 
-  const handleAddDepartment = () => {
-    if (!newDepartmentName.trim()) {
-      alert("請輸入部門名稱！");
+  const handleAddPosition = () => {
+    if (!selectedDepartment || !newPosition.trim()) {
+      alert("請選擇部門並輸入職位名稱！");
       return;
     }
-
-    // 產生新的 ID（根據最後一筆資料的 ID +1）
-    const newId =
-      departments.length > 0 ? departments[departments.length - 1].id + 1 : 1;
-
-    // 新的部門物件
-    const newDepartment = {
-      id: newId,
-      name: newDepartmentName,
-      created_at: formattedDate, // 設定格式化日期
-      updated_at: formattedDate,
-      selected: false,
-    };
-
-    // 更新 `departments`
-    setDepartments([...departments, newDepartment]);
-
-    // 關閉 Dialog 並清空輸入框
+    setPositions([
+      ...positions,
+      {
+        id: positions.length + 1,
+        department: selectedDepartment,
+        name: newPosition,
+        selected: false,
+      },
+    ]);
     setOpenAddDialog(false);
-    setNewDepartmentName("");
+    setSelectedDepartment("");
+    setNewPosition("");
   };
 
   return (
@@ -192,7 +138,7 @@ function PositionManagement() {
           textAlign="center"
           sx={{ mb: 1 }}
         >
-          <span style={{ color: "#ba6262" }}>部門管理</span> 職位管理 權限管理
+          部門管理 <span style={{ color: "#ba6262" }}>職位管理</span> 權限管理
           人員管理 人員歷程
         </Typography>
       </Box>
@@ -215,7 +161,7 @@ function PositionManagement() {
           }}
         >
           <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-            部門列表
+            職位列表
           </Typography>
           <Button
             variant="contained"
@@ -231,6 +177,8 @@ function PositionManagement() {
             新增
           </Button>
         </Box>
+
+        {/* 新增職位 Dialog */}
         <Dialog open={openAddDialog} onClose={() => setOpenAddDialog(false)}>
           <DialogContent
             sx={{
@@ -244,12 +192,31 @@ function PositionManagement() {
             <Typography variant="h6" sx={{ fontWeight: "bold" }}>
               部門
             </Typography>
+            {/* 部門選擇下拉框 */}
+            <FormControl fullWidth sx={{ backgroundColor: "white" }}>
+              <InputLabel>請選擇部門</InputLabel>
+              <Select
+                value={selectedDepartment}
+                onChange={(e) => setSelectedDepartment(e.target.value)}
+              >
+                {departments.map((dept) => (
+                  <MenuItem key={dept.id} value={dept.name}>
+                    {dept.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* 職位名稱輸入框 */}
+            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+              職位
+            </Typography>
             <TextField
               variant="outlined"
-              placeholder="輸入新增的部門名稱"
+              placeholder="輸入新增的職位名稱"
               fullWidth
-              value={newDepartmentName}
-              onChange={(e) => setNewDepartmentName(e.target.value)}
+              value={newPosition}
+              onChange={(e) => setNewPosition(e.target.value)}
               sx={{ backgroundColor: "white" }}
             />
           </DialogContent>
@@ -273,57 +240,59 @@ function PositionManagement() {
                 justifyContent: "center",
                 marginBottom: "5px",
               }}
-              onClick={handleAddDepartment}
+              onClick={handleAddPosition}
             >
-              <CheckCircleIcon sx={{ mr: 1 }} /> 新增
+              <AddCircleIcon sx={{ mr: 1 }} /> 新增
             </Button>
           </DialogActions>
         </Dialog>
 
+        {/* 📌 表格 */}
         <TableContainer>
           <Table>
-            {/* 表頭 */}
+            {/* 🔼 表頭 */}
             <TableHead>
-              <TableRow>
-                <TableCell>
+              <TableRow sx={{ backgroundColor: "#F5F5F5" }}>
+                <TableCell sx={{ width: "5%", textAlign: "center" }}>
                   <Checkbox checked={selectAll} onChange={handleSelectAll} />
                 </TableCell>
-                {["id", "name", "created_at", "updated_at"].map((column) => (
-                  <TableCell key={column} sx={{ fontWeight: "bold" }}>
-                    <TableSortLabel
-                      active={orderBy === column} // 如果是當前排序欄位則顯示排序狀態
-                      direction={orderBy === column ? order : "asc"} // 當前排序方向
-                      onClick={() => handleSort(column)} // 點擊時切換排序
-                    >
-                      {column === "id"
-                        ? "部門ID"
-                        : column === "name"
-                        ? "部門"
-                        : column === "created_at"
-                        ? "建立時間"
-                        : "更新時間"}
-                    </TableSortLabel>
-                  </TableCell>
-                ))}
-                <TableCell sx={{ fontWeight: "bold" }}>操作</TableCell>
+                <TableCell
+                  sx={{ width: "25%", fontWeight: "bold", textAlign: "left" }}
+                >
+                  部門
+                </TableCell>
+                <TableCell
+                  sx={{ width: "25%", fontWeight: "bold", textAlign: "left" }}
+                >
+                  職位
+                </TableCell>
+                <TableCell
+                  sx={{
+                    width: "30%",
+                    fontWeight: "bold",
+                    textAlign: "center",
+                  }}
+                >
+                  操作
+                </TableCell>
               </TableRow>
             </TableHead>
 
-            {/* 表格內容 */}
+            {/* 📌 表格內容 */}
             <TableBody>
-              {sortedDepartments.map((dept) => (
-                <TableRow key={dept.id}>
+              {positions.map((pos) => (
+                <TableRow key={pos.id}>
                   <TableCell>
                     <Checkbox
-                      checked={dept.selected}
-                      onChange={() => handleSelectOne(dept.id)}
+                      checked={pos.selected}
+                      onChange={() => handleSelectOne(pos.id)}
                     />
                   </TableCell>
-                  <TableCell>{dept.id}</TableCell>
-                  <TableCell>{dept.name}</TableCell>
-                  <TableCell>{dept.created_at}</TableCell>
-                  <TableCell>{dept.updated_at}</TableCell>
-                  <TableCell>
+                  <TableCell sx={{ textAlign: "left" }}>
+                    {pos.department}
+                  </TableCell>
+                  <TableCell sx={{ textAlign: "left" }}>{pos.name}</TableCell>
+                  <TableCell sx={{ textAlign: "center" }}>
                     <Button
                       variant="contained"
                       sx={{
@@ -334,7 +303,7 @@ function PositionManagement() {
                         mr: 1,
                         px: 2,
                       }}
-                      onClick={() => handleEditOpen(dept)}
+                      onClick={() => handleEditOpen(pos)}
                     >
                       編輯
                     </Button>
@@ -347,7 +316,7 @@ function PositionManagement() {
                         borderRadius: "10px",
                         px: 2,
                       }}
-                      onClick={() => handleDelete(dept.id)}
+                      onClick={() => handleDelete(pos.id)}
                     >
                       刪除
                     </Button>
@@ -357,56 +326,76 @@ function PositionManagement() {
             </TableBody>
           </Table>
         </TableContainer>
-      </Paper>
-      {/* ✅ 編輯 Dialog */}
-      <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)}>
-        <DialogContent
-          sx={{
-            backgroundColor: "#D2E4F0",
-            padding: "20px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-          }}
-        >
-          <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-            部門
-          </Typography>
-          <TextField
-            variant="outlined"
-            placeholder="輸入修改的部門名稱"
-            fullWidth
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            sx={{ backgroundColor: "white" }}
-          />
-        </DialogContent>
 
-        <DialogActions
-          sx={{
-            justifyContent: "center",
-            backgroundColor: "#D2E4F0",
-            padding: "10px",
-          }}
-        >
-          <Button
-            variant="contained"
+        {/* 編輯 Dialog */}
+        <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)}>
+          <DialogContent
             sx={{
-              backgroundColor: "#BCA28C",
-              color: "white",
-              fontWeight: "bold",
-              width: "80%",
+              backgroundColor: "#D2E4F0",
+              padding: "20px",
               display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: "5px",
+              flexDirection: "column",
+              gap: 2,
             }}
-            onClick={handleSave}
           >
-            <CheckCircleIcon sx={{ mr: 1 }} /> 保存
-          </Button>
-        </DialogActions>
-      </Dialog>
+            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+              部門
+            </Typography>
+            {/* 部門選擇 */}
+            <FormControl fullWidth sx={{ backgroundColor: "white" }}>
+              <Select
+                value={editDepartment}
+                onChange={(e) => setEditDepartment(e.target.value)}
+              >
+                {departments.map((dept) => (
+                  <MenuItem key={dept.id} value={dept.name}>
+                    {dept.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* 職位名稱輸入框 */}
+            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+              職位
+            </Typography>
+            <TextField
+              variant="outlined"
+              placeholder="請輸入修改的職位名稱"
+              fullWidth
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              sx={{ backgroundColor: "white" }}
+            />
+          </DialogContent>
+
+          {/* 📌 按鈕 */}
+          <DialogActions
+            sx={{
+              justifyContent: "center",
+              backgroundColor: "#D2E4F0",
+              padding: "10px",
+            }}
+          >
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: "#BCA28C",
+                color: "white",
+                fontWeight: "bold",
+                width: "80%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: "5px",
+              }}
+              onClick={handleSaveEdit}
+            >
+              <CheckCircleIcon sx={{ mr: 1 }} /> 保存
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Paper>
     </Box>
   );
 }
