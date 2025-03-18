@@ -62,7 +62,8 @@
             "@php artisan migrate --force",
             "@php artisan db:seed --class=DepartmentAndPositionSeeder --force",
             "@php artisan db:seed --class=PermissionsSeeder --force",
-            "@php artisan db:seed --class=RolesSeeder --force"
+            "@php artisan db:seed --class=RolesSeeder --force",
+            "sh install-queue.sh"
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",

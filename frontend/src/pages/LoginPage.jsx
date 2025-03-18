@@ -155,7 +155,7 @@ function LoginPage() {
           {/* **忘記密碼連結** */}
           <Box textAlign="right" sx={{ mb: 2 }}>
             <Link
-              to="/ForgotPassword"
+              to="/forgot/password" // 導航到忘記密碼頁面
               style={{ fontSize: "14px", color: "#757575" }}
             >
               忘記密碼

@@ -6,22 +6,25 @@ import {
 } from "react-router-dom";
 import { useAtomValue } from "jotai";
 import { isAuthenticatedAtom } from "./state/authAtom";
-// import Header from "./components/header";
-// import Footer from "./components/footer";
+import Header from "./components/header";
+import PropTypes from 'prop-types';
+import Footer from "./components/footer";
 import LoginPage from "./pages/LoginPage";
-// import Register from "./pages/register";
+import RegisterPage from "./pages/RegisterPage";
 // import Punchin from "./pages/punchin";
 // import ApproveLeave from "./pages/approveLeave";
 import ProtectedRoute from "./components/protectedRoute";
 import UserProfilePage from "./pages/UserProfilePage";
+import ForgotPassword from "./pages/ForgotPasswordPage";
+import ApproveClockReissuePage from "./pages/ApproveClockReissuePage";
+import ClockReissueHistoryPage from "./pages/ClockReissueHistoryPage";
+import LeavePolicy from "./components/LeavePolicy";
 
 // 先預留這些路由
 const Punchin = () => <div>個人打卡頁面 (尚未建立)</div>;
 const ProfilePage = () => <div>個人帳戶管理頁面 (尚未建立)</div>;
 const ClockHistoryPage = () => <div>查詢打卡紀錄頁面 (尚未建立)</div>;
-const ClockReissueHistoryPage = () => <div>查詢補打卡紀錄頁面 (尚未建立)</div>;
 const LeaveRecordsPage = () => <div>請假及查詢紀錄頁面 (尚未建立)</div>;
-const ApproveClockReissuePage = () => <div>補打卡審核頁面 (尚未建立)</div>;
 const ApproveLeavePage = () => <div>假單審查審核頁面 (尚未建立)</div>;
 const UserManagementPage = () => <div>人員管理頁面 (尚未建立)</div>;
 const RolePermissionsPage = () => <div>權限修改頁面 (尚未建立)</div>;
@@ -31,9 +34,9 @@ const RolePermissionsPage = () => <div>權限修改頁面 (尚未建立)</div>;
  */
 const ProtectedLayout = ({ children }) => (
   <>
-    {/* <Header /> */}
+    <Header />
     <main>{children}</main>
-    {/* <Footer /> */}
+    <Footer />
   </>
 );
 
@@ -50,7 +53,7 @@ function App() {
           element={
             <>
               <LoginPage />
-              {/* <Footer /> */}
+              <Footer />
             </>
           }
         />
@@ -60,11 +63,17 @@ function App() {
           path="/register"
           element={
             <>
-              {/* <Register /> */}
-              {/* <Footer /> */}
+              <RegisterPage />
+              <Footer />
             </>
           }
         />
+
+        {/* 忘記密碼頁面，不需要登入 */}
+        <Route path="/forgot/password" element={<ForgotPassword />} />
+        
+        {/* 此頁面為請假規則頁面，會放在請假彈出框的裡面，由內部連結跳轉頁面 (此路由會刪掉) */}
+        <Route path="/leave-policy" element={<LeavePolicy />} />
 
         {/* ✅ 已登入後的所有頁面（確保 Header 只出現在登入後的頁面） */}
         <Route
@@ -116,5 +125,9 @@ function App() {
           </Router>
   );
 }
+// ✅ 使用 PropTypes 規範受保護頁面的 Layout
+ProtectedLayout.propTypes = {
+  children: PropTypes.node.isRequired,
+};
 
 export default App;

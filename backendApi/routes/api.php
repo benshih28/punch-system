@@ -20,7 +20,11 @@ use App\Http\Controllers\LeaveTypeController;
 use App\Http\Controllers\LeaveResetRuleController;
 use App\Http\Controllers\LeaveController;
 
+use App\Http\Controllers\QuestionFeedbackController;
+
 // 公開 API（不需要登入）
+// 問題反饋
+Route::post('/send-email', [QuestionFeedbackController::class, 'sendFeedback']);
 // 註冊
 Route::post('/register', [RegisteredUserController::class, 'store']);
 
@@ -65,7 +69,7 @@ Route::middleware('auth:api')->group(function () {
         });
 
         // 查詢當前使用者打卡紀錄 （需要 `view_attendance` 權限）
-        Route::get('/attendance/record', [PunchCorrectionController::class, 'ggetAllAttendanceRecords'])->middleware('can:view_attendance');
+        Route::get('/attendance/record', [PunchCorrectionController::class, 'getAllAttendanceRecords'])->middleware('can:view_attendance');
 
 
 
@@ -212,13 +216,13 @@ Route::middleware('auth:api')->group(function () {
             Route::get('/company', [LeaveController::class, 'viewCompanyLeaveRecords'])->middleware('can:view_company_leave_records');
 
 
-        //     // 7.HR 可以審核/駁回請假（需要 `approve_leave` 權限）
-        //     Route::patch('/{id}/approve', [LeaveController::class, 'approveLeave'])->middleware('can:approve_leave');
-        //     Route::patch('/{id}/reject', [LeaveController::class, 'rejectLeave'])->middleware('can:approve_leave');
+            // 7.HR 可以審核/駁回請假（需要 `approve_leave` 權限）
+            Route::patch('/{id}/approve', [LeaveController::class, 'approveLeave'])->middleware('can:approve_leave');
+            Route::patch('/{id}/reject', [LeaveController::class, 'rejectLeave'])->middleware('can:approve_leave');
 
-        //     // 8.主管可以核准/駁回本部門請假單（需要 `approve_department_leave` 權限）
-        //     Route::patch('/{id}/department/approve', [LeaveController::class, 'approveDepartmentLeave'])->middleware('can:approve_department_leave');
-        //     Route::patch('/{id}/department/reject', [LeaveController::class, 'rejectDepartmentLeave'])->middleware('can:approve_department_leave');
+            // 8.主管可以核准/駁回本部門請假單（需要 `approve_department_leave` 權限）
+            Route::patch('/{id}/department/approve', [LeaveController::class, 'approveDepartmentLeave'])->middleware('can:approve_department_leave');
+            Route::patch('/{id}/department/reject', [LeaveController::class, 'rejectDepartmentLeave'])->middleware('can:approve_department_leave');
         });
     });
 });
