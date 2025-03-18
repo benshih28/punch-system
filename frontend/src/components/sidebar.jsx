@@ -150,6 +150,20 @@ function Sidebar({ isOpen, toggleSidebar }) {
             <List component="div" disablePadding>
               <ListItemButton
                 component={Link}
+                to="/department-management"
+                sx={{ pl: 4 }}
+              >
+                <ListItemText primary="部門管理" />
+              </ListItemButton>
+              <ListItemButton
+                component={Link}
+                to="/position-management"
+                sx={{ pl: 4 }}
+              >
+                <ListItemText primary="職位管理" />
+              </ListItemButton>
+              <ListItemButton
+                component={Link}
                 to="/user-management"
                 sx={{ pl: 4 }}
               >
