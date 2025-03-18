@@ -13,6 +13,7 @@ import LoginPage from "./pages/LoginPage";
 // import Punchin from "./pages/punchin";
 // import ApproveLeave from "./pages/approveLeave";
 import ProtectedRoute from "./components/protectedRoute";
+import UserProfilePage from "./pages/UserProfilePage";
 
 // 先預留這些路由
 const Punchin = () => <div>個人打卡頁面 (尚未建立)</div>;
@@ -73,7 +74,7 @@ function App() {
                 <ProtectedLayout>
                   <Routes>
                     <Route path="/punchin" element={<Punchin />} />
-                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/user/update/profile" element={<UserProfilePage />} />
                     <Route
                       path="/clock-history"
                       element={<ClockHistoryPage />}
