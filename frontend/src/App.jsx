@@ -8,7 +8,7 @@ import { useAtomValue } from "jotai";
 import { isAuthenticatedAtom } from "./state/authAtom";
 import Header from "./components/header";
 import PropTypes from 'prop-types';
-// import Footer from "./components/footer";
+import Footer from "./components/footer";
 import LoginPage from "./pages/LoginPage";
 // import Register from "./pages/register";
 // import Punchin from "./pages/punchin";
@@ -34,7 +34,7 @@ const ProtectedLayout = ({ children }) => (
   <>
     <Header />
     <main>{children}</main>
-    {/* <Footer /> */}
+    <Footer />
   </>
 );
 
@@ -51,7 +51,7 @@ function App() {
           element={
             <>
               <LoginPage />
-              {/* <Footer /> */}
+              <Footer />
             </>
           }
         />
@@ -62,7 +62,7 @@ function App() {
           element={
             <>
               {/* <Register /> */}
-              {/* <Footer /> */}
+              <Footer />
             </>
           }
         />

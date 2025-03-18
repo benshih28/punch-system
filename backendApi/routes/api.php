@@ -20,7 +20,11 @@ use App\Http\Controllers\LeaveTypeController;
 use App\Http\Controllers\LeaveResetRuleController;
 use App\Http\Controllers\LeaveController;
 
+use App\Http\Controllers\QuestionFeedbackController;
+
 // 公開 API（不需要登入）
+// 問題反饋
+Route::post('/send-email', [QuestionFeedbackController::class, 'sendFeedback']);
 // 註冊
 Route::post('/register', [RegisteredUserController::class, 'store']);
 
