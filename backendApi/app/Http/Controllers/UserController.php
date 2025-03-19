@@ -166,7 +166,7 @@ class UserController extends Controller
      *     summary="獲取使用者完整資訊",
      *     description="取得使用者的基本資料、打卡紀錄、請假資訊、角色與權限等資訊",
      *     tags={"User"},
-     *     security={{"bearerAuth":{}}},
+     *     security={{"bearerAuth":{}}}, 
      *     
      *     @OA\Response(
      *         response=200,
@@ -175,6 +175,7 @@ class UserController extends Controller
      *             @OA\Property(property="user", type="object",
      *                 @OA\Property(property="id", type="integer", example=1),
      *                 @OA\Property(property="name", type="string", example="王小明"),
+     *                 @OA\Property(property="gender", type="string", example="male"),
      *                 @OA\Property(property="avatar", type="string", example="/storage/avatars/user_1.jpg"),
      *                 @OA\Property(property="position", type="string", example="工程師"),
      *                 @OA\Property(property="department_id", type="integer", example=2),
@@ -217,8 +218,12 @@ class UserController extends Controller
         $user = Auth::user();
 
         // 取得頭像與職位
+        $file = File::where('user_id', $user->id)
+            ->whereNotNull('avatar')
+            ->first();
+        $avatar = $file ? Storage::url("avatars/" . $file->avatar) : null;
+
         $employee = Employee::where('user_id', $user->id)->first();
-        $avatar = $user->file ? $user->file->avatar : null;
 
         // 取得當天打卡與補登資料
         $today = now()->format('Y-m-d');
@@ -253,6 +258,7 @@ class UserController extends Controller
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
+                'gender' => $user->gender,
                 'avatar' => $avatar,
                 'position' => $employee->position->name ?? null,
                 'department_id' => $department->id ?? null,
