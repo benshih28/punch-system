@@ -9,47 +9,54 @@ import {
   Box, // 佈局容器 (類似 div)
   Paper, // 用於包裝內容，提供陰影與邊框效果
   Typography, // 文字標題
-  Button,
-  TableContainer,
+  Button, // 按鈕
+  TableContainer, // 用於顯示表格資料
   Table,
   TableHead,
   TableRow,
   TableCell,
   TableBody,
   Checkbox,
-  Dialog,
+  Dialog, // 對話框(彈跳視窗)
   DialogActions,
   DialogContent,
-  TextField,
-  FormControl,
+  TextField, // 文字輸入框
+  FormControl, // 用於下拉選單
   InputLabel,
   Select,
   MenuItem,
+  Menu,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"; // ✅ 圖示
 import AddCircleIcon from "@mui/icons-material/AddCircle"; // 圖示
 
 function PositionManagement() {
+  // 部門列表
   const [departments, setDepartments] = useState([
     { id: 1, name: "人事部" },
     { id: 2, name: "財務部" },
     { id: 3, name: "研發部" },
   ]);
 
+  // 職位列表
   const [positions, setPositions] = useState([
-    { id: 1, department: "人事部", name: "主管", selected: false },
+    { id: 1,
+      department: "人事部",
+      name: "主管",
+      selected: false // 是否被選取
+    },
   ]);
 
   const [openAddDialog, setOpenAddDialog] = useState(false); //控制新增 Dialog
-  const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [selectedDepartment, setSelectedDepartment] = useState(""); // 新增職位時選擇的部門
   const [newPosition, setNewPosition] = useState(""); // 存儲新職位名稱
   const [openEditDialog, setOpenEditDialog] = useState(false); // 控制編輯 Dialog
   const [editPosition, setEditPosition] = useState(null); // 當前編輯的職位
-  const [editDepartment, setEditDepartment] = useState(""); // 存儲選擇的部門
-  const [editName, setEditName] = useState(""); // 存儲職位名稱
+  const [editDepartment, setEditDepartment] = useState(""); // 編輯時選擇的部門
+  const [editName, setEditName] = useState(""); // 存儲編輯的職位名稱
   const [selectAll, setSelectAll] = useState(false); // 是否全選
 
-  // 點擊「編輯」按鈕，開啟 Dialog 並設定值
+  // 開啟「編輯視窗」按鈕
   const handleEditOpen = (position) => {
     setEditPosition(position);
     setEditDepartment(position.department);
@@ -74,12 +81,14 @@ function PositionManagement() {
     setPositions(positions.filter((pos) => pos.id !== id));
   };
 
+  // 全選/取消全選
   const handleSelectAll = () => {
     const newSelectAll = !selectAll;
     setSelectAll(newSelectAll);
     setPositions(positions.map((pos) => ({ ...pos, selected: newSelectAll })));
   };
 
+  // 單選
   const handleSelectOne = (id) => {
     const updatedPositions = positions.map((pos) =>
       pos.id === id ? { ...pos, selected: !pos.selected } : pos
@@ -92,11 +101,14 @@ function PositionManagement() {
     setSelectAll(allSelected);
   };
 
+  // 新增職位
   const handleAddPosition = () => {
+    // 確保已填入部門跟職位
     if (!selectedDepartment || !newPosition.trim()) {
       alert("請選擇部門並輸入職位名稱！");
       return;
     }
+    // 新增職位到positions陣列
     setPositions([
       ...positions,
       {
@@ -118,7 +130,7 @@ function PositionManagement() {
         height: "100%", // 佔滿整個視口高度
         display: "flex", // 啟用 Flexbox
         flexDirection: "column", // 讓內容垂直排列
-        alignItems: "center",
+        alignItems: "center", // 內容置中
         backgroundColor: "#ffffff", // 背景顏色
       }}
     >
@@ -149,9 +161,10 @@ function PositionManagement() {
           width: "90%",
           padding: "20px",
           boxShadow: "0px -4px 10px rgba(0, 0, 0, 0.3)", // 上方陰影
-          borderRadius: "8px",
+          borderRadius: "8px", // 圓角
         }}
       >
+        {/* 新增按鈕 */}
         <Box
           sx={{
             display: "flex",
@@ -178,7 +191,7 @@ function PositionManagement() {
           </Button>
         </Box>
 
-        {/* 新增職位 Dialog */}
+        {/* 新增職位彈跳視窗 */}
         <Dialog open={openAddDialog} onClose={() => setOpenAddDialog(false)}>
           <DialogContent
             sx={{
@@ -194,11 +207,15 @@ function PositionManagement() {
             </Typography>
             {/* 部門選擇下拉框 */}
             <FormControl fullWidth sx={{ backgroundColor: "white" }}>
-              <InputLabel>請選擇部門</InputLabel>
               <Select
                 value={selectedDepartment}
                 onChange={(e) => setSelectedDepartment(e.target.value)}
+                displayEmpty // 讓value=""的MenuItem可見
               >
+                {/* disabled避免使用者選擇它 */}
+                <MenuItem value="" disabled>
+                  請選擇部門
+                </MenuItem>
                 {departments.map((dept) => (
                   <MenuItem key={dept.id} value={dept.name}>
                     {dept.name}
@@ -247,30 +264,29 @@ function PositionManagement() {
           </DialogActions>
         </Dialog>
 
-        {/* 📌 表格 */}
+        {/* 表格 */}
         <TableContainer>
           <Table>
-            {/* 🔼 表頭 */}
+            {/* 表頭 */}
             <TableHead>
               <TableRow sx={{ backgroundColor: "#F5F5F5" }}>
                 <TableCell sx={{ width: "5%", textAlign: "center" }}>
                   <Checkbox checked={selectAll} onChange={handleSelectAll} />
                 </TableCell>
                 <TableCell
-                  sx={{ width: "25%", fontWeight: "bold", textAlign: "left" }}
+                  sx={{ width: "10%", fontWeight: "bold" }}
                 >
                   部門
                 </TableCell>
                 <TableCell
-                  sx={{ width: "25%", fontWeight: "bold", textAlign: "left" }}
+                  sx={{ width: "25%", fontWeight: "bold" }}
                 >
                   職位
                 </TableCell>
                 <TableCell
                   sx={{
-                    width: "30%",
+                    width: "20%",
                     fontWeight: "bold",
-                    textAlign: "center",
                   }}
                 >
                   操作
@@ -278,21 +294,21 @@ function PositionManagement() {
               </TableRow>
             </TableHead>
 
-            {/* 📌 表格內容 */}
+            {/* 表格內容 */}
             <TableBody>
               {positions.map((pos) => (
                 <TableRow key={pos.id}>
-                  <TableCell>
+                  <TableCell sx={{width: "5%", textAlign: "center" }}>
                     <Checkbox
                       checked={pos.selected}
                       onChange={() => handleSelectOne(pos.id)}
                     />
                   </TableCell>
-                  <TableCell sx={{ textAlign: "left" }}>
+                  <TableCell>
                     {pos.department}
                   </TableCell>
-                  <TableCell sx={{ textAlign: "left" }}>{pos.name}</TableCell>
-                  <TableCell sx={{ textAlign: "center" }}>
+                  <TableCell>{pos.name}</TableCell>
+                  <TableCell>
                     <Button
                       variant="contained"
                       sx={{
@@ -327,7 +343,7 @@ function PositionManagement() {
           </Table>
         </TableContainer>
 
-        {/* 編輯 Dialog */}
+        {/* 編輯彈跳視窗 */}
         <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)}>
           <DialogContent
             sx={{
@@ -369,7 +385,7 @@ function PositionManagement() {
             />
           </DialogContent>
 
-          {/* 📌 按鈕 */}
+          {/* 編輯按鈕 */}
           <DialogActions
             sx={{
               justifyContent: "center",
