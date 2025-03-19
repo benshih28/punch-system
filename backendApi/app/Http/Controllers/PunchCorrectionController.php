@@ -471,7 +471,7 @@ class PunchCorrectionController extends Controller
 
         // 避免 page 或 perPage 為負數
         $page = max(1, $page);
-        $perPage = max(1, 10);
+        $perPage = max(1, $perPage);
 
         $totalUsersResult = DB::select("
             SELECT COUNT(DISTINCT user_id) AS total_users
@@ -645,7 +645,7 @@ class PunchCorrectionController extends Controller
 
         // 避免 page 或 perPage 為負數
         $page = max(1, $page);
-        $perPage = max(1, min($perPage, 10));
+        $perPage = max(1, $perPage);
 
         // 呼叫 MySQL 預存程序
         $corrections = DB::select('CALL GetAllPunchCorrections(?, ?, ?, ?)', [
