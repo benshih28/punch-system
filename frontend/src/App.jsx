@@ -12,7 +12,7 @@ import Footer from "./components/footer";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import PunchinPage from "./pages/PunchInPage";
-// import ApproveLeave from "./pages/approveLeave";
+// import ApproveLeavePage from "./pages/ApproveLeavePage";
 import ProtectedRoute from "./components/protectedRoute";
 import UserProfilePage from "./pages/UserProfilePage";
 import ForgotPassword from "./pages/ForgotPasswordPage";
@@ -73,7 +73,7 @@ function App() {
         <Route path="/forgot/password" element={<ForgotPassword />} />
 
         {/* 此頁面為請假規則頁面，會放在請假彈出框的裡面，由內部連結跳轉頁面 (此路由會刪掉) */}
-        <Route path="/leave-policy" element={<LeavePolicy />} />
+        <Route path="/leave/policy" element={<LeavePolicy />} />
 
         {/* ✅ 已登入後的所有頁面（確保 Header 只出現在登入後的頁面） */}
         <Route
@@ -87,34 +87,34 @@ function App() {
                     path="/user/update/profile"
                     element={<UserProfilePage />}
                   />
-                  <Route path="/clock-history" element={<ClockHistoryPage />} />
+                  <Route path="/clock/history" element={<ClockHistoryPage />} />
                   <Route
-                    path="/clock-reissue-history"
+                    path="/clock/reissue/history"
                     element={<ClockReissueHistoryPage />}
                   />
                   <Route
-                    path="/leave-and-inquiry-records"
+                    path="/leave/and/inquiry/records"
                     element={<LeaveRecordsPage />}
                   />
-                  <Route path="/approve-leave" element={<ApproveLeavePage />} />
+                  <Route path="/approve/leave" element={<ApproveLeavePage />} />
                   <Route
-                    path="/approve-clock-reissue"
+                    path="/approve/clock/reissue"
                     element={<ApproveClockReissuePage />}
                   />
                   <Route
-                    path="/department-management"
+                    path="/department/management"
                     element={<DepartmentManagementPage />}
                   />
                   <Route
-                    path="/position-management"
+                    path="/position/management"
                     element={<PositionManagementPage />}
                   />
                   <Route
-                    path="/user-management"
+                    path="/user/management"
                     element={<UserManagementPage />}
                   />
                   <Route
-                    path="/role-permissions"
+                    path="/role/permissions"
                     element={<RolePermissionsPage />}
                   />
                   <Route path="*" element={<Navigate to="/punchin" />} />
