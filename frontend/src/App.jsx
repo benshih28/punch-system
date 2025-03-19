@@ -11,24 +11,24 @@ import PropTypes from "prop-types";
 import Footer from "./components/footer";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
-// import Punchin from "./pages/punchin";
+import PunchinPage from "./pages/PunchInPage";
 // import ApproveLeave from "./pages/approveLeave";
 import ProtectedRoute from "./components/protectedRoute";
+import UserProfilePage from "./pages/UserProfilePage";
 import ForgotPassword from "./pages/ForgotPasswordPage";
 import ApproveClockReissuePage from "./pages/ApproveClockReissuePage";
 import ClockReissueHistoryPage from "./pages/ClockReissueHistoryPage";
 import LeavePolicy from "./components/LeavePolicy";
 import DepartmentManagementPage from "./pages/DepartmentManagementPage";
+import PositionManagementPage from "./pages/PositionManagementPage";
 
 // 先預留這些路由
-const Punchin = () => <div>個人打卡頁面 (尚未建立)</div>;
 const ProfilePage = () => <div>個人帳戶管理頁面 (尚未建立)</div>;
 const ClockHistoryPage = () => <div>查詢打卡紀錄頁面 (尚未建立)</div>;
 const LeaveRecordsPage = () => <div>請假及查詢紀錄頁面 (尚未建立)</div>;
 const ApproveLeavePage = () => <div>假單審查審核頁面 (尚未建立)</div>;
 const UserManagementPage = () => <div>人員管理頁面 (尚未建立)</div>;
 const RolePermissionsPage = () => <div>權限修改頁面 (尚未建立)</div>;
-const PositionManagementPage = () => <div>職位管理頁面 (尚未建立)</div>;
 
 /**
  * 受保護頁面的 Layout（包含 Header & Footer）
