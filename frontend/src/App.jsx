@@ -14,6 +14,7 @@ import RegisterPage from "./pages/RegisterPage";
 // import Punchin from "./pages/punchin";
 // import ApproveLeave from "./pages/approveLeave";
 import ProtectedRoute from "./components/protectedRoute";
+import UserProfilePage from "./pages/UserProfilePage";
 import ForgotPassword from "./pages/ForgotPasswordPage";
 import ApproveClockReissuePage from "./pages/ApproveClockReissuePage";
 import ClockReissueHistoryPage from "./pages/ClockReissueHistoryPage";
@@ -82,7 +83,7 @@ function App() {
                 <ProtectedLayout>
                   <Routes>
                     <Route path="/punchin" element={<Punchin />} />
-                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/user/update/profile" element={<UserProfilePage />} />
                     <Route
                       path="/clock-history"
                       element={<ClockHistoryPage />}
