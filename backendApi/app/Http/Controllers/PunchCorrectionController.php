@@ -589,22 +589,46 @@ class PunchCorrectionController extends Controller
      *     operationId="getAllPunchCorrections",
      *     tags={"Punch Correction"},
      *     security={{ "bearerAuth":{} }},
-     *     @OA\Parameter(name="start_date", in="query", description="開始日期", @OA\Schema(type="string", format="date", example="2025-03-01")),
-     *     @OA\Parameter(name="end_date", in="query", description="結束日期", @OA\Schema(type="string", format="date", example="2025-03-10")),
+     *     
+     *     @OA\Parameter(
+     *         name="start_date",
+     *         in="query",
+     *         description="開始日期",
+     *         required=false,
+     *         @OA\Schema(type="string", format="date", example="2025-03-01")
+     *     ),
+     *     @OA\Parameter(
+     *         name="end_date",
+     *         in="query",
+     *         description="結束日期",
+     *         required=false,
+     *         @OA\Schema(type="string", format="date", example="2025-03-10")
+     *     ),
      *     @OA\Parameter(
      *         name="page",
      *         in="query",
      *         description="分頁頁碼（預設 1）",
+     *         required=false,
      *         @OA\Schema(type="integer", example=1)
      *     ),
+     *     
      *     @OA\Response(
      *         response=200,
      *         description="成功獲取補登紀錄",
-     *         @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/PunchCorrection"))
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="total_records", type="integer", example=11),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(ref="#/components/schemas/PunchCorrection")
+     *             )
+     *         )
      *     ),
      *     @OA\Response(response=401, description="未授權")
      * )
      */
+
     public function getAllCorrections(Request $request)
     {
         // 確保使用者已登入
@@ -623,18 +647,6 @@ class PunchCorrectionController extends Controller
         $page = max(1, $page);
         $perPage = max(1, min($perPage, 10));
 
-        // **✅ 第一次查詢：計算符合條件的 `totalRecords`**
-        $totalRecordsResult = DB::select("
-            SELECT COUNT(*) AS total_records
-            FROM punch_corrections pc
-            WHERE (pc.punch_time >= ? OR ? IS NULL)
-            AND (pc.punch_time <= ? + INTERVAL 1 DAY OR ? IS NULL)
-            AND pc.user_id IN (SELECT id FROM employees WHERE status != 'inactive')
-        ", [$startDate, $startDate, $endDate, $endDate]);
-
-        // **獲取 `total_records`**
-        $totalRecords = $totalRecordsResult[0]->total_records ?? 0;
-
         // 呼叫 MySQL 預存程序
         $corrections = DB::select('CALL GetAllPunchCorrections(?, ?, ?, ?)', [
             $startDate ?: null,   // 如果沒傳 start_date，則傳 NULL
@@ -642,6 +654,9 @@ class PunchCorrectionController extends Controller
             $page,
             $perPage
         ]);
+
+        // 取得總筆數
+        $totalRecords = count($corrections) > 0 ? $corrections[0]->total_records : 0;
 
         // **計算分頁資訊**
         $lastPage = max(1, ceil($totalRecords / $perPage));
