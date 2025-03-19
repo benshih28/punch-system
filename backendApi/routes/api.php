@@ -204,7 +204,7 @@ Route::middleware('auth:api')->group(function () {
             Route::get('/my-records', [LeaveController::class, 'viewMyLeaveRecords'])->middleware('can:view_leave_records');
 
             // 3. 員工或 HR 可以刪除請假資料（需要 `delete_leave` 權限）
-            Route::delete('/{id}', [LeaveController::class, 'deleteLeave'])->middleware('can:delete_leave');
+            //Route::delete('/{id}', [LeaveController::class, 'deleteLeave'])->middleware('can:delete_leave');
 
             // 4. 員工或 HR 可以更新請假資料（需要 `update_leave` 權限）
             Route::post('/update/{id}', [LeaveController::class, 'updateLeave'])->middleware('can:update_leave');
