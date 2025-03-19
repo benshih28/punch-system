@@ -66,7 +66,7 @@ function Sidebar({ isOpen, toggleSidebar }) {
         {/* 選單列表 */}
         <List>
           {/* 🔹 個人帳戶管理 */}
-          <ListItemButton component={Link} to="/profile">
+          <ListItemButton component={Link} to="/user/update/profile">
             <ListItemIcon>
               <AccountCircleIcon />
             </ListItemIcon>

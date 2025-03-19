@@ -23,7 +23,6 @@ import DepartmentManagementPage from "./pages/DepartmentManagementPage";
 import PositionManagementPage from "./pages/PositionManagementPage";
 
 // 先預留這些路由
-const ProfilePage = () => <div>個人帳戶管理頁面 (尚未建立)</div>;
 const ClockHistoryPage = () => <div>查詢打卡紀錄頁面 (尚未建立)</div>;
 const LeaveRecordsPage = () => <div>請假及查詢紀錄頁面 (尚未建立)</div>;
 const ApproveLeavePage = () => <div>假單審查審核頁面 (尚未建立)</div>;
@@ -83,8 +82,11 @@ function App() {
             <ProtectedRoute>
               <ProtectedLayout>
                 <Routes>
-                  <Route path="/punchin" element={<Punchin />} />
-                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/punchin" element={<PunchinPage />} />
+                  <Route
+                    path="/user/update/profile"
+                    element={<UserProfilePage />}
+                  />
                   <Route path="/clock-history" element={<ClockHistoryPage />} />
                   <Route
                     path="/clock-reissue-history"
