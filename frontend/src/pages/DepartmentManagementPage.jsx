@@ -1,5 +1,4 @@
 import { useState } from "react"; // React Hook 用於管理元件的內部狀態
-import { useForm } from "react-hook-form"; // React Hook Form 用於表單管理
 import { useAtom } from "jotai"; // 從 Jotai 引入 `useAtom`，用來讀取 `authAtom`
 import { authAtom } from "../state/authAtom"; // Jotai Atom 用於存儲身份驗證狀態
 import API from "../api/axios"; // Axios 實例，用於發送 API 請求
@@ -24,8 +23,12 @@ import {
   TextField,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle"; // ✅ 圖示
+import AddCircleIcon from "@mui/icons-material/AddCircle"; // √圖示
 
 function DepartmentManagement() {
+  // **Jotai - 全局狀態管理**
+  const [, setAuth] = useAtom(authAtom); // 設定全局身份驗證狀態
+
   const [departments, setDepartments] = useState([
     {
       id: 1,
@@ -275,7 +278,7 @@ function DepartmentManagement() {
               }}
               onClick={handleAddDepartment}
             >
-              <CheckCircleIcon sx={{ mr: 1 }} /> 新增
+              <AddCircleIcon sx={{ mr: 1 }} /> 新增
             </Button>
           </DialogActions>
         </Dialog>
@@ -298,10 +301,10 @@ function DepartmentManagement() {
                       {column === "id"
                         ? "部門ID"
                         : column === "name"
-                        ? "部門"
-                        : column === "created_at"
-                        ? "建立時間"
-                        : "更新時間"}
+                          ? "部門"
+                          : column === "created_at"
+                            ? "建立時間"
+                            : "更新時間"}
                     </TableSortLabel>
                   </TableCell>
                 ))}
