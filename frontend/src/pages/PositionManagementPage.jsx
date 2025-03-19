@@ -1,5 +1,4 @@
 import { useState } from "react"; // React Hook 用於管理元件的內部狀態
-import { useForm } from "react-hook-form"; // React Hook Form 用於表單管理
 import { useAtom } from "jotai"; // 從 Jotai 引入 `useAtom`，用來讀取 `authAtom`
 import { authAtom } from "../state/authAtom"; // Jotai Atom 用於存儲身份驗證狀態
 import API from "../api/axios"; // Axios 實例，用於發送 API 請求

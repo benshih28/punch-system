@@ -1,5 +1,4 @@
 import { useState } from "react"; // React Hook 用於管理元件的內部狀態
-import { useForm } from "react-hook-form"; // React Hook Form 用於表單管理
 import { useAtom } from "jotai"; // 從 Jotai 引入 `useAtom`，用來讀取 `authAtom`
 import { authAtom } from "../state/authAtom"; // Jotai Atom 用於存儲身份驗證狀態
 import API from "../api/axios"; // Axios 實例，用於發送 API 請求
@@ -35,7 +34,7 @@ function ApproveClockReissuePage() {
   // **React Hook Form - 表單管理**
 
   // **Jotai - 全局狀態管理**
-  // const [, setAuth] = useAtom(authAtom); // setAuth 更新 Jotai 全局狀態 (authAtom)
+  const [, setAuth] = useAtom(authAtom); // setAuth 更新 Jotai 全局狀態 (authAtom)
 
   // 設定起始 & 結束日期
   const [startDate, setStartDate] = useState(new Date());
@@ -45,8 +44,6 @@ function ApproveClockReissuePage() {
   // 設定部門 & 員工編號
   const [department, setDepartment] = useState("");
   const [employeeId, setEmployeeId] = useState("");
-
-
   // 存放當前選中的資料
   const [selectedRow, setSelectedRow] = useState(null);
   // 開啟 & 關閉 Dialog
@@ -109,6 +106,9 @@ function ApproveClockReissuePage() {
 
   const [filteredRows, setFilteredRows] = useState(rows);  // 預設顯示所有資料
 
+  // 新增狀態來儲存錯誤訊息
+  const [rejectionError, setRejectionError] = useState("");
+
   const handleReviewOpen = (row) => {
     setSelectedRow({
       ...row,
@@ -121,15 +121,29 @@ function ApproveClockReissuePage() {
   const handleReviewSubmit = () => {
     if (!selectedRow) return;
 
-    // 更新表格內對應的 row
-    setRows((prevRows) =>
-      prevRows.map((row) =>
-        row.id === selectedRow.id ? { ...row, status: selectedRow.status } : row
-      )
+    // **當選擇「審核未通過」但未填寫拒絕原因時，顯示錯誤**
+    if (selectedRow.status === "審核未通過" && !selectedRow.rejectionReason.trim()) {
+      setRejectionError("請輸入拒絕原因");
+      return; // 阻止送出
+    }
+
+    // **清除錯誤訊息**
+    setRejectionError("");
+
+    // **更新 rows 陣列**
+    const updatedRows = rows.map((row) =>
+      row.id === selectedRow.id
+        ? { ...row, status: selectedRow.status, rejectionReason: selectedRow.rejectionReason }
+        : row
     );
+
+    setRows(updatedRows);
+    setFilteredRows(updatedRows); // **同步更新顯示的資料**
 
     setOpenDetailsDialog(false); // 關閉彈窗
   };
+
+
 
   const handleSearch = () => {
 
@@ -468,9 +482,10 @@ function ApproveClockReissuePage() {
                 <TextField
                   select
                   value={selectedRow?.status || "待審核"}
-                  onChange={(e) =>
-                    setSelectedRow((prev) => ({ ...prev, status: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    setSelectedRow((prev) => ({ ...prev, status: e.target.value }));
+                    setRejectionError(""); // 切換狀態時清除錯誤訊息
+                  }}
                   variant="outlined"
                   size="small"
                   fullWidth
@@ -497,6 +512,8 @@ function ApproveClockReissuePage() {
                   size="small"
                   fullWidth
                   sx={{ backgroundColor: "white" }}
+                  error={!!rejectionError} // 當有錯誤時顯示紅框
+                  helperText={rejectionError} // 顯示錯誤訊息
                 />
               </Box>
             )}
@@ -526,22 +543,6 @@ function ApproveClockReissuePage() {
           </DialogActions>
         </Dialog>
       </Paper>
-      {/* 頁尾 */}
-      <Box
-        sx={{
-          width: "100%",
-          mt: "auto",
-          textAlign: "center",
-          position: "absolute", // 讓頁尾固定在底部
-          bottom: 0, // 設定在底部
-          overflow: "hidden", // ✅ 隱藏滾動條
-        }}
-      >
-        <hr style={{ width: "100%", marginBottom: "10px" }} />
-        <Typography sx={{ fontSize: "20px", fontWeight: "bold" }}>
-          聯絡我們
-        </Typography>
-      </Box>
     </Box>
   );
 }
