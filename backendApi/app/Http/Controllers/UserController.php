@@ -11,6 +11,13 @@ use App\Models\File;
 use App\Http\Controllers\FileController;
 // use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use App\Models\PunchIn;
+use App\Models\PunchOut;
+use App\Models\PunchCorrection;
+use App\Models\Employee;
+use App\Models\Leave;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 
 /**
@@ -109,7 +116,7 @@ class UserController extends Controller
         // 新密碼
         //當輸入了舊密碼，強制要求新密碼
         if ($request->filled('old_password')) {
-            if (!$request->filled('new_password')|| !$request->filled('new_password_confirmation')) {
+            if (!$request->filled('new_password') || !$request->filled('new_password_confirmation')) {
                 return response()->json(['message' => '未填寫新密碼或確認密碼'], 400);
             }
             // 1.檢查是否輸入舊密碼
@@ -125,8 +132,8 @@ class UserController extends Controller
         }
         // 防止沒輸入舊密碼，卻輸入新密碼
         if (!$request->filled('old_password') && ($request->filled('new_password') || $request->filled('new_password_confirmation'))) {
-        return response()->json(['message' => '請輸入舊密碼才能變更密碼'], 400);
-}
+            return response()->json(['message' => '請輸入舊密碼才能變更密碼'], 400);
+        }
 
         // Debug 記錄
         // Log::info('User profile updated: ' . $user->id);
@@ -151,4 +158,126 @@ class UserController extends Controller
         return response()->json(['message' => '個人資料已更新', 'avatar' => $avatarUrl]);
 
     }
+
+
+    /**
+     * @OA\Get(
+     *     path="/api/user/details",
+     *     summary="獲取使用者完整資訊",
+     *     description="取得使用者的基本資料、打卡紀錄、請假資訊、角色與權限等資訊",
+     *     tags={"User"},
+     *     security={{"bearerAuth":{}}}, 
+     *     
+     *     @OA\Response(
+     *         response=200,
+     *         description="成功獲取使用者資訊",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="user", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="王小明"),
+     *                 @OA\Property(property="gender", type="string", example="male"),
+     *                 @OA\Property(property="avatar", type="string", example="/storage/avatars/user_1.jpg"),
+     *                 @OA\Property(property="position", type="string", example="工程師"),
+     *                 @OA\Property(property="department_id", type="integer", example=2),
+     *                 @OA\Property(property="department_name", type="string", example="技術部"),
+     *                 @OA\Property(property="manager_id", type="integer", example=5),
+     *                 @OA\Property(property="manager_name", type="string", example="張主管"),
+     *                 @OA\Property(property="employee_status", type="string", example="approved")
+     *             ),
+     *             @OA\Property(property="punch_records", type="object",
+     *                 @OA\Property(property="punch_in", type="string", format="date-time", example="2025-03-19 08:30:00"),
+     *                 @OA\Property(property="punch_out", type="string", format="date-time", example="2025-03-19 18:00:00"),
+     *                 @OA\Property(property="corrections", type="array",
+     *                     @OA\Items(
+     *                         @OA\Property(property="id", type="integer", example=10),
+     *                         @OA\Property(property="correction_type", type="string", example="punch_out"),
+     *                         @OA\Property(property="punch_time", type="string", format="date-time", example="2025-03-19 18:10:00"),
+     *                         @OA\Property(property="status", type="string", example="approved")
+     *                     )
+     *                 )
+     *             ),
+     *             @OA\Property(property="roles_permissions", type="object",
+     *                 @OA\Property(property="roles", type="array", @OA\Items(type="string", example="employee")),
+     *                 @OA\Property(property="permissions", type="array", @OA\Items(type="string", example="view_attendance"))
+     *             ),
+     *             @OA\Property(property="recent_leaves", type="array",
+     *                 @OA\Items(
+     *                     @OA\Property(property="id", type="integer", example=15),
+     *                     @OA\Property(property="leave_type", type="string", example="年假"),
+     *                     @OA\Property(property="start_time", type="string", format="date-time", example="2025-03-10 09:00:00"),
+     *                     @OA\Property(property="end_time", type="string", format="date-time", example="2025-03-11 18:00:00"),
+     *                     @OA\Property(property="status", type="string", example="approved")
+     *                 )
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function getUserDetails()
+    {
+        $user = Auth::user();
+
+        // 取得頭像與職位
+        $file = File::where('user_id', $user->id)
+            ->whereNotNull('avatar')
+            ->first();
+        $avatar = $file ? Storage::url("avatars/" . $file->avatar) : null;
+
+        $employee = Employee::where('user_id', $user->id)->first();
+
+        // 取得當天打卡與補登資料
+        $today = now()->format('Y-m-d');
+        $punchIn = PunchIn::where('user_id', $user->id)->whereDate('timestamp', $today)->first();
+        $punchOut = PunchOut::where('user_id', $user->id)->whereDate('timestamp', $today)->first();
+        $punchCorrections = PunchCorrection::where('user_id', $user->id)
+            ->whereDate('punch_time', $today)
+            ->where('status', 'approved')
+            ->get(['id', 'correction_type', 'punch_time', 'status']);
+
+        // 取得部門、主管與員工狀態
+        $department = $employee->department ?? null;
+        $manager = $employee->manager ?? null;
+
+        // 取得角色與權限
+        $roles = $user->getRoleNames();
+        $permissions = $user->getAllPermissions()->pluck('name');
+
+        // 取得最近五筆請假審核狀態
+        $recentLeaves = Leave::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get(['id', 'leave_type_id', 'start_time', 'end_time', 'status']);
+
+        $recentLeaves->map(function ($leave) {
+            $leave->leave_type = $leave->leaveType->name;
+            unset($leave->leave_type_id);
+            return $leave;
+        });
+
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'gender' => $user->gender,
+                'avatar' => $avatar,
+                'position' => $employee->position->name ?? null,
+                'department_id' => $department->id ?? null,
+                'department_name' => $department->name ?? null,
+                'manager_id' => $manager->id ?? null,
+                'manager_name' => $manager->name ?? null,
+                'employee_status' => $employee->status ?? null
+            ],
+            'punch_records' => [
+                'punch_in' => $punchIn->timestamp ?? null,
+                'punch_out' => $punchOut->timestamp ?? null,
+                'corrections' => $punchCorrections
+            ],
+            'roles_permissions' => [
+                'roles' => $roles,
+                'permissions' => $permissions
+            ],
+            'recent_leaves' => $recentLeaves
+        ]);
+    }
 }
+
