@@ -41,6 +41,7 @@ Route::middleware('auth:api')->group(function () {
 
 
     // user 資料
+    Route::get('/user/details', [UserController::class, 'getUserDetails']);
     Route::get('/user', function (Request $request) {
         return response()->json($request->user());
     });
