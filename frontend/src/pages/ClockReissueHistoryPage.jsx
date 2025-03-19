@@ -1,5 +1,4 @@
 import { useState } from "react"; // React Hook 用於管理元件的內部狀態
-import { useForm } from "react-hook-form"; // React Hook Form 用於表單管理
 import { useAtom } from "jotai"; // 從 Jotai 引入 `useAtom`，用來讀取 `authAtom`
 import { authAtom } from "../state/authAtom"; // Jotai Atom 用於存儲身份驗證狀態
 import API from "../api/axios"; // Axios 實例，用於發送 API 請求
@@ -440,22 +439,7 @@ function ClockReissueHistoryPage() {
           />
         </Paper>
       </Paper>
-      {/* 頁尾 */}
-      <Box
-        sx={{
-          width: "100%",
-          mt: "auto",
-          textAlign: "center",
-          position: "absolute", // 讓頁尾固定在底部
-          bottom: 0, // 設定在底部
-          overflow: "hidden", // ✅ 隱藏滾動條
-        }}
-      >
-        <hr style={{ width: "100%", marginBottom: "10px" }} />
-        <Typography sx={{ fontSize: "20px", fontWeight: "bold" }}>
-          聯絡我們
-        </Typography>
-      </Box>
+      
       <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)}>
         <DialogContent
           sx={{
