@@ -2,8 +2,8 @@ import { useState } from "react";
 import { AppBar, Toolbar, IconButton, Box } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useNavigate } from "react-router-dom";
-import Sidebar from "./Sidebar"; // 引入側邊欄
-import NotificationPanel from "./NotificationPanel"; // 確保路徑正確
+import Sidebar from "./sidebar"; // 引入側邊欄
+import NotificationPanel from "./notificationPanel"; // 確保路徑正確
 
 function Header() {
   const navigate = useNavigate();
