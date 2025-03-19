@@ -14,6 +14,7 @@ import RegisterPage from "./pages/RegisterPage";
 import PunchinPage from "./pages/PunchInPage";
 // import ApproveLeave from "./pages/approveLeave";
 import ProtectedRoute from "./components/protectedRoute";
+import UserProfilePage from "./pages/UserProfilePage";
 import ForgotPassword from "./pages/ForgotPasswordPage";
 import ApproveClockReissuePage from "./pages/ApproveClockReissuePage";
 import ClockReissueHistoryPage from "./pages/ClockReissueHistoryPage";
