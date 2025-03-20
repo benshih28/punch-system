@@ -2,7 +2,7 @@ import { useState } from "react"; // React Hook 用於管理元件的內部狀�
 import { useAtom } from "jotai"; // 從 Jotai 引入 `useAtom`，用來讀取 `authAtom`
 import { authAtom } from "../state/authAtom"; // Jotai Atom 用於存儲身份驗證狀態
 import API from "../api/axios"; // Axios 實例，用於發送 API 請求
-
+import { Link } from "react-router-dom";
 // **Material UI 元件**
 import {
   Box, // 佈局容器 (類似 div)
@@ -195,8 +195,25 @@ function DepartmentManagement() {
           textAlign="center"
           sx={{ mb: 1 }}
         >
-          <span style={{ color: "#ba6262" }}>部門管理</span> 職位管理 權限管理
-          人員管理 人員歷程
+          <Link to="/department/management" style={{ textDecoration: "none", color: "#ba6262", fontWeight: "bold" }}>
+            部門管理
+          </Link>
+          &nbsp;
+          <Link to="/position/management" style={{ textDecoration: "none", color: "black" }}>
+            職位管理
+          </Link>
+          &nbsp;
+          <Link to="/role/permissions" style={{ textDecoration: "none", color: "black" }}>
+            權限管理
+          </Link>
+          &nbsp;
+          <Link to="/user/management" style={{ textDecoration: "none", color: "black" }}>
+            人員管理
+          </Link>
+          &nbsp;
+          <Link to="/employee/history" style={{ textDecoration: "none", color: "black" }}>
+            人員歷程
+          </Link>
         </Typography>
       </Box>
 

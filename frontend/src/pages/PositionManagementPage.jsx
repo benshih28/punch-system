@@ -2,6 +2,7 @@ import { useState } from "react"; // React Hook 用於管理元件的內部狀�
 import { useAtom } from "jotai"; // 從 Jotai 引入 `useAtom`，用來讀取 `authAtom`
 import { authAtom } from "../state/authAtom"; // Jotai Atom 用於存儲身份驗證狀態
 import API from "../api/axios"; // Axios 實例，用於發送 API 請求
+import { Link } from "react-router-dom";
 
 // **Material UI 元件**
 import {
@@ -39,7 +40,8 @@ function PositionManagement() {
 
   // 職位列表
   const [positions, setPositions] = useState([
-    { id: 1,
+    {
+      id: 1,
       department: "人事部",
       name: "主管",
       selected: false // 是否被選取
@@ -149,8 +151,25 @@ function PositionManagement() {
           textAlign="center"
           sx={{ mb: 1 }}
         >
-          部門管理 <span style={{ color: "#ba6262" }}>職位管理</span> 權限管理
-          人員管理 人員歷程
+          <Link to="/department/management" style={{ textDecoration: "none", color: "black" }}>
+            部門管理
+          </Link>
+          &nbsp;
+          <Link to="/position/management" style={{ textDecoration: "none", color: "#ba6262", fontWeight: "bold" }}>
+            職位管理
+          </Link>
+          &nbsp;
+          <Link to="/role/permissions" style={{ textDecoration: "none", color: "black" }}>
+            權限管理
+          </Link>
+          &nbsp;
+          <Link to="/user/management" style={{ textDecoration: "none", color: "black" }}>
+            人員管理
+          </Link>
+          &nbsp;
+          <Link to="/employee/history" style={{ textDecoration: "none", color: "black" }}>
+            人員歷程
+          </Link>
         </Typography>
       </Box>
 
@@ -297,7 +316,7 @@ function PositionManagement() {
             <TableBody>
               {positions.map((pos) => (
                 <TableRow key={pos.id}>
-                  <TableCell sx={{width: "5%", textAlign: "center" }}>
+                  <TableCell sx={{ width: "5%", textAlign: "center" }}>
                     <Checkbox
                       checked={pos.selected}
                       onChange={() => handleSelectOne(pos.id)}
