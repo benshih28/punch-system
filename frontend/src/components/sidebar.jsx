@@ -88,14 +88,14 @@ function Sidebar({ isOpen, toggleSidebar }) {
               </ListItemButton>
               <ListItemButton
                 component={Link}
-                to="/clock-history"
+                to="/clock/history"
                 sx={{ pl: 4 }}
               >
                 <ListItemText primary="查詢打卡紀錄" />
               </ListItemButton>
               <ListItemButton
                 component={Link}
-                to="/clock-reissue-history"
+                to="/clock/reissue/history"
                 sx={{ pl: 4 }}
               >
                 <ListItemText primary="查詢補打卡紀錄" />
@@ -104,7 +104,7 @@ function Sidebar({ isOpen, toggleSidebar }) {
           </Collapse>
 
           {/* 🔹 請假及查詢紀錄 */}
-          <ListItemButton component={Link} to="/leave-and-inquiry-records">
+          <ListItemButton component={Link} to="/leave/and/inquiry/records">
             <ListItemIcon>
               <EventNoteIcon />
             </ListItemIcon>
@@ -123,14 +123,14 @@ function Sidebar({ isOpen, toggleSidebar }) {
             <List component="div" disablePadding>
               <ListItemButton
                 component={Link}
-                to="/approve-leave"
+                to="/approve/leave"
                 sx={{ pl: 4 }}
               >
                 <ListItemText primary="假單審核" />
               </ListItemButton>
               <ListItemButton
                 component={Link}
-                to="/approve-clock-reissue"
+                to="/approve/clock/reissue"
                 sx={{ pl: 4 }}
               >
                 <ListItemText primary="補打卡審核" />
@@ -150,28 +150,28 @@ function Sidebar({ isOpen, toggleSidebar }) {
             <List component="div" disablePadding>
               <ListItemButton
                 component={Link}
-                to="/department-management"
+                to="/department/management"
                 sx={{ pl: 4 }}
               >
                 <ListItemText primary="部門管理" />
               </ListItemButton>
               <ListItemButton
                 component={Link}
-                to="/position-management"
+                to="/position/management"
                 sx={{ pl: 4 }}
               >
                 <ListItemText primary="職位管理" />
               </ListItemButton>
               <ListItemButton
                 component={Link}
-                to="/user-management"
+                to="/user/management"
                 sx={{ pl: 4 }}
               >
                 <ListItemText primary="人員管理" />
               </ListItemButton>
               <ListItemButton
                 component={Link}
-                to="/role-permissions"
+                to="/role/permissions"
                 sx={{ pl: 4 }}
               >
                 <ListItemText primary="權限修改" />
