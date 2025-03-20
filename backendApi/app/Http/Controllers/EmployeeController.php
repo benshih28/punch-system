@@ -7,7 +7,9 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+
 use Illuminate\Support\Facades\DB;
+use App\Models\EmployeeProfile;
 
 
 class EmployeeController extends Controller
@@ -266,8 +268,8 @@ class EmployeeController extends Controller
     /**
      * @OA\Patch(
      *     path="/api/employees/{id}/assign",
-     *     summary="HR 分配部門、職位、主管、角色",
-     *     description="HR 指派員工的部門、職位、主管和角色。員工必須已通過審核 (approved) 才能指派。",
+     *     summary="HR 分配部門、職位、主管、角色，並設定入職日期",
+     *     description="HR 指派員工的部門、職位、主管和角色，並記錄入職日期。員工必須已通過審核 (approved) 才能指派。",
      *     operationId="assignEmployeeDetails",
      *     tags={"Employees"},
      *     security={{"bearerAuth": {}}},
@@ -282,21 +284,23 @@ class EmployeeController extends Controller
      *
      *     @OA\RequestBody(
      *         required=true,
-     *         description="需要指派的部門、職位、主管、角色 ID",
+     *         description="需要指派的部門、職位、主管、角色 ID 和入職日期",
      *         @OA\JsonContent(
-     *             required={"department_id", "position_id", "manager_id", "role_id"},
+     *             required={"department_id", "position_id", "manager_id", "role_id", "hire_date"},
      *             @OA\Property(property="department_id", type="integer", example=1, description="部門 ID"),
      *             @OA\Property(property="position_id", type="integer", example=2, description="職位 ID"),
      *             @OA\Property(property="manager_id", type="integer", example=5, description="主管的使用者 ID"),
-     *             @OA\Property(property="role_id", type="integer", example=3, description="角色 ID")
+     *             @OA\Property(property="role_id", type="integer", example=3, description="角色 ID"),
+     *             @OA\Property(property="hire_date", type="string", format="date", example="2023-05-15", description="員工入職日期 (YYYY-MM-DD)")
      *         )
      *     ),
      *
      *     @OA\Response(
      *         response=200,
-     *         description="員工部門、職位、主管、角色已更新",
+     *         description="員工部門、職位、主管、角色已更新，並設定入職日期",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="員工部門、職位、主管、角色已更新")
+     *             @OA\Property(property="message", type="string", example="員工部門、職位、主管、角色已更新，並設定入職日期"),
+     *             @OA\Property(property="hire_date", type="string", format="date", example="2023-05-15")
      *         )
      *     ),
      *
@@ -334,6 +338,7 @@ class EmployeeController extends Controller
             'position_id' => 'required|exists:positions,id',
             'manager_id' => 'required|exists:users,id',
             'role_id' => 'required|exists:roles,id',
+            'hire_date' => 'required|date|before_or_equal:today'
         ]);
 
         $employee = Employee::find($id);
@@ -341,7 +346,7 @@ class EmployeeController extends Controller
             return response()->json(['error' => '無法指派，員工尚未通過審核'], 400);
         }
 
-        // 🔹 呼叫 MySQL 預存程序 AssignEmployeeDetails
+        // 呼叫 MySQL 預存程序 AssignEmployeeDetails
         DB::statement('CALL AssignEmployeeDetails(?, ?, ?, ?, ?)', [
             $id,
             $request->department_id,
@@ -350,8 +355,16 @@ class EmployeeController extends Controller
             $request->role_id
         ]);
 
+
+        // 更新或建立 employee_profiles 的 hire_date
+        $employeeProfile = EmployeeProfile::updateOrCreate(
+            ['employee_id' => $id], // 依據 employee_id 搜尋
+            ['hire_date' => $request->hire_date] // 更新 hire_date
+        );
+
         return response()->json([
-            'message' => '員工部門、職位、主管、角色已更新'
+            'message' => '員工部門、職位、主管、角色已更新，並設定入職日期',
+            'hire_date' => $employeeProfile->hire_date
         ], 200);
     }
     /**
