@@ -105,8 +105,8 @@ function PunchIn() {
           {[
             { text: "上班打卡", action: () => handlePunch("work") },
             { text: "下班打卡", action: () => handlePunch("offWork") },
-            { text: "補打卡", action: () => navigate("/clock-reissue-history") },
-            { text: "查詢打卡紀錄", action: () => navigate("/clock-history") },
+            { text: "補打卡", action: () => navigate("/clock/reissue/history") },
+            { text: "查詢打卡紀錄", action: () => navigate("/clock/history") },
           ].map(({ text, action }, index) => (
             <Button
               key={index}
