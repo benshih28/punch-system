@@ -53,7 +53,7 @@ function LoginPage() {
 
 
       // **獲取完整的使用者資訊**
-      const userDetailsResponse = await API.get("/api/user/details", {
+      const userDetailsResponse = await API.get("/user/details", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
