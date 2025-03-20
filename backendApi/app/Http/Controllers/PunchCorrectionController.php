@@ -591,6 +591,20 @@ class PunchCorrectionController extends Controller
      *     security={{ "bearerAuth":{} }},
      *     
      *     @OA\Parameter(
+     *         name="department_id",
+     *         in="query",
+     *         description="部門 ID（選填）",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=2)
+     *     ),
+     *     @OA\Parameter(
+     *         name="user_id",
+     *         in="query",
+     *         description="特定員工 ID（選填）",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=5)
+     *     ),
+     *     @OA\Parameter(
      *         name="start_date",
      *         in="query",
      *         description="開始日期",
@@ -638,6 +652,8 @@ class PunchCorrectionController extends Controller
         }
 
         // 取得 Query 參數
+        $departmentId = $request->query('department_id');
+        $userId = $request->query('user_id');
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
         $page = $request->query('page', 1); // 預設第一頁
@@ -648,7 +664,9 @@ class PunchCorrectionController extends Controller
         $perPage = max(1, $perPage);
 
         // 呼叫 MySQL 預存程序
-        $corrections = DB::select('CALL GetAllPunchCorrections(?, ?, ?, ?)', [
+        $corrections = DB::select('CALL GetAllPunchCorrections(?, ?, ?, ?, ?, ?)', [
+            $departmentId ?: null,
+            $userId ?: null,
             $startDate ?: null,   // 如果沒傳 start_date，則傳 NULL
             $endDate ?: null,      // 如果沒傳 end_date，則傳 NULL
             $page,
