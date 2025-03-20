@@ -88,7 +88,7 @@ function Sidebar({ isOpen, toggleSidebar }) {
               </ListItemButton>
               <ListItemButton
                 component={Link}
-                to="/clock-history"
+                to="/clock/history"
                 sx={{ pl: 4 }}
               >
                 <ListItemText primary="查詢打卡紀錄" />

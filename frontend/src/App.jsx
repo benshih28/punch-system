@@ -18,7 +18,7 @@ import ForgotPassword from "./pages/ForgotPasswordPage";
 import ApproveClockReissuePage from "./pages/ApproveClockReissuePage";
 import ClockReissueHistoryPage from "./pages/ClockReissueHistoryPage";
 import LeavePolicy from "./components/LeavePolicy";
-
+import ClockHistory from "./pages/ClockHistoryPage";
 // 先預留這些路由
 const Punchin = () => <div>個人打卡頁面 (尚未建立)</div>;
 const ProfilePage = () => <div>個人帳戶管理頁面 (尚未建立)</div>;
@@ -84,8 +84,8 @@ function App() {
                     <Route path="/punchin" element={<Punchin />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route
-                      path="/clock-history"
-                      element={<ClockHistoryPage />}
+                      path="/clock/history"
+                      element={<ClockHistory />}
                     />
                     <Route
                       path="/clock-reissue-history"
