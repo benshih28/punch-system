@@ -51,6 +51,23 @@ function LoginPage() {
         user: user,
       });
 
+
+      // **獲取完整的使用者資訊**
+      const userDetailsResponse = await API.get("/api/user/details", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const userDetails = userDetailsResponse.data;
+
+      // **更新 Jotai（這會自動存入 localStorage）**
+      setAuth({
+        access_token: token, 
+        user: userDetails.user, 
+        punch_records: userDetails.punch_records,
+        roles_permissions: userDetails.roles_permissions,
+        recent_leaves: userDetails.recent_leaves,
+      });
+
       // **導航到打卡頁面**
       navigate("/punchin");
     } catch (error) {
