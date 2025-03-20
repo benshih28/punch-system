@@ -316,7 +316,7 @@ function DepartmentManagement() {
                       onClick={() => handleSort(column)} // 點擊時切換排序
                     >
                       {column === "id"
-                        ? "部門ID"
+                        ? "部門 ID"
                         : column === "name"
                           ? "部門"
                           : column === "created_at"
