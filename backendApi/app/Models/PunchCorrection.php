@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+
 /**
  * @OA\Schema(
  *     schema="PunchCorrection",
@@ -13,7 +14,10 @@ use Illuminate\Support\Facades\Auth;
  *     type="object",
  *     required={"id", "user_id", "correction_type", "punch_time", "status"},
  *     @OA\Property(property="id", type="integer", example=1),
- *     @OA\Property(property="user_name", type="integer", example="Admin"),
+ *     @OA\Property(property="user_id", type="integer", example=5),
+ *     @OA\Property(property="user_name", type="string", example="Admin"),
+ *     @OA\Property(property="department_id", type="integer", example=2),
+ *     @OA\Property(property="department_name", type="string", example="資訊部"),
  *     @OA\Property(property="punch_time", type="string", format="date-time", example="2025-03-11 08:00:00"),
  *     @OA\Property(property="correction_type", type="string", enum={"punch_in", "punch_out"}, example="punch_in"),
  *     @OA\Property(property="reason", type="string", example="忘記打卡"),
