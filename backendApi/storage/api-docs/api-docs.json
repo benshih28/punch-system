@@ -4551,6 +4551,26 @@
                 "operationId": "getAllPunchCorrections",
                 "parameters": [
                     {
+                        "name": "department_id",
+                        "in": "query",
+                        "description": "部門 ID（選填）",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 2
+                        }
+                    },
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "description": "特定員工 ID（選填）",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    },
+                    {
                         "name": "start_date",
                         "in": "query",
                         "description": "開始日期",
@@ -5372,9 +5392,21 @@
                         "type": "integer",
                         "example": 1
                     },
-                    "user_name": {
+                    "user_id": {
                         "type": "integer",
+                        "example": 5
+                    },
+                    "user_name": {
+                        "type": "string",
                         "example": "Admin"
+                    },
+                    "department_id": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "department_name": {
+                        "type": "string",
+                        "example": "資訊部"
                     },
                     "punch_time": {
                         "type": "string",
