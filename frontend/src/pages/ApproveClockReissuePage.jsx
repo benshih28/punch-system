@@ -57,6 +57,7 @@ function ApproveClockReissuePage() {
   const [departments, setDepartments] = useState([]); // 存放所有部門
   const [departmentId, setDepartmentId] = useState(null); // 存儲部門 ID
   const [selectedDepartment, setSelectedDepartment] = useState(null); // 選擇的部門 ID
+  const [selectedDepartmentName, setSelectedDepartmentName] = useState(""); // 存部門名稱
   const [employeeId, setEmployeeId] = useState("");
   const [userId, setUserId] = useState(null); // 存儲使用者 ID
 
@@ -106,39 +107,43 @@ function ApproveClockReissuePage() {
   }, []);
 
   // 依照查詢條件篩選**
-  const handleSearch = async (newPage = 0, newRowsPerPage = rowsPerPage) => {
-    const pageNum = isNaN(newPage) ? 0 : Number(newPage);
-    const rowsPerPageNum = isNaN(newRowsPerPage) ? 10 : Number(newRowsPerPage);
-
-    if (departmentId !== 1) {
-      setUnauthorized(true);
-      return;
+  const handleSearch = async (
+    newPage = page,
+    newRowsPerPage = rowsPerPage,
+    resetPage = false
+  ) => {
+    if (resetPage) {
+      setPage(0); // 先重設頁碼
+      await new Promise((resolve) => setTimeout(resolve, 0)); // 🛠 強制等待 React 更新 state
     }
+
+    const pageNum = resetPage ? 0 : isNaN(newPage) ? 0 : Number(newPage);
+    const rowsPerPageNum = isNaN(newRowsPerPage) ? 10 : Number(newRowsPerPage);
 
     setLoading(true);
     setError(null);
+    setUnauthorized(false);
 
     try {
       // 格式化 `startDate` & `endDate` 為 `YYYY-MM-DD`
-      const formattedStartDate = startDate.toISOString().split("T")[0];
       const formattedEndDate = endDate.toISOString().split("T")[0];
 
       let query = `/corrections?
-          startDate=${formattedStartDate}&
-          endDate=${formattedEndDate}&
+          start_date=2025-01-01&
+          end_date=${formattedEndDate}&
           page=${pageNum + 1}&
-          perpage=${rowsPerPageNum}`;
+          per_page=${rowsPerPageNum}`;
 
-      if (selectedDepartment && selectedDepartment !== "") {
+      if (selectedDepartment && !isNaN(selectedDepartment)) {
         query += `&department_id=${selectedDepartment}`; // 選擇部門
       }
 
       if (employeeId && employeeId !== "") {
-        query += `&employee_id=${employeeId}`; // 選擇員工
+        query += `&user_id=${employeeId}`; // 選擇員工
       }
 
       const response = await API.get(query);
-      console.log("✅ API 回應:", response.data);
+      console.log("URL", query);
 
       const corrections = response.data?.data?.data || [];
       const total = response.data.data.data[0].total_records || 0; // 取得總筆數
@@ -148,14 +153,11 @@ function ApproveClockReissuePage() {
 
       // **處理 API 回應資料**
       const formattedCorrections = corrections.map((item) => {
-        const [datePart, timePart] = item.punch_time.split(" "); // 分割日期 & 時間
-        const createdDate = item.created_at.split(" ")[0]; // 只取日期部分
-
         return {
           ...item,
-          date: datePart,
-          time: timePart,
-          created_at: createdDate,
+          date: item.punch_time.split(" ")[0],
+          time: item.punch_time.split(" ")[1],
+          created_at: item.created_at.split(" ")[0],
           correction_type:
             item.correction_type === "punch_in" ? "上班打卡" : "下班打卡",
           status:
@@ -170,8 +172,6 @@ function ApproveClockReissuePage() {
       setRows(formattedCorrections);
       setFilteredRows(formattedCorrections);
       setTotalRecords(total); // 設定總筆數
-      setPage(newPage); // 設定新頁數
-      setRowsPerPage(newRowsPerPage); // 設定新顯示筆數
     } catch (err) {
       setError("無法取得資料，請稍後再試");
       setRows([]);
@@ -184,25 +184,33 @@ function ApproveClockReissuePage() {
 
   // **🔹 3. 換頁**
   const handleChangePage = (event, newPage) => {
-    // setPage(newPage);
-    console.log(`📌 換頁到第 ${newPage + 1} 頁`);
-    handleSearch(newPage, rowsPerPage); // 重新載入該頁數的資料
+    setPage(newPage);
   };
 
   // **🔹 4. 更改每頁顯示筆數**
   const handleChangeRowsPerPage = (event) => {
     const newRowsPerPage = parseInt(event.target.value, 10);
-    // setRowsPerPage(newRowsPerPage);
-    // setPage(0); // ✅ 重新回到第一頁
-    console.log(`📌 變更每頁顯示筆數: ${newRowsPerPage}`);
-    handleSearch(0, newRowsPerPage); // ✅ 查詢新筆數
+    setRowsPerPage(newRowsPerPage);
+    setPage(0); // ✅ 重新回到第一頁
+  };
+
+  const handleDepartmentChange = async (event) => {
+    const newDepartment = Number(event.target.value); // 確保存數字 ID
+    setSelectedDepartment(newDepartment);
+
+    const selectedDept = departments.find((dept) => dept.id === newDepartment);
+    setSelectedDepartmentName(selectedDept ? selectedDept.name : "");
+
+    setDepartmentId(newDepartment); // 同步更新 `departmentId`
+    setUnauthorized(false); // 清除無權限狀態
+    setPage(0); // 重置分頁
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    handleSearch(0, rowsPerPage, true);
   };
 
   useEffect(() => {
-    if (departmentId !== null) {
-      handleSearch(); // 只有當 departmentId 確定後才查詢
-    }
-  }, [departmentId]);
+    handleSearch(page, rowsPerPage);
+  }, [page, rowsPerPage]);
 
   // 不是人資時，顯示無權限
   if (unauthorized) {
@@ -222,8 +230,8 @@ function ApproveClockReissuePage() {
   const handleReviewOpen = (row) => {
     setSelectedRow({
       ...row,
-      status: "待審核", // 確保審核狀態預設為「待審核」
-      rejectionReason: "", // 預設清空拒絕原因
+      status: row.status || "待審核", // 確保審核狀態預設為「待審核」
+      rejectionReason: row.rejectionReason || "", // 預設清空拒絕原因
     });
     setOpenDetailsDialog(true);
   };
@@ -313,8 +321,8 @@ function ApproveClockReissuePage() {
             variant="outlined"
             size="small"
             value={selectedDepartment ?? ""}
-            onChange={(e) => setSelectedDepartment(e.target.value)}
-            select={departmentId === 1}
+            onChange={handleDepartmentChange}
+            select
             sx={{ backgroundColor: "white", minWidth: "180px" }} // 白底，寬度限制
           >
             {departments.length > 0 &&
@@ -470,38 +478,36 @@ function ApproveClockReissuePage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredRows
-                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                    .map((row) => (
-                      <TableRow key={row.id} hover>
-                        {columns.map((column) => {
-                          let value = row[column.id];
+                  filteredRows.map((row) => (
+                    <TableRow key={row.id} hover>
+                      {columns.map((column) => {
+                        let value = row[column.id];
 
-                          return (
-                            <TableCell
-                              key={column.id}
-                              align="center"
-                              sx={{ minWidth: column.minWidth }}
-                            >
-                              {column.id === "actions" ? (
-                                <Button
-                                  variant="contained"
-                                  sx={{
-                                    backgroundColor: "#D2B48C",
-                                    color: "white",
-                                  }}
-                                  onClick={() => handleReviewOpen(row)}
-                                >
-                                  審核
-                                </Button>
-                              ) : (
-                                value
-                              )}
-                            </TableCell>
-                          );
-                        })}
-                      </TableRow>
-                    ))
+                        return (
+                          <TableCell
+                            key={column.id}
+                            align="center"
+                            sx={{ minWidth: column.minWidth }}
+                          >
+                            {column.id === "actions" ? (
+                              <Button
+                                variant="contained"
+                                sx={{
+                                  backgroundColor: "#D2B48C",
+                                  color: "white",
+                                }}
+                                onClick={() => handleReviewOpen(row)}
+                              >
+                                審核
+                              </Button>
+                            ) : (
+                              value
+                            )}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  ))
                 )}
               </TableBody>
             </Table>
@@ -513,7 +519,7 @@ function ApproveClockReissuePage() {
             component="div" // 告訴MUI這是一個div容器
             count={totalRecords} // 總資料筆數
             rowsPerPage={rowsPerPage} // 當前每頁顯示筆數
-            page={page} // 當前頁碼(從0開始)
+            page={page} // 當前頁碼
             onPageChange={handleChangePage} // 換頁時觸發的函式
             onRowsPerPageChange={handleChangeRowsPerPage} // 改變每頁顯示筆數時觸發
             sx={{
@@ -541,7 +547,7 @@ function ApproveClockReissuePage() {
               <Box sx={{ flex: 1 }}>
                 <b>申請人：</b>
                 <TextField
-                  value={selectedRow?.applicant || ""}
+                  value={selectedRow?.user_name || ""}
                   variant="outlined"
                   size="small"
                   fullWidth
@@ -595,7 +601,7 @@ function ApproveClockReissuePage() {
               <Box sx={{ flex: 1 }}>
                 <b>申請日期：</b>
                 <TextField
-                  value={selectedRow?.applicationDate || ""}
+                  value={selectedRow?.created_at || ""}
                   variant="outlined"
                   size="small"
                   fullWidth

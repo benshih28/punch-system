@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'], // 允許所有 HTTP 方法 (GET, POST, PUT, DELETE, OPTIONS)
 
-    'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:5175')], // 允許特定前端網址
+    'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:5173')], // 允許特定前端網址
 
     'allowed_origins_patterns' => [],
 
