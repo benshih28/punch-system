@@ -13,14 +13,13 @@ use Illuminate\Support\Facades\Auth;
  *     type="object",
  *     required={"id", "user_id", "correction_type", "punch_time", "status"},
  *     @OA\Property(property="id", type="integer", example=1),
- *     @OA\Property(property="user_id", type="integer", example=2),
- *     @OA\Property(property="correction_type", type="string", enum={"punch_in", "punch_out"}, example="punch_in"),
+ *     @OA\Property(property="user_name", type="integer", example="Admin"),
  *     @OA\Property(property="punch_time", type="string", format="date-time", example="2025-03-11 08:00:00"),
+ *     @OA\Property(property="correction_type", type="string", enum={"punch_in", "punch_out"}, example="punch_in"),
  *     @OA\Property(property="reason", type="string", example="忘記打卡"),
- *     @OA\Property(property="status", type="string", enum={"pending", "approved", "rejected"}, example="pending"),
+ *     @OA\Property(property="created_at", type="string", format="date-time", example="2025-03-19 20:30:33"),
+ *     @OA\Property(property="status", type="string", enum={"pending", "approved", "rejected"}, example="approved"),
  *     @OA\Property(property="review_message", type="string", example="審核通過"),
- *     @OA\Property(property="approved_by", type="integer", nullable=true, example=1),
- *     @OA\Property(property="approved_at", type="string", format="date-time", nullable=true, example="2025-03-11 09:00:00")
  * )
  * @OA\Schema(
  *     schema="AttendanceRecord",

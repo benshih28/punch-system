@@ -4554,6 +4554,7 @@
                         "name": "start_date",
                         "in": "query",
                         "description": "開始日期",
+                        "required": false,
                         "schema": {
                             "type": "string",
                             "format": "date",
@@ -4564,6 +4565,7 @@
                         "name": "end_date",
                         "in": "query",
                         "description": "結束日期",
+                        "required": false,
                         "schema": {
                             "type": "string",
                             "format": "date",
@@ -4574,6 +4576,7 @@
                         "name": "page",
                         "in": "query",
                         "description": "分頁頁碼（預設 1）",
+                        "required": false,
                         "schema": {
                             "type": "integer",
                             "example": 1
@@ -4586,10 +4589,19 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/PunchCorrection"
-                                    }
+                                    "properties": {
+                                        "total_records": {
+                                            "type": "integer",
+                                            "example": 11
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/PunchCorrection"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
                                 }
                             }
                         }
@@ -5046,6 +5058,10 @@
                                                     "type": "string",
                                                     "example": "王小明"
                                                 },
+                                                "gender": {
+                                                    "type": "string",
+                                                    "example": "male"
+                                                },
                                                 "avatar": {
                                                     "type": "string",
                                                     "example": "/storage/avatars/user_1.jpg"
@@ -5356,9 +5372,14 @@
                         "type": "integer",
                         "example": 1
                     },
-                    "user_id": {
+                    "user_name": {
                         "type": "integer",
-                        "example": 2
+                        "example": "Admin"
+                    },
+                    "punch_time": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-03-11 08:00:00"
                     },
                     "correction_type": {
                         "type": "string",
@@ -5368,14 +5389,14 @@
                         ],
                         "example": "punch_in"
                     },
-                    "punch_time": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2025-03-11 08:00:00"
-                    },
                     "reason": {
                         "type": "string",
                         "example": "忘記打卡"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-03-19 20:30:33"
                     },
                     "status": {
                         "type": "string",
@@ -5384,22 +5405,11 @@
                             "approved",
                             "rejected"
                         ],
-                        "example": "pending"
+                        "example": "approved"
                     },
                     "review_message": {
                         "type": "string",
                         "example": "審核通過"
-                    },
-                    "approved_by": {
-                        "type": "integer",
-                        "example": 1,
-                        "nullable": true
-                    },
-                    "approved_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2025-03-11 09:00:00",
-                        "nullable": true
                     }
                 },
                 "type": "object"
