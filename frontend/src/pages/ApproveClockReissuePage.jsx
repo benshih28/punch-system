@@ -1,5 +1,6 @@
 import { useState } from "react"; // React Hook 用於管理元件的內部狀態
 import { useAtom } from "jotai"; // 從 Jotai 引入 `useAtom`，用來讀取 `authAtom`
+import { errorAtom } from "../state/errorAtom"; 
 import { authAtom } from "../state/authAtom"; // Jotai Atom 用於存儲身份驗證狀態
 import { useEffect } from "react"; // 用於獲取API
 import API from "../api/axios"; // Axios 實例，用於發送 API 請求
@@ -44,10 +45,11 @@ const columns = [
 
 function ApproveClockReissuePage() {
   // **Jotai - 全局狀態管理**
-  // const [, setAuth] = useAtom(authAtom); // setAuth 更新 Jotai 全局狀態 (authAtom)
+  const [, setAuth] = useAtom(authAtom); // setAuth 更新 Jotai 全局狀態 (authAtom)
 
   // 設定起始 & 結束日期 & 頁數 & 限制筆數
-  const [startDate, setStartDate] = useState(new Date());
+  const currentYear = new Date().getFullYear(); // 取得當前年份
+  const [startDate, setStartDate] = useState(new Date(`${currentYear}-01-01`));
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [endDate, setEndDate] = useState(new Date());
   const [page, setPage] = useState(0);
@@ -76,6 +78,7 @@ function ApproveClockReissuePage() {
   const [filteredRows, setFilteredRows] = useState([]); // 篩選後的資料
   const [loading, setLoading] = useState(true); // 載入狀態
   const [error, setError] = useState(null); // 錯誤訊息
+  const [errorMessage] = useAtom(errorAtom); // 錯誤訊息
 
   // 使用 useEffect 在畫面載入時請求 API
   // useEffect是React Hook，初次渲染時自動執行一次
@@ -278,7 +281,7 @@ function ApproveClockReissuePage() {
         apiUrl = `/punch/correction/${selectedRow.id}/reject`;
         requestBody.review_message = selectedRow.rejectionReason;
       }
-      
+
 
       // **發送 API 更新補登打卡資料**
       const response = await API.put(apiUrl, requestBody);
@@ -302,8 +305,8 @@ function ApproveClockReissuePage() {
         setOpenDetailsDialog(false); // 關閉彈窗
         alert("審核結果已成功更新！");
       }
-    } catch (error) {
-      console.error("更新失敗:", error);
+    } catch (err) {
+      console.error("更新失敗:", err);
       alert("更新失敗，請稍後再試！");
     }
   };
@@ -464,7 +467,10 @@ function ApproveClockReissuePage() {
             marginTop: "15px",
           }}
           startIcon={<ManageSearchIcon />} //讓放大鏡圖是在左邊
-          onClick={() => handleSearch(0, rowsPerPage, true)} // 點選後篩選日期
+          onClick={() => {
+            setIsInitialLoad(false); // 標記為非初始載入
+            handleSearch(0, rowsPerPage, true);
+          }} // 點選後篩選日期
         >
           查詢
         </Button>
