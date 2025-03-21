@@ -250,7 +250,7 @@ class LeaveService
                 });
             }
 
-            if (!empty($filters['status'])) {
+            if (isset($filters['status'])) { // 檢查 status 是否存在(防止0被empty過濾掉改使用isset)
                 $query->where('status', $filters['status']);
             }
 

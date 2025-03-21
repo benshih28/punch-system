@@ -12,7 +12,7 @@ import Footer from "./components/footer";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import PunchinPage from "./pages/PunchInPage";
-// import ApproveLeavePage from "./pages/ApproveLeavePage";
+import ApproveLeavePage from "./pages/ApproveLeavePage";
 import ProtectedRoute from "./components/protectedRoute";
 import UserProfilePage from "./pages/UserProfilePage";
 import ForgotPassword from "./pages/ForgotPasswordPage";
@@ -26,7 +26,6 @@ import RolePermissionsPage from "./pages/RolePermissionsPage";
 
 // 先預留這些路由
 const LeaveRecordsPage = () => <div>請假及查詢紀錄頁面 (尚未建立)</div>;
-const ApproveLeavePage = () => <div>假單審查審核頁面 (尚未建立)</div>;
 const UserManagementPage = () => <div>人員管理頁面 (尚未建立)</div>;
 
 /**
