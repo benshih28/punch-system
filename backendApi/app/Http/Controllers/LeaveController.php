@@ -486,6 +486,7 @@ class LeaveController extends Controller
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after_or_equal:start_date',
                 'status' => 'nullable|integer|in:0,1,2,3,4',
+                'rejected' => 'nullable|integer',
                 'leave_hours' => 'nullable',
                 'created_at' => 'nullable|date',
             ]);
@@ -664,6 +665,7 @@ class LeaveController extends Controller
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after_or_equal:start_date',
                 'status' => 'nullable|integer|in:0,1,2,3,4',
+                'rejected' => 'nullable|integer',
                 'leave_hours' => 'nullable',
                 'created_at' => 'nullable|date',
             ]);
@@ -1079,8 +1081,9 @@ class LeaveController extends Controller
             'end_time' => $leave->end_time,
             'reason' => $leave->reason,
             'status' => $leave->status,
+            'reject_reason' => $leave->reject_reason,
             'attachment' => $leave->file ? asset("storage/" . $leave->file->leave_attachment) : null,
-            'create_at' => $leave->create_at,
+            'created_at' => $leave->created_at,
         ];
     }
 
