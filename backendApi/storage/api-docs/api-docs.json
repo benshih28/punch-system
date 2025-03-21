@@ -912,8 +912,8 @@
                 "tags": [
                     "Employees"
                 ],
-                "summary": "HR 分配部門、職位、主管、角色",
-                "description": "HR 指派員工的部門、職位、主管和角色。員工必須已通過審核 (approved) 才能指派。",
+                "summary": "HR 分配部門、職位、主管、角色，並設定入職日期",
+                "description": "HR 指派員工的部門、職位、主管和角色，並記錄入職日期。員工必須已通過審核 (approved) 才能指派。",
                 "operationId": "assignEmployeeDetails",
                 "parameters": [
                     {
@@ -928,7 +928,7 @@
                     }
                 ],
                 "requestBody": {
-                    "description": "需要指派的部門、職位、主管、角色 ID",
+                    "description": "需要指派的部門、職位、主管、角色 ID 和入職日期",
                     "required": true,
                     "content": {
                         "application/json": {
@@ -937,7 +937,8 @@
                                     "department_id",
                                     "position_id",
                                     "manager_id",
-                                    "role_id"
+                                    "role_id",
+                                    "hire_date"
                                 ],
                                 "properties": {
                                     "department_id": {
@@ -959,6 +960,12 @@
                                         "description": "角色 ID",
                                         "type": "integer",
                                         "example": 3
+                                    },
+                                    "hire_date": {
+                                        "description": "員工入職日期 (YYYY-MM-DD)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2023-05-15"
                                     }
                                 },
                                 "type": "object"
@@ -968,14 +975,19 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "員工部門、職位、主管、角色已更新",
+                        "description": "員工部門、職位、主管、角色已更新，並設定入職日期",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "員工部門、職位、主管、角色已更新"
+                                            "example": "員工部門、職位、主管、角色已更新，並設定入職日期"
+                                        },
+                                        "hire_date": {
+                                            "type": "string",
+                                            "format": "date",
+                                            "example": "2023-05-15"
                                         }
                                     },
                                     "type": "object"
