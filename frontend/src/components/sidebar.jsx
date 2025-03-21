@@ -1,8 +1,9 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
 import { Link, useNavigate } from "react-router-dom";
-import { useAtom } from "jotai";
-import { authAtom } from "../state/authAtom";
+import { useAtom,useSetAtom  } from "jotai";
+import { authAtom,logoutAtom  } from "../state/authAtom";
+import API from "../api/axios";
 import {
   Drawer,
   List,
@@ -28,7 +29,7 @@ function Sidebar({ isOpen, toggleSidebar }) {
   const [auth, setAuth] = useAtom(authAtom); // 讀取全局狀態
   const navigate = useNavigate();
   const [openMenus, setOpenMenus] = useState({});
-
+  const logout = useSetAtom(logoutAtom);
   const toggleMenu = (menu) => {
     setOpenMenus((prev) => ({
       ...prev,
@@ -37,12 +38,17 @@ function Sidebar({ isOpen, toggleSidebar }) {
   };
 
   // 登出函式
-  const handleLogout = () => {
-    localStorage.removeItem("token"); // 清除 Token
-    setAuth({ isAuthenticated: false, user: null }); // 更新狀態
-    navigate("/login"); // 重新導向登入頁
-  };
+  const handleLogout = async () => {
+    try {
+      await API.post("/logout"); // ✅ 如果 API 需要登出請求
+    } catch (error) {
+      console.warn("登出失敗，可能已經登出:", error);
+    }
 
+    logout(); // 使用 `logoutAtom`，清除 `authAtom` 和 localStorage
+
+    navigate("/login"); // 導向登入頁
+  };
   return (
     <Drawer anchor="left" open={isOpen} onClose={toggleSidebar}>
       <Box sx={{ width: 250 }}>
