@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import axios from "axios";
 import {
-    Button, Card, CardContent, TextField, Avatar, Typography, Box, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Grid, Divider, InputAdornment
+    Button, Card, CardContent, TextField, Avatar, Typography, Box, Dialog, DialogTitle,
+    DialogContent, DialogActions, IconButton, Grid, Divider, InputAdornment
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
@@ -11,6 +12,7 @@ import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useAtom } from "jotai";
 import { authAtom } from "../state/authAtom";
 import { useNavigate } from "react-router-dom";
+import Tooltip from "@mui/material/Tooltip";
 
 const UserProfilePage = () => {
     const [auth] = useAtom(authAtom);
@@ -24,22 +26,45 @@ const UserProfilePage = () => {
         return () => {
             document.body.style.margin = "";
         };
-        // const token = auth?.access_token || localStorage.getItem("access_token");
-        // if (!token) {
-        //     alert("請先登入！");
-        //     navigate("/login"); // 沒有 Token，強制跳回登入頁
-        // }
     }, []);
 
     const { register, handleSubmit, reset } = useForm();
     const [avatar, setAvatar] = useState(null);
     const [open, setOpen] = useState(false);
     const [user, setUser] = useState({
-        name: "王小明",
-        role: "人資主管",
-        gender: "male",
+        name: "",
+        position: "",
+        gender: "",
         avatar: "",
+        punch_records: { punch_in: null, punch_out: null },
+        recent_leaves: []
     });
+
+    //當畫面載入時，從 localStorage 讀取 user 資料
+    useEffect(() => {
+        const storedAuthData = localStorage.getItem("auth");
+        // console.log("從 localStorage 讀取 user 資料:", storedUserData);
+
+        if (storedAuthData) {
+            try {
+                const parsedData = JSON.parse(storedAuthData);
+                // console.log("解析的 user 資料:", parsedData.user); 
+                setUser({
+                    name: parsedData.user?.name || "",
+                    position: parsedData.user?.position || "",
+                    gender: parsedData.user?.gender || "",
+                    avatar: parsedData.user?.avatar || "",
+                    punch_records: parsedData.punch_records || { punch_in: null, punch_out: null },
+                    recent_leaves: parsedData.recent_leaves || []
+                });
+            } catch (error) {
+                console.error("解析 user 資料失敗:", error);
+            }
+        }
+        else {
+            console.warn("localStorage 內沒有 auth 資料");
+        }
+    }, [auth]);
 
     // 開啟 & 關閉 Modal
     const handleOpen = () => setOpen(true);
@@ -52,15 +77,17 @@ const UserProfilePage = () => {
     // 處理圖片上傳
     const handleAvatarChange = (e) => {
         const file = e.target.files[0];
-        setAvatar(file);
+        // setAvatar(file);
+        if (file) {
+            setAvatar(file);
+        }
     };
 
     // 處理個人資料更新
     const onSubmit = async (data) => {
         try {
-            const authState = store.get(authAtom);
-            const token = authState?.access_token || localStorage.getItem("access_token");
-
+            // const authState = store.get(authAtom);
+            const token = auth?.access_token || localStorage.getItem("access_token");
             const formData = new FormData();
             if (data.old_password) formData.append("old_password", data.old_password);
             if (data.new_password) formData.append("new_password", data.new_password);
@@ -68,10 +95,28 @@ const UserProfilePage = () => {
                 formData.append("new_password_confirmation", data.new_password_confirmation);
             if (avatar) formData.append("avatar", avatar);
 
-            await axios.post("user/update/profile", formData, {
-                headers: { "Content-Type": "multipart/form-data" },
+            // await axios.post("user/update/profile", formData, {
+            const response = await axios.post("http://localhost:8000/api/user/update/profile", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                    "Authorization": `Bearer ${token}`
+                },
             });
 
+            // 確保 response 正確回傳 avatar
+            const updatedAvatar = response.data?.avatar || user.avatar;
+            // console.log("更新後的新 avatar URL:", updatedAvatar);
+
+            // 更新前端狀態
+            const updatedUser = { ...user, avatar: updatedAvatar };
+            setUser(updatedUser);
+
+            // 更新 LocalStorage
+            const storedAuthData = JSON.parse(localStorage.getItem("auth")) || {};
+            if (storedAuthData.user) {
+                storedAuthData.user.avatar = updatedAvatar;
+                localStorage.setItem("auth", JSON.stringify(storedAuthData));
+            }
             alert("個人資料已更新");
             handleClose();
         } catch (error) {
@@ -109,7 +154,9 @@ const UserProfilePage = () => {
             >
                 <Box display="flex" alignItems="center">
                     <Avatar
-                        src={user.avatar || "/default-avatar.png"}
+                        src={user?.avatar ? `http://localhost:8000${user.avatar}` : "/default-avatar.png"}
+                        // src={`http://localhost:8000${user?.avatar}`}
+                        onError={(e) => { e.target.src = "/default-avatar.png"; }}
                         alt=""
                         sx={{ width: 100, height: 100, marginRight: 2 }}
                     />
@@ -117,7 +164,7 @@ const UserProfilePage = () => {
                     <Box display="flex" flexDirection="column" spacing={1}>
                         <Typography variant="h5" fontWeight="bold">{user.name}</Typography>
                         <Typography color="textSecondary" sx={{ backgroundColor: "#ddd", padding: "2px 6px", borderRadius: "4px", display: "inline-block", mt: 1 }}>
-                            {user.role}
+                            {user.position}
                         </Typography>
                         <Typography color="textSecondary" sx={{ mt: 1 }}> {user.gender === "male" ? "男" : "女"}</Typography>
                     </Box>
@@ -127,7 +174,7 @@ const UserProfilePage = () => {
                 </Button>
             </Box>
 
-            {/*  下方區塊（打卡、請假、特休假） */}
+            {/*  下方區塊（打卡、請假） */}
             <Grid container spacing={2} padding={4}>
                 {/* 今日打卡（左半部） */}
                 <Grid item xs={12} md={6}>
@@ -135,55 +182,92 @@ const UserProfilePage = () => {
                         <CardContent sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
                             <Typography variant="h6" fontWeight="bold">今日打卡</Typography>
                             <Divider sx={{ my: 1 }} />
-                            <Grid container sx={{ flexGrow: 1, height: "100%" }} alignItems="center">
-                                {/* 左側：上班、下班 */}
-                                <Grid item xs={6} display="flex" flexDirection="column" alignItems="flex-start" justifyContent="center" pl={2} gap={3}>
-                                    <Typography>上班 <b>08:00</b></Typography>
-                                    <Typography>下班 --</Typography>
-                                </Grid>
-                                {/* 右側：鬧鐘圖片*/}
-                                <Grid item xs={6} display="flex" alignItems="center" justifyContent="center" sx={{ height: "100%", pr: { xs: 2, sm: 3, md: 4 } }}>
-                                    <Box pr={2}>
-                                        <img src="/clock.png" alt="Clock" style={{ width: 80, height: 80 }} />
-                                    </Box>
-                                </Grid>
 
-                            </Grid>
+                            {/* 上班時間 & 下班時間 */}
+                            {["上班時間", "下班時間"].map((label, index) => (
+                                <Box key={index} sx={{ display: "flex", alignItems: "center", width: "100%", mb: 1 }}>
+                                    {/* 左側：上班、下班 */}
+                                    <Typography sx={{
+                                        flex: "none",
+                                        marginRight: 2,
+                                        display: "inline-block",
+                                        minWidth: "60px",
+                                        fontWeight: "bold",
+                                    }}>
+                                        {label}
+                                    </Typography>
+
+                                    {/* 時間顯示 */}
+                                    <Typography sx={{
+                                        flex: 1,
+                                        textAlign: "left",
+                                        whiteSpace: "nowrap"
+                                    }}>
+                                        {index === 0
+                                            ? (user.punch_records.punch_in ? new Date(user.punch_records.punch_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) : "--")
+                                            : (user.punch_records.punch_out ? new Date(user.punch_records.punch_out).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) : "--")
+                                        }
+                                    </Typography>
+                                </Box>
+                            ))}
+                            {/* 右側：鬧鐘圖片*/}
+                            {/* <Box pr={2}>
+                                    <img src="/clock.png" alt="Clock" style={{ width: 80, height: 80 }} />
+                                </Box> */}
                         </CardContent>
                     </Card>
                 </Grid>
 
-                {/* 右半部：上方近期請假 + 下方特休假 */}
+                {/* 右半部：近期請假 */}
                 <Grid item xs={12} md={6} container direction="column" spacing={2}>
-                    {/* 近期請假 */}
                     <Grid item>
                         <Card sx={{ height: "100%" }}>
                             <CardContent>
-                                <Typography variant="h6" fontWeight="bold">近期請假</Typography>
+                                <Typography variant="h6" fontWeight="bold">近期請假 (顯示五筆)</Typography>
                                 <Divider sx={{ my: 1 }} />
-                                <Typography>事假</Typography>
-                                <Typography>2024/07/08 - 2024/07/09</Typography>
+                                {user.recent_leaves.length > 0 ? (
+                                    user.recent_leaves.map((leave, index) => (
+                                        <Box key={index}
+                                            //  sx={{ display: "flex", justifyContent: "space-between",mb: 1 ,gap: 0,}}>
+                                            sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+
+                                            {/* 請假類型 */}
+                                            <Tooltip title={leave.leave_type?.description.includes("喪假") ? leave.leave_type.description : ""}
+                                                placement="top-start" arrow
+                                            >
+                                                <Typography variant="subtitle1"
+                                                    sx={{
+                                                        // border: "1px solid red",
+                                                        flex: "none",
+                                                        display: "inline-block",
+                                                        minWidth: "60px",
+                                                        fontWeight: "bold",
+                                                        marginRight: 0  // 設定與時間的間距
+                                                    }}>
+                                                    {leave.leave_type?.description.includes("喪假") ? "喪假" : leave.leave_type?.description || "未知類型"}
+                                                </Typography>
+                                            </Tooltip>
+                                            {/* 請假時間 */}
+                                            <Typography variant="body2" sx={{ flex: 1, textAlign: "left", whiteSpace: "nowrap" }}>
+                                                {new Date(leave.start_time).toLocaleString("zh-TW", {
+                                                    year: "numeric", month: "2-digit", day: "2-digit",
+                                                    hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false
+                                                })}
+                                                {" ~ "}
+                                                {new Date(leave.end_time).toLocaleString("zh-TW", {
+                                                    year: "numeric", month: "2-digit", day: "2-digit",
+                                                    hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false
+                                                })}
+                                            </Typography>
+                                        </Box>
+                                    ))
+                                ) : (
+                                    <Typography variant="body2" color="textSecondary">無近期請假</Typography>
+                                )}
                             </CardContent>
                         </Card>
                     </Grid>
 
-                    {/* 特休假 */}
-                    <Grid item>
-                        <Card sx={{ height: "100%" }}>
-                            <CardContent>
-                                <Typography variant="h6" fontWeight="bold">特休假</Typography>
-                                <Divider sx={{ my: 1 }} />
-                                <Box display="flex" justifyContent="space-between">
-                                    <Typography>總天數</Typography>
-                                    <Typography><b>14天</b></Typography>
-                                </Box>
-                                <Box display="flex" justifyContent="space-between">
-                                    <Typography>剩餘天數</Typography>
-                                    <Typography><b>2天</b></Typography>
-                                </Box>
-                            </CardContent>
-                        </Card>
-                    </Grid>
                 </Grid>
             </Grid>
 
@@ -312,7 +396,7 @@ const UserProfilePage = () => {
                     </form>
                 </DialogContent>
             </Dialog>
-        </Box>
+        </Box >
     );
 };
 
