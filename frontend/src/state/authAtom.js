@@ -29,3 +29,11 @@ export const authAtom = atomWithStorage("auth", initialAuth());
 export const isAuthenticatedAtom = atom(
   (get) => !!get(authAtom).access_token // 若有 Token，則視為已登入
 );
+
+/**
+ * `logoutAtom`：全域登出功能，清除 `authAtom` 及 `localStorage`
+ */
+export const logoutAtom = atom(null, (get, set) => {
+  set(authAtom, { access_token: null, user: null });
+  localStorage.removeItem("auth"); // ✅ 確保 localStorage 也清除
+});
