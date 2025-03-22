@@ -18,6 +18,17 @@ composer install
 
 ---
 
+## 已安裝過composer install
+```bash
+php artisan serve
+npm run queue      # 啟動 queue（背景）
+npm run stop-queue # 停掉 queue（安全）
+```
+
+
+
+---
+
 composer install已合併以下指令
 1.生成 APP_KEY
 ```bash
@@ -36,6 +47,12 @@ php artisan migrate
 php artisan make:seeder --class=DepartmentAndPositionSeeder
 php artisan make:seeder --class=PermissionsSeeder
 php artisan make:seeder --class=RolesSeeder
+
+```
+
+5.開啟自動監聽
+```bash
+npm run queue 
 
 ```
 確認沒問題就照版本控制筆記的作法開新分支
