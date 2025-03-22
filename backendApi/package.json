@@ -1,0 +1,16 @@
+{
+  "name": "backendapi",
+  "version": "1.0.0",
+  "description": "XAMPP的php.ini拿掉註解 ```bash extension=sodium ```",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "queue": "node scripts/start-queue.js",
+    "stop-queue": "node scripts/stop-queue.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
