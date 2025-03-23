@@ -152,25 +152,24 @@ class LeaveResetService
         // Log::info("🟣 當月已批准請假時數: " . $approvedHours);
 
         // ✅ **計算當月待審核的請假時數**
-        $pendingHours = Leave::where('user_id', $userId)
+        $pendingQuery = Leave::where('user_id', $userId)
             ->whereHas('leaveType', function ($query) {
                 $query->where('name', 'Menstrual Leave');
             })
             ->where('status', 0)
             ->whereBetween('start_time', [$thisMonthStart, $thisMonthEnd]);
         // Log::info("🔍 查詢 SQL: " . $pendingHours->toSql(), $pendingHours->getBindings());
-        $pendingHours = $pendingHours->sum('leave_hours');
+        if (!is_null($excludeLeaveId)) {
+            $pendingQuery->where('id', '!=', $excludeLeaveId);
+        }
+        
+        $pendingHours = $pendingQuery->sum('leave_hours');
 
         // ✅ **補回的生理假時數**
         $resetHours = $this->resetMenstrualLeaveHours($userId, $leaveStartTime);
 
         // ✅ **當月總額度 = 8 小時 + 上個月請假時數（最多 8 小時）**
         $totalAvailableHours = min($maxHours, $resetHours + $maxHours);
-
-        // ✅ **若為編輯假單，排除當前假單**
-        if (!is_null($excludeLeaveId)) {
-            $approvedHours -= Leave::where('id', $excludeLeaveId)->value('leave_hours') ?? 0;
-        }
 
         // ✅ **計算總已請假時數**
         $usedHours = $approvedHours + $pendingHours;
@@ -207,7 +206,7 @@ class LeaveResetService
         // ✅ **檢查 `leaveType->name` 是否等於 `Menstrual Leave`**
         if (trim(strtolower($leaveType->name)) === 'menstrual leave') {
             Log::info("✅ 這是生理假 (`Menstrual Leave`)，進入 `getRemainingMenstrualLeaveHours()`！");
-            return $this->getRemainingMenstrualLeaveHours($userId, $leaveStartTime);
+            return $this->getRemainingMenstrualLeaveHours($userId, $leaveStartTime, $excludeLeaveId);
         }
 
         // ✅ **只有「一般假別」才需要處理 `total_hours`**
