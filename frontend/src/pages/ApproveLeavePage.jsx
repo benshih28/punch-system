@@ -165,13 +165,56 @@ function ApproveLeave() {
   // 關閉彈窗
   const handleClose = () => setOpen(false);
 
+  // 根據權限和狀態獲取對應的選項
+  const getApprovalOptions = () => {
+    const loginUserId = JSON.parse(localStorage.getItem("auth"))?.user?.id; // 取得登入用戶的 ID(HR假單)
+    const isOwnRequest = selectedRequest?.user_id === loginUserId; // 判斷是否為自己的請假
+
+    if (permissions === "HR") {
+      if (selectedRequest?.status === 0 && isOwnRequest) {
+        // HR 審自己部門（主管階段）
+        return [
+          <MenuItem key="1" value="1">
+            審核通過（主管）
+          </MenuItem>,
+          <MenuItem key="2" value="2">
+            審核未通過（主管）
+          </MenuItem>,
+        ];
+      } else if (selectedRequest?.status === 1) {
+        // HR 人資審核
+        return [
+          <MenuItem key="3" value="3">
+            審核通過（人資）
+          </MenuItem>,
+          <MenuItem key="4" value="4">
+            審核未通過（人資）
+          </MenuItem>,
+        ];
+      }
+    } else if (permissions === "Manager" && selectedRequest?.status === 0) {
+      // 一般主管審核
+      return [
+        <MenuItem key="1" value="1">
+          審核通過（主管）
+        </MenuItem>,
+        <MenuItem key="2" value="2">
+          審核未通過（主管）
+        </MenuItem>,
+      ];
+    }
+
+    return null;
+  };
+
   const onSubmit = async (data) => {
-    
     const { status, reject_reason } = data;
 
     // apiRoutes這是一個對應關系
     const apiRoutes = {
       HR: {
+        1: `/leave/${selectedRequest.leave_id}/department/approve`,
+        2: `/leave/${selectedRequest.leave_id}/department/reject`,
         3: `/leave/${selectedRequest.leave_id}/approve`,
         4: `/leave/${selectedRequest.leave_id}/reject`,
       },
@@ -469,9 +512,8 @@ function ApproveLeave() {
                   </TableCell>
                   <TableCell>{G_LEAVE_STATUS[request.status]}</TableCell>
                   <TableCell>
-                    {/* 審核按鈕 */}
-                    {permissions == "HR" && request.status == 1 ? (
-                      // HR 審核按鈕
+                    {/* HR 人資審核 (status == 1) */}
+                    {permissions === "HR" && request.status === 1 ? (
                       <Button
                         variant="contained"
                         onClick={() => handleOpen(request)}
@@ -482,8 +524,23 @@ function ApproveLeave() {
                       >
                         人資審核
                       </Button>
-                    ) : permissions == "Manager" && request.status == 0 ? (
-                      // 主管審核按鈕
+                    ) : permissions === "HR" &&
+                      request.status === 0 &&
+                      request.user_id ===
+                        JSON.parse(localStorage.getItem("auth"))?.user?.id ? (
+                      // HR 身份 & 是自己的假單 & 主管審核階段
+                      <Button
+                        variant="contained"
+                        onClick={() => handleOpen(request)}
+                        sx={{
+                          backgroundColor: "#A1887F",
+                          color: "#fff",
+                        }}
+                      >
+                        主管審核
+                      </Button>
+                    ) : permissions === "Manager" && request.status === 0 ? (
+                      // 一般主管審核
                       <Button
                         variant="contained"
                         onClick={() => handleOpen(request)}
@@ -699,25 +756,7 @@ function ApproveLeave() {
                         <MenuItem value="" disabled>
                           請選擇
                         </MenuItem>
-                        {permissions === "HR"
-                          ? [
-                              <MenuItem key="3" value="3">
-                                審核通過
-                              </MenuItem>,
-                              <MenuItem key="4" value="4">
-                                審核未通過
-                              </MenuItem>,
-                            ]
-                          : permissions === "Manager"
-                          ? [
-                              <MenuItem key="1" value="1">
-                                審核通過
-                              </MenuItem>,
-                              <MenuItem key="2" value="2">
-                                審核未通過
-                              </MenuItem>,
-                            ]
-                          : null}
+                        {getApprovalOptions()}
                       </Select>
                     )}
                   />
@@ -727,6 +766,7 @@ function ApproveLeave() {
                     </Typography>
                   )}
                 </Box>
+
                 {/* 如果選擇拒絕，則顯示「拒絕原因」輸入框 */}
                 {(selectedStatus === "2" || selectedStatus === "4") && (
                   <Box>
