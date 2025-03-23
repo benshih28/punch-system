@@ -1,18 +1,48 @@
-import { useAtomValue } from "jotai";
+import { useSetAtom, useAtomValue } from "jotai";
 import { authAtom } from "../state/authAtom";
 import { useNavigate } from "react-router-dom";
 import { Button, Box, Typography } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import HomeIcon from "@mui/icons-material/Home";
 import api from "../api/axios";
 
+// 時間格式化函式：轉成 Asia/Taipei 的 HH:mm:ss
+function formatToTaiwanTime(utcTime) {
+  if (!utcTime) return null;
+  const date = new Date(utcTime);
+
+  return date.toLocaleString("zh-TW", {
+    timeZone: "Asia/Taipei",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
 function PunchIn() {
   const auth = useAtomValue(authAtom);
+  // 新增這行：用來更新 authAtom
+  const setAuth = useSetAtom(authAtom);
   const navigate = useNavigate();
   const [workTime, setWorkTime] = useState(null);
   const [offWorkTime, setOffWorkTime] = useState(null);
   const [shakeType, setShakeType] = useState("");
+
+  // 當 authAtom 更新時，更新 workTime 和 offWorkTime
+  useEffect(() => {
+    if (auth?.punch_records?.punch_in) {
+      setWorkTime(auth.punch_records.punch_in);
+    }
+
+    if (auth?.punch_records?.punch_out) {
+      setOffWorkTime(auth.punch_records.punch_out);
+    }
+  }, [auth]);
 
   const triggerShake = (type) => {
     setShakeType(type);
@@ -26,8 +56,31 @@ function PunchIn() {
       const response = await api.post(apiUrl);
 
       if (response.status === 201) {
-        const time = response.data[type === "work" ? "punch_in" : "punch_out"].timestamp;
-        type === "work" ? setWorkTime(time) : setOffWorkTime(time);
+        const time =
+          response.data[type === "work" ? "punch_in" : "punch_out"].timestamp;
+
+        if (type === "work") {
+          setWorkTime(time);
+          // ✅ 更新 authAtom.punch_records
+          setAuth((prev) => ({
+            ...prev,
+            punch_records: {
+              ...prev.punch_records,
+              punch_in: time,
+            },
+          }));
+        } else {
+          setOffWorkTime(time);
+          // ✅ 更新 authAtom.punch_records
+          setAuth((prev) => ({
+            ...prev,
+            punch_records: {
+              ...prev.punch_records,
+              punch_out: time,
+            },
+          }));
+        }
+
         alert(response.data.message || "打卡成功");
       }
     } catch (error) {
@@ -95,7 +148,12 @@ function PunchIn() {
           {auth?.user?.name && (
             <Typography
               variant="h6"
-              sx={{ mb: 2, fontWeight: "bold", color: "#555", textAlign: "center" }}
+              sx={{
+                mb: 2,
+                fontWeight: "bold",
+                color: "#555",
+                textAlign: "center",
+              }}
             >
               歡迎, {auth.user.name} 👋
             </Typography>
@@ -105,7 +163,10 @@ function PunchIn() {
           {[
             { text: "上班打卡", action: () => handlePunch("work") },
             { text: "下班打卡", action: () => handlePunch("offWork") },
-            { text: "補打卡", action: () => navigate("/clock/reissue/history") },
+            {
+              text: "補打卡",
+              action: () => navigate("/clock/reissue/history"),
+            },
             { text: "查詢打卡紀錄", action: () => navigate("/clock/history") },
           ].map(({ text, action }, index) => (
             <Button
@@ -128,8 +189,18 @@ function PunchIn() {
         {/* 右側 時間顯示區 */}
         <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
           {[
-            { label: "上班", time: workTime, icon: <AccessTimeIcon />, shake: shakeType === "work" },
-            { label: "下班", time: offWorkTime, icon: <HomeIcon />, shake: shakeType === "offWork" },
+            {
+              label: "上班",
+              time: workTime,
+              icon: <AccessTimeIcon />,
+              shake: shakeType === "work",
+            },
+            {
+              label: "下班",
+              time: offWorkTime,
+              icon: <HomeIcon />,
+              shake: shakeType === "offWork",
+            },
           ].map(({ label, time, shake }, index) => (
             <Box
               key={index}
@@ -147,11 +218,10 @@ function PunchIn() {
               <Box
                 sx={{
                   animation: shake ? "shake 0.5s" : "none",
-                  textShadow: "2px 2px 5px rgba(0,0,0,0.2)", // 內部陰影
-                  filter: "drop-shadow(2px 2px 5px rgba(0,0,0,0.2))", // 外部陰影
+                  textShadow: "2px 2px 5px rgba(0,0,0,0.2)",
+                  filter: "drop-shadow(2px 2px 5px rgba(0,0,0,0.2))",
                 }}
               >
-                {/* 這裡為 Icon 設定 fontSize 和 color */}
                 {label === "上班" ? (
                   <AccessTimeIcon sx={{ fontSize: 50, color: "#FAFAFA" }} />
                 ) : (
@@ -163,7 +233,7 @@ function PunchIn() {
                   {label}
                 </Typography>
                 <Typography variant="h6" fontWeight="bold" color="#000">
-                  {time || "--:--:--"}
+                  {formatToTaiwanTime(time) || "--:--:--"}
                 </Typography>
               </Box>
             </Box>
