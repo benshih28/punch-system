@@ -99,8 +99,9 @@ function ApproveClockReissuePage() {
         if (Array.isArray(departmentResponse.data.departments)) {
           setDepartments(departmentResponse.data.departments);
         }
-      } catch (err) {
-        setError("無法取得資料，請稍後再試");
+      } catch (error) {
+        console.error("錯誤詳情:", error.response?.data || error.message);
+        alert(error.response?.data?.message || "無法取得資料，請稍後再試");
       }
     };
     fetchUserInfo();
@@ -186,13 +187,13 @@ function ApproveClockReissuePage() {
       setRows(formattedCorrections);
       setFilteredRows(formattedCorrections);
       setTotalRecords(total); // 設定總筆數
-    } catch (err) {
-      setError("無法取得資料，請稍後再試");
+    } catch (error) {
       setRows([]);
       setFilteredRows([]);
       setTotalRecords(0); // 避免 totalRecords 遺留錯誤值
 
-      alert("查詢失敗，請稍後再試！");
+      console.error("錯誤詳情:", error.response?.data || error.message);
+      alert(error.response?.data?.message || "查詢失敗，請稍後再試！");
       window.location.reload(); // 重新整理網頁
     } finally {
       setLoading(false);
@@ -300,8 +301,8 @@ function ApproveClockReissuePage() {
         alert("審核結果已成功更新！");
       }
     } catch (error) {
-      console.error("更新失敗:", error);
-      alert("更新失敗，請稍後再試！");
+      console.error("錯誤詳情:", error.response?.data || error.message);
+      alert(error.response?.data?.message || "更新失敗，請稍後再試！");
     }
   };
 
