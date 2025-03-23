@@ -206,7 +206,7 @@ class LeaveController extends Controller
         } catch (\Throwable $e) {
             // 7️⃣ **回傳錯誤資訊**
             return response()->json([
-                'message' => '申請失敗，請檢查填入資料是否有誤',
+                'message' => $e->getMessage(),
                 'error' => app()->isLocal() ? $e->getMessage() : null, // **本機開發環境才回傳錯誤**
             ], 500);
         }
@@ -339,6 +339,7 @@ class LeaveController extends Controller
             return response()->json([
                 'message' => '查詢成功',
                 'records' => $leaves->map(fn($leave) => $this->formatLeave($leave)),
+                'total' => $leaves->total(),
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -1076,6 +1077,7 @@ class LeaveController extends Controller
             'leave_id' => $leave->id,
             'user_id' => $leave->user_id,
             'user_name' => $leave->user->name,
+            'leave_type_id' => $leave->leave_type_id,
             'leave_type' => optional($leave->leaveType)->name, // 確保讀取關聯名稱
             'leave_type_name' => optional($leave->leaveType)->description,
             'start_time' => $leave->start_time,
