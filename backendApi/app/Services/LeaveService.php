@@ -30,6 +30,10 @@ class LeaveService
         $leaveTypeId = $data['leave_type_id'];
         $hours = $this->calculateHours($data['start_time'], $data['end_time']);
 
+        if ($hours <= 0) {
+            throw new \Exception("請假時間區間無效，請重新選擇有效的請假時段", 400);
+        }
+
         // 2️⃣ 拿到這個假別的總時數
         $remainingHours = $this->getRemainingLeaveHours($leaveTypeId, $user->id, $data['start_time']);
 
@@ -136,6 +140,10 @@ class LeaveService
             ? $this->calculateHours($data['start_time'], $data['end_time'])
             : $leave->leave_hours;
 
+        if ($isUpdatingHours && $hours <= 0) {
+            throw new \Exception("請假時間區間無效，請重新選擇有效的請假時段", 400);
+        }
+
         // 6️⃣ **檢查剩餘請假時數**
         if ($isUpdatingHours) {
             $remainingHours = $this->leaveResetService->getRemainingLeaveHours($leaveTypeId, $leave->user_id, $leaveStartTime, $leave->id);
@@ -162,25 +170,35 @@ class LeaveService
     // 5. 計算跨天請假時數 (支援單日、跨日)
     private function calculateHours(string $startTime, string $endTime): float
     {
-        $start = strtotime($startTime);
-        $end = strtotime($endTime);
-
-        $startDate = date('Y-m-d', $start);
-        $endDate = date('Y-m-d', $end);
+        $startDate = date('Y-m-d', strtotime($startTime));
+        $endDate = date('Y-m-d', strtotime($endTime));
 
         if ($startDate === $endDate) {
             // 同一天直接算時數
             return $this->calculateOneDayHours($startTime, $endTime);
         }
+        $totalHours = 0;
+        // 🧮 第一天：從開始時間到當天18:00
+        $firstDayEnd = $startDate . ' 18:00:00';
+        $totalHours += $this->calculateOneDayHours($startTime, $firstDayEnd);
 
-        // 跨天情況
-        $firstDayHours = $this->calculateOneDayHours($startTime, "$startDate 18:00:00");
-        $lastDayHours = $this->calculateOneDayHours("$endDate 09:00:00", $endTime);
+        // 🧮 中間天（整天請假）
+        $current = date('Y-m-d', strtotime($startDate . ' +1 day'));
+        while ($current < $endDate) {
+            $dayStart = $current . ' 09:00:00';
+            $dayEnd = $current . ' 18:00:00';
+            $totalHours += $this->calculateOneDayHours($dayStart, $dayEnd);
+            $current = date('Y-m-d', strtotime($current . ' +1 day'));
+        }
 
-        $middleDays = (strtotime($endDate) - strtotime($startDate)) / 86400 - 1;
-        $middleDaysHours = max($middleDays, 0) * self::WORK_HOURS_PER_DAY;
-
-        return round($firstDayHours + $lastDayHours + $middleDaysHours, 2);
+        // 🧮 最後一天：從 09:00 到實際結束時間
+        $lastDayStart = $endDate . ' 09:00:00';
+        $totalHours += $this->calculateOneDayHours($lastDayStart, $endTime);
+        
+        if ($totalHours < 1) {
+            throw new \Exception("請假時間不在上班時間內，請重新選擇", 400);
+        }
+        return round($totalHours, 2);        
     }
 
     // 6. 計算單天請假時數 (考慮上下班時間)
@@ -189,13 +207,21 @@ class LeaveService
         $startTime = strtotime($start);
         $endTime = strtotime($end);
 
+        if ($startTime >= $endTime) {
+            return 0;
+        }
+
         // 如果時間不符合上班時間(可依公司規定調整)
         $workStart = strtotime(date('Y-m-d', $startTime) . ' 09:00:00');
         $workEnd = strtotime(date('Y-m-d', $startTime) . ' 18:00:00');
 
         // 限制只計算上班時段
-        if ($startTime < $workStart) $startTime = $workStart;
-        if ($endTime > $workEnd) $endTime = $workEnd;
+        $startTime = max($startTime, $workStart);
+        $endTime = min($endTime, $workEnd);
+
+        if ($startTime >= $endTime) {
+            return 0;
+        }
 
         // 計算小時數 (包含中午休息時間可以加上去)
         $hours = ($endTime - $startTime) / 3600;
@@ -222,13 +248,13 @@ class LeaveService
 
         // 針對特休和生理假使用專門的方法計算
         if ($leaveType->name === 'Annual Leave') {
-            return $this->leaveResetService->getRemainingAnnualLeaveHours($userId, $leaveStartTime);
+            return $this->leaveResetService->getRemainingAnnualLeaveHours($userId, $leaveStartTime, $excludeLeaveId);
         } elseif ($leaveType->name === 'Menstrual Leave') {
             return $this->leaveResetService->getRemainingMenstrualLeaveHours($userId, $leaveStartTime, $excludeLeaveId);
         }
 
         // 其他假別使用通用計算方式
-        return $this->leaveResetService->getRemainingLeaveHours($leaveTypeId, $userId);
+        return $this->leaveResetService->getRemainingLeaveHours($leaveTypeId, $userId, $excludeLeaveId);
     }
 
     // 8. 統一查詢結果及修改格式
