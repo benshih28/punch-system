@@ -99,8 +99,9 @@ function ApproveClockReissuePage() {
         if (Array.isArray(departmentResponse.data.departments)) {
           setDepartments(departmentResponse.data.departments);
         }
-      } catch (err) {
-        setError("無法取得資料，請稍後再試");
+      } catch (error) {
+        console.error("錯誤詳情:", error.response?.data || error.message);
+        alert(error.response?.data?.message || "無法取得資料，請稍後再試");
       }
     };
     fetchUserInfo();
@@ -163,8 +164,7 @@ function ApproveClockReissuePage() {
         .filter((item) => {
           const punchDate = item.punch_time.split(" ")[0]; // 取出 punch_time 的日期
           return (
-            punchDate >= formattedStartDate &&
-            punchDate <= formattedEndDate
+            punchDate >= formattedStartDate && punchDate <= formattedEndDate
           );
         })
         .map((item) => {
@@ -179,21 +179,21 @@ function ApproveClockReissuePage() {
               item.status === "approved"
                 ? "審核通過"
                 : item.status === "rejected"
-                  ? "審核未通過"
-                  : "待審核",
+                ? "審核未通過"
+                : "待審核",
           };
         });
 
       setRows(formattedCorrections);
       setFilteredRows(formattedCorrections);
       setTotalRecords(total); // 設定總筆數
-    } catch (err) {
-      setError("無法取得資料，請稍後再試");
+    } catch (error) {
       setRows([]);
       setFilteredRows([]);
       setTotalRecords(0); // 避免 totalRecords 遺留錯誤值
 
-      alert("查詢失敗，請稍後再試！");
+      console.error("錯誤詳情:", error.response?.data || error.message);
+      alert(error.response?.data?.message || "查詢失敗，請稍後再試！");
       window.location.reload(); // 重新整理網頁
     } finally {
       setLoading(false);
@@ -257,7 +257,6 @@ function ApproveClockReissuePage() {
 
   // 審核送出按鈕
   const handleReviewSubmit = async (row) => {
-
     // **當選擇「審核未通過」但未填寫拒絕原因時，顯示錯誤**
     if (
       selectedRow.status === "審核未通過" &&
@@ -278,22 +277,21 @@ function ApproveClockReissuePage() {
         apiUrl = `/punch/correction/${selectedRow.id}/reject`;
         requestBody.review_message = selectedRow.rejectionReason;
       }
-      
 
       // **發送 API 更新補登打卡資料**
       const response = await API.put(apiUrl, requestBody);
       console.log("API 回應:", response.data);
 
-      console.log(response)
+      console.log(response);
       if (response.status === 200) {
         // **更新 rows 陣列**
         const updatedRows = rows.map((row) =>
           row.id === selectedRow.id
             ? {
-              ...row,
-              status: selectedRow.status,
-              rejectionReason: selectedRow.rejectionReason,
-            }
+                ...row,
+                status: selectedRow.status,
+                rejectionReason: selectedRow.rejectionReason,
+              }
             : row
         );
 
@@ -303,8 +301,8 @@ function ApproveClockReissuePage() {
         alert("審核結果已成功更新！");
       }
     } catch (error) {
-      console.error("更新失敗:", error);
-      alert("更新失敗，請稍後再試！");
+      console.error("錯誤詳情:", error.response?.data || error.message);
+      alert(error.response?.data?.message || "更新失敗，請稍後再試！");
     }
   };
 
@@ -497,17 +495,17 @@ function ApproveClockReissuePage() {
                           column.id === "id"
                             ? 50
                             : [
-                              "user_name",
-                              "date",
-                              "time",
-                              "correction_type",
-                              "created_at",
-                              "status",
-                            ].includes(column.id)
-                              ? 150
-                              : column.id === "actions"
-                                ? 100
-                                : "auto",
+                                "user_name",
+                                "date",
+                                "time",
+                                "correction_type",
+                                "created_at",
+                                "status",
+                              ].includes(column.id)
+                            ? 150
+                            : column.id === "actions"
+                            ? 100
+                            : "auto",
                         backgroundColor: "#f5f5f5",
                         fontWeight: "bold",
                         textAlign: "center",
@@ -546,7 +544,10 @@ function ApproveClockReissuePage() {
                                   color: "white",
                                 }}
                                 onClick={() => handleReviewOpen(row)}
-                                disabled={row.status === "審核通過" || row.status === "審核未通過"}
+                                disabled={
+                                  row.status === "審核通過" ||
+                                  row.status === "審核未通過"
+                                }
                               >
                                 審核
                               </Button>
