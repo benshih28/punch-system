@@ -44,10 +44,11 @@ const columns = [
 
 function ApproveClockReissuePage() {
   // **Jotai - 全局狀態管理**
-  const [, setAuth] = useAtom(authAtom); // setAuth 更新 Jotai 全局狀態 (authAtom)
+  // const [, setAuth] = useAtom(authAtom); // setAuth 更新 Jotai 全局狀態 (authAtom)
 
   // 設定起始 & 結束日期 & 頁數 & 限制筆數
   const [startDate, setStartDate] = useState(new Date());
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [endDate, setEndDate] = useState(new Date());
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -55,11 +56,10 @@ function ApproveClockReissuePage() {
 
   // 設定部門 & 員工編號
   const [departments, setDepartments] = useState([]); // 存放所有部門
-  const [departmentId, setDepartmentId] = useState(null); // 存儲部門 ID
+  const [, setDepartmentId] = useState(null); // 存儲部門 ID
   const [selectedDepartment, setSelectedDepartment] = useState(null); // 選擇的部門 ID
-  const [selectedDepartmentName, setSelectedDepartmentName] = useState(""); // 存部門名稱
+  const [, setSelectedDepartmentName] = useState(""); // 存部門名稱
   const [employeeId, setEmployeeId] = useState("");
-  const [userId, setUserId] = useState(null); // 存儲使用者 ID
 
   // 存放當前選中的資料
   const [selectedRow, setSelectedRow] = useState(null);
@@ -106,7 +106,7 @@ function ApproveClockReissuePage() {
     fetchUserInfo();
   }, []);
 
-  // 依照查詢條件篩選**
+  // 依照查詢條件篩選
   const handleSearch = async (
     newPage = page,
     newRowsPerPage = rowsPerPage,
@@ -117,6 +117,9 @@ function ApproveClockReissuePage() {
       await new Promise((resolve) => setTimeout(resolve, 0)); // 🛠 強制等待 React 更新 state
     }
 
+    // 設定 `isInitialLoad` 為 `false`，避免總是取 `2025-01-01`
+    setIsInitialLoad(false);
+
     const pageNum = resetPage ? 0 : isNaN(newPage) ? 0 : Number(newPage);
     const rowsPerPageNum = isNaN(newRowsPerPage) ? 10 : Number(newRowsPerPage);
 
@@ -126,10 +129,14 @@ function ApproveClockReissuePage() {
 
     try {
       // 格式化 `startDate` & `endDate` 為 `YYYY-MM-DD`
+      const formattedStartDate = isInitialLoad
+        ? "2025-01-01"
+        : startDate.toISOString().split("T")[0];
+
       const formattedEndDate = endDate.toISOString().split("T")[0];
 
       let query = `/corrections?
-          start_date=2025-01-01&
+          start_date=${formattedStartDate}&
           end_date=${formattedEndDate}&
           page=${pageNum + 1}&
           per_page=${rowsPerPageNum}`;
@@ -152,22 +159,29 @@ function ApproveClockReissuePage() {
         throw new Error("API 回應的 data.data 不是陣列");
 
       // **處理 API 回應資料**
-      const formattedCorrections = corrections.map((item) => {
-        return {
-          ...item,
-          date: item.punch_time.split(" ")[0],
-          time: item.punch_time.split(" ")[1],
-          created_at: item.created_at.split(" ")[0],
-          correction_type:
-            item.correction_type === "punch_in" ? "上班打卡" : "下班打卡",
-          status:
-            item.status === "approved"
-              ? "審核通過"
-              : item.status === "rejected"
-              ? "審核未通過"
-              : "待審核",
-        };
-      });
+      const formattedCorrections = corrections
+        .filter((item) => {
+          const punchDate = item.punch_time.split(" ")[0]; // 取出 punch_time 的日期
+          return (
+            punchDate >= formattedStartDate && punchDate <= formattedEndDate
+          );
+        })
+        .map((item) => {
+          return {
+            ...item,
+            date: item.punch_time.split(" ")[0],
+            time: item.punch_time.split(" ")[1],
+            created_at: item.created_at.split(" ")[0],
+            correction_type:
+              item.correction_type === "punch_in" ? "上班打卡" : "下班打卡",
+            status:
+              item.status === "approved"
+                ? "審核通過"
+                : item.status === "rejected"
+                ? "審核未通過"
+                : "待審核",
+          };
+        });
 
       setRows(formattedCorrections);
       setFilteredRows(formattedCorrections);
@@ -177,23 +191,27 @@ function ApproveClockReissuePage() {
       setRows([]);
       setFilteredRows([]);
       setTotalRecords(0); // 避免 totalRecords 遺留錯誤值
+
+      alert("查詢失敗，請稍後再試！");
+      window.location.reload(); // 重新整理網頁
     } finally {
       setLoading(false);
     }
   };
 
-  // **🔹 3. 換頁**
+  // 換頁
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
 
-  // **🔹 4. 更改每頁顯示筆數**
+  // 更改每頁顯示筆數
   const handleChangeRowsPerPage = (event) => {
     const newRowsPerPage = parseInt(event.target.value, 10);
     setRowsPerPage(newRowsPerPage);
-    setPage(0); // ✅ 重新回到第一頁
+    setPage(0); // 重新回到第一頁
   };
 
+  // 更改查詢的部門
   const handleDepartmentChange = async (event) => {
     const newDepartment = Number(event.target.value); // 確保存數字 ID
     setSelectedDepartment(newDepartment);
@@ -205,7 +223,6 @@ function ApproveClockReissuePage() {
     setUnauthorized(false); // 清除無權限狀態
     setPage(0); // 重置分頁
     await new Promise((resolve) => setTimeout(resolve, 0));
-    handleSearch(0, rowsPerPage, true);
   };
 
   useEffect(() => {
@@ -227,6 +244,7 @@ function ApproveClockReissuePage() {
   if (loading) return <Typography>Loading...</Typography>;
   if (error) return <Typography color="error">{error}</Typography>;
 
+  // 打開審核的彈跳視窗
   const handleReviewOpen = (row) => {
     setSelectedRow({
       ...row,
@@ -237,9 +255,7 @@ function ApproveClockReissuePage() {
   };
 
   // 審核送出按鈕
-  const handleReviewSubmit = () => {
-    if (!selectedRow) return;
-
+  const handleReviewSubmit = async (row) => {
     // **當選擇「審核未通過」但未填寫拒絕原因時，顯示錯誤**
     if (
       selectedRow.status === "審核未通過" &&
@@ -249,23 +265,44 @@ function ApproveClockReissuePage() {
       return; // 阻止送出
     }
 
-    // **清除錯誤訊息**
-    setRejectionError("");
+    try {
+      let apiUrl = "";
+      let requestBody = {};
 
-    // **更新 rows 陣列**
-    const updatedRows = rows.map((row) =>
-      row.id === selectedRow.id
-        ? {
-            ...row,
-            status: selectedRow.status,
-            rejectionReason: selectedRow.rejectionReason,
-          }
-        : row
-    );
+      // **決定 API 路徑**
+      if (selectedRow.status === "審核通過") {
+        apiUrl = `/punch/correction/${selectedRow.id}/approve`;
+      } else if (selectedRow.status === "審核未通過") {
+        apiUrl = `/punch/correction/${selectedRow.id}/reject`;
+        requestBody.review_message = selectedRow.rejectionReason;
+      }
 
-    setRows(updatedRows); // 同步更新 rows 陣列
-    setFilteredRows(updatedRows); // 同步更新顯示的資料
-    setOpenDetailsDialog(false); // 關閉彈窗
+      // **發送 API 更新補登打卡資料**
+      const response = await API.put(apiUrl, requestBody);
+      console.log("API 回應:", response.data);
+
+      console.log(response);
+      if (response.status === 200) {
+        // **更新 rows 陣列**
+        const updatedRows = rows.map((row) =>
+          row.id === selectedRow.id
+            ? {
+                ...row,
+                status: selectedRow.status,
+                rejectionReason: selectedRow.rejectionReason,
+              }
+            : row
+        );
+
+        setRows(updatedRows); // 同步更新 rows 陣列
+        setFilteredRows(updatedRows); // 同步更新顯示的資料
+        setOpenDetailsDialog(false); // 關閉彈窗
+        alert("審核結果已成功更新！");
+      }
+    } catch (error) {
+      console.error("更新失敗:", error);
+      alert("更新失敗，請稍後再試！");
+    }
   };
 
   return (
@@ -325,6 +362,9 @@ function ApproveClockReissuePage() {
             select
             sx={{ backgroundColor: "white", minWidth: "180px" }} // 白底，寬度限制
           >
+            <MenuItem value="" disabled>
+              請選擇部門
+            </MenuItem>
             {departments.length > 0 &&
               departments.map((dept) => (
                 <MenuItem key={dept.id} value={dept.id}>
@@ -349,9 +389,12 @@ function ApproveClockReissuePage() {
             {/* 起始日期 */}
             <DatePicker
               value={startDate}
-              onChange={(newValue) =>
-                newValue && setStartDate(new Date(newValue))
-              }
+              onChange={(newValue) => {
+                if (newValue) {
+                  setStartDate(new Date(newValue)); // 確保 `startDate` 被正確更新
+                  setIsInitialLoad(false); // 避免 `2025-01-01` 被預設值影響
+                }
+              }}
               maxDate={new Date()} // 不能選擇未來日期
               format="yyyy/MM/dd" // 確保格式正確
               slotProps={{
@@ -377,9 +420,12 @@ function ApproveClockReissuePage() {
             {/* 結束日期 */}
             <DatePicker
               value={endDate}
-              onChange={(newValue) =>
-                newValue && setEndDate(new Date(newValue))
-              }
+              onChange={(newValue) => {
+                if (newValue) {
+                  setEndDate(new Date(newValue));
+                  setIsInitialLoad(false);
+                }
+              }}
               maxDate={new Date()} // 不能選擇未來日期
               format="yyyy/MM/dd"
               slotProps={{
@@ -415,7 +461,7 @@ function ApproveClockReissuePage() {
             marginTop: "15px",
           }}
           startIcon={<ManageSearchIcon />} //讓放大鏡圖是在左邊
-          onClick={handleSearch} // 點選後篩選日期
+          onClick={() => handleSearch(0, rowsPerPage, true)} // 點選後篩選日期
         >
           查詢
         </Button>
@@ -497,6 +543,10 @@ function ApproveClockReissuePage() {
                                   color: "white",
                                 }}
                                 onClick={() => handleReviewOpen(row)}
+                                disabled={
+                                  row.status === "審核通過" ||
+                                  row.status === "審核未通過"
+                                }
                               >
                                 審核
                               </Button>
