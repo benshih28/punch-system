@@ -486,6 +486,7 @@ class LeaveController extends Controller
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after_or_equal:start_date',
                 'status' => 'nullable|integer|in:0,1,2,3,4',
+                'rejected' => 'nullable|integer',
                 'leave_hours' => 'nullable',
                 'created_at' => 'nullable|date',
             ]);
@@ -664,6 +665,7 @@ class LeaveController extends Controller
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after_or_equal:start_date',
                 'status' => 'nullable|integer|in:0,1,2,3,4',
+                'rejected' => 'nullable|integer',
                 'leave_hours' => 'nullable',
                 'created_at' => 'nullable|date',
             ]);
@@ -1043,6 +1045,8 @@ class LeaveController extends Controller
     {
         try {
             $user = auth()->user(); // 取得當前用戶
+            $startTime = $request->query('start_time');
+            $excludeId = $request->query('exclude_id');
 
             // 先確保該假別存在，避免查詢無效 ID
             $leaveType = LeaveType::find($leave_type_id);
@@ -1050,10 +1054,9 @@ class LeaveController extends Controller
                 return response()->json([
                     'message' => '請假類型無效',
                 ], 400);
-            }
-
+            }            
             // ✅ **直接使用 Service 層的 getRemainingLeaveHours()**
-            $remainingHours = $this->leaveService->getRemainingLeaveHours($leave_type_id, $user->id);
+            $remainingHours = $this->leaveService->getRemainingLeaveHours($leave_type_id, $user->id, $startTime, $excludeId);
 
             return response()->json([
                 'leave_type' => $leaveType->name,
@@ -1078,9 +1081,11 @@ class LeaveController extends Controller
             'start_time' => $leave->start_time,
             'end_time' => $leave->end_time,
             'reason' => $leave->reason,
+            'leave_hours' => $leave->leave_hours,
             'status' => $leave->status,
+            'reject_reason' => $leave->reject_reason,
             'attachment' => $leave->file ? asset("storage/" . $leave->file->leave_attachment) : null,
-            'create_at' => $leave->create_at,
+            'created_at' => $leave->created_at,
         ];
     }
 

@@ -1,7 +1,7 @@
 import axios from "axios"; // 引入 Axios，用於發送 HTTP 請求
 import { getDefaultStore } from "jotai"; // 從 Jotai 引入 getDefaultStore，以便獲取全局狀態
 import { authAtom } from "../state/authAtom"; // 引入 authAtom，用於存儲身份驗證狀態
-
+import { errorAtom } from "../state/errorAtom";
 // 取得 Jotai 的全局 Store，讓我們可以在全域範圍內存取和管理狀態
 const store = getDefaultStore();
 
@@ -35,19 +35,27 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response, // 正常回應時，直接返回回應結果
   async (error) => {
-    // 檢查回應狀態碼是否為 401（未授權或 Token 過期）
-    if (error.response?.status === 401) {
-      console.warn("Token 過期或未授權，清除 Token...");
+    const status = error.response?.status;
+    const data = error.response?.data;
 
-      const currentAuth = store.get(authAtom);
-      // 只有當 `authAtom` 內的 `access_token` 不是 null 時，才執行清除，避免重複操作
-      if (currentAuth.access_token) {
-        store.set(authAtom, { access_token: null, user: null });
-      }
+    // **使用 Map 簡化錯誤處理**
+    const errorMessages = new Map([
+      [400, data?.message || "請求格式錯誤，請檢查輸入"],
+      [401, "未授權，請重新登入"],
+      [403, "權限不足，無法執行此操作"],
+      [404, "找不到請求的資源"],
+      [422, data?.message || "請求驗證失敗，請檢查輸入"],
+      [500, "伺服器錯誤，請稍後再試"],
+    ]);
 
-      // 附加自訂錯誤訊息，方便前端處理
-      error.customMessage = "登入時間超時，請重新登入";
+    let errorMessage = errorMessages.get(status) || "發生未知錯誤，請稍後再試";
+
+    if (status === 401) {
+      store.set(logoutAtom);
     }
+
+    console.error(`API 錯誤 (${status}):`, data);
+    store.set(errorAtom, errorMessage); // ✅ 存入錯誤狀態
 
     return Promise.reject(error); // 拒絕錯誤回應，讓前端可以進一步處理
   }

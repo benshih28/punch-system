@@ -212,7 +212,7 @@ class LeaveService
     }
 
     // 7. 計算特殊假別剩餘小時數
-    public function getRemainingLeaveHours($leaveTypeId, $userId, $leaveStartTime = null)
+    public function getRemainingLeaveHours($leaveTypeId, $userId, $leaveStartTime = null, $excludeLeaveId = null)
     {
         $leaveType = LeaveType::find($leaveTypeId);
 
@@ -221,10 +221,10 @@ class LeaveService
         }
 
         // 針對特休和生理假使用專門的方法計算
-        if ($leaveType->name === 'Annual leave') {
+        if ($leaveType->name === 'Annual Leave') {
             return $this->leaveResetService->getRemainingAnnualLeaveHours($userId, $leaveStartTime);
         } elseif ($leaveType->name === 'Menstrual Leave') {
-            return $this->leaveResetService->getRemainingMenstrualLeaveHours($userId, $leaveStartTime);
+            return $this->leaveResetService->getRemainingMenstrualLeaveHours($userId, $leaveStartTime, $excludeLeaveId);
         }
 
         // 其他假別使用通用計算方式
@@ -250,7 +250,7 @@ class LeaveService
                 });
             }
 
-            if (!empty($filters['status'])) {
+            if (isset($filters['status'])) { // 檢查 status 是否存在(防止0被empty過濾掉改使用isset)
                 $query->where('status', $filters['status']);
             }
 

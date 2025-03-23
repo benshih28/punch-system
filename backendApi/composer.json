@@ -63,7 +63,7 @@
             "@php artisan db:seed --class=DepartmentAndPositionSeeder --force",
             "@php artisan db:seed --class=PermissionsSeeder --force",
             "@php artisan db:seed --class=RolesSeeder --force",
-            "sh install-queue.sh"
+            "npm run queue"
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",

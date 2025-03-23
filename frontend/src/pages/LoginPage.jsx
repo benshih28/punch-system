@@ -45,11 +45,6 @@ function LoginPage() {
 
       if (!token) throw new Error("Token 未提供");
 
-      // **更新 Jotai 全局狀態**
-      setAuth({
-        access_token: token, // 與 authAtom 一致
-        user: user,
-      });
 
 
       // **獲取完整的使用者資訊**
