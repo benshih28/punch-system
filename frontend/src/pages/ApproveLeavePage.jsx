@@ -721,17 +721,24 @@ function ApproveLeave() {
                 {selectedRequest.attachment && (
                   <Box>
                     <Typography fontSize={14}>請假附件</Typography>
-                    <TextField
-                      value={selectedRequest.attachment}
+                    <Box
                       sx={{
                         backgroundColor: "white",
                         mb: 2,
                         borderRadius: "8px",
+                        p: 1.5,
+                        wordBreak: "break-all", // 防止長連結破版
                       }}
-                      margin="dense"
-                      fullWidth
-                      disabled
-                    />
+                    >
+                      <a
+                        href={selectedRequest.attachment}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ textDecoration: "none", color: "#1976d2" }} // 可根據你的主題改變顏色
+                      >
+                        {selectedRequest.attachment}
+                      </a>
+                    </Box>
                   </Box>
                 )}
 
