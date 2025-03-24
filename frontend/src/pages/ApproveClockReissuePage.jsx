@@ -101,7 +101,6 @@ function ApproveClockReissuePage() {
         }
       } catch (error) {
         console.error("錯誤詳情:", error.response?.data || error.message);
-        alert(error.response?.data?.message || "無法取得資料，請稍後再試");
       }
     };
     fetchUserInfo();
@@ -193,8 +192,6 @@ function ApproveClockReissuePage() {
       setTotalRecords(0); // 避免 totalRecords 遺留錯誤值
 
       console.error("錯誤詳情:", error.response?.data || error.message);
-      alert(error.response?.data?.message || "查詢失敗，請稍後再試！");
-      window.location.reload(); // 重新整理網頁
     } finally {
       setLoading(false);
     }
