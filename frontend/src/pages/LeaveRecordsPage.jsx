@@ -24,7 +24,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Link
+  Link,
+  CircularProgress
 } from "@mui/material";
 import { Search } from "@mui/icons-material";
 import { LocalizationProvider, DateTimePicker } from "@mui/x-date-pickers";
@@ -47,6 +48,7 @@ function ApproveLeave() {
   const [dialogMessage, setDialogMessage] = useState("");        // Dialog 內容
   const [dialogSuccess, setDialogSuccess] = useState(true);      // 是成功 or 失敗
   const [status, setStatus] = useState("");  // 選中的狀態
+  const [loading, setLoading] = useState(false); // 資料載入
   const statusMap = {       // 審核狀態
     0: "待審核",
     1: "主管通過",
@@ -128,6 +130,8 @@ function ApproveLeave() {
       return;
     }
 
+    setLoading(true);
+
     try {
       const apiRoute = "/leave/my-records";
       const params = {
@@ -146,6 +150,9 @@ function ApproveLeave() {
       // console.error("取得請假資料失敗", error);
       setLeaveRequests([]);
       setTotalPages(1); // 失敗時也要歸 1，避免卡住
+    }
+    finally {
+      setLoading(false); // ✅ 載入完成
     }
   };
   useEffect(() => {
@@ -538,7 +545,18 @@ function ApproveLeave() {
 
           {/* 假單內容 */}
           <TableBody>
-            {leaveRequests.length > 0 ? (
+            {loading ? (
+              <TableRow>
+                <TableCell align="center" colSpan={columns.length}>
+                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 4 }}>
+                    <CircularProgress color="primary" />
+                    <Typography fontSize={14} mt={2}>
+                      資料載入中，請稍候…
+                    </Typography>
+                  </Box>
+                </TableCell>
+              </TableRow>
+            ) : leaveRequests.length > 0 ? (
               leaveRequests.map((request) => {
                 const totalHour = request.leave_hours ?? 8;
                 const fullDays = Math.floor(totalHour / 8);
@@ -954,6 +972,7 @@ function ApproveLeave() {
                           <Link
                             component="button"
                             variant="body2"
+                            type="button"
                             onClick={() => setPolicyOpen(true)}
                             underline="hover"
                           >
@@ -1091,8 +1110,8 @@ function ApproveLeave() {
         onClose={() => setPolicyOpen(false)}
         PaperProps={{
           sx: {
-            width: "1000px", 
-            maxWidth: "95vw",   
+            width: "1000px",
+            maxWidth: "95vw",
             borderRadius: "16px",
             minHeight: "90vh",
             maxHeight: "95vh",
