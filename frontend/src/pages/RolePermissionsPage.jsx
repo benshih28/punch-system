@@ -1,14 +1,17 @@
 import { useMediaQuery } from "@mui/material";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Box, Paper, Typography, Button, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Checkbox, Dialog, DialogActions, DialogContent, TextField } from "@mui/material";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { Link } from "react-router-dom";
-import { permissionLabels } from "../constants/permissionLabels";
-import API from "../api/axios";
+
 function RolePermissionsPage() {
-  const [permissions, setPermissions] = useState([]);;
-  const [permissionGroups, setPermissionGroups] = useState({});
+  const [permissions, setPermissions] = useState([
+    { id: 1, name: "人事主管", permissions: [] },
+    { id: 2, name: "財務主管", permissions: [] },
+    { id: 3, name: "系統管理員", permissions: [] },
+  ]);
+
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [newPermissionName, setNewPermissionName] = useState("");
   const [selectedNewPermissions, setSelectedNewPermissions] = useState([]);
@@ -19,38 +22,45 @@ function RolePermissionsPage() {
   const [editPermissionId, setEditPermissionId] = useState(null);
   const [selectedEditPermissions, setSelectedEditPermissions] = useState([]);
 
-  useEffect(() => {
-    API.get("/roles")
-      .then((res) => {
-        setPermissions(res.data); // 設定角色列表
-      })
-      .catch((err) => {
-        console.error("取得角色列表失敗", err);
-      });
-  }, []);
-
-  useEffect(() => {
-    API.get("/permissions")
-      .then((res) => {
-        const grouped = res.data.reduce((acc, perm) => {
-          const { category, name } = perm;
-
-          if (!acc[category]) acc[category] = [];
-
-          acc[category].push({
-            id: name,
-            name: permissionLabels[name] || name, // 對應中文，如果沒有就用原文
-          });
-
-          return acc;
-        }, {});
-
-        setPermissionGroups(grouped);
-      })
-      .catch((err) => {
-        console.error("取得權限列表失敗", err);
-      });
-  }, []);
+  // 分類權限
+  const permissionGroups = {
+    "基本考勤權限": [
+      { id: "punch_in", name: "上班打卡" },
+      { id: "punch_out", name: "下班打卡" },
+      { id: "request_correction", name: "申請補打卡" },
+      { id: "view_corrections", name: "查詢個人補登打卡紀錄" },
+      { id: "view_attendance", name: "查詢個人打卡紀錄" },
+      { id: "approve_correction", name: "審核補打卡" },
+      { id: "view_all_corrections", name: "查詢所有補登打卡紀錄" },
+    ],
+    "請假管理": [
+      { id: "request_leave", name: "申請請假" },
+      { id: "view_leave_records", name: "查詢請假餘額" },
+      { id: "approve_leave", name: "審核請假" },
+      { id: "delete_leave", name: "刪除請假" },
+      { id: "view_department_leave_records", name: "查詢部門請假紀錄" },
+      { id: "approve_department_leave", name: "核准/駁回部門請假" },
+      { id: "update_leave", name: "更新請假資料" },
+    ],
+    "角色與權限管理": [
+      { id: "manage_roles", name: "管理角色與權限" },
+      { id: "view_roles", name: "查詢角色" },
+      { id: "view_permissions", name: "查詢權限" },
+    ],
+    "員工與組織管理": [
+      { id: "manage_employees", name: "管理員工" },
+      { id: "register_employee", name: "註冊員工" },
+      { id: "review_employee", name: "審核員工" },
+      { id: "assign_employee_details", name: "分配/變更部門、職位、主管、角色" },
+      { id: "delete_employee", name: "刪除員工" },
+    ],
+    "部門與職位管理 (HR)": [
+      { id: "manage_departments", name: "管理部門" },
+      { id: "manage_positions", name: "管理職位" },
+      { id: "view_manager", name: "查詢主管" },
+      { id: "view_subordinates", name: "查詢自己管理的員工" },
+    ],
+  };
 
   // 新增角色
   const handleAddPermission = () => {
@@ -217,35 +227,15 @@ function RolePermissionsPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {permissions.length > 0 ? (
-                permissions.map((permission) => (
-                  <TableRow key={permission.id}>
-                    <TableCell>{permission.id}</TableCell>
-                    <TableCell>{permission.name}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="contained"
-                        sx={{
-                          backgroundColor: "#BCA28C",
-                          color: "white",
-                          fontWeight: "bold",
-                          borderRadius: "10px",
-                          px: 2,
-                        }}
-                        onClick={() => handleEditOpen(permission)}
-                      >
-                        編輯
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={3} align="center">
-                    尚無角色資料
+              {permissions.map((permission) => (
+                <TableRow key={permission.id}>
+                  <TableCell>{permission.id}</TableCell>
+                  <TableCell>{permission.name}</TableCell>
+                  <TableCell>
+                    <Button variant="contained" sx={{ backgroundColor: "#BCA28C", color: "white", fontWeight: "bold", borderRadius: "10px", px: 2 }} onClick={() => handleEditOpen(permission)}>編輯</Button>
                   </TableCell>
                 </TableRow>
-              )}
+              ))}
             </TableBody>
           </Table>
         </TableContainer>
