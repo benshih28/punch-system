@@ -175,8 +175,6 @@ function ClockReissueHistoryPage() {
       setTotalRecords(0); // 避免 totalRecords 遺留錯誤值
 
       console.error("錯誤詳情:", error.response?.data || error.message);
-      alert(error.response?.data?.message || "查詢失敗，請稍後再試！");
-      window.location.reload(); // 重新整理網頁
     } finally {
       setLoading(false);
     }
@@ -239,7 +237,6 @@ function ClockReissueHistoryPage() {
       handleSearch(0, rowsPerPage, true);
     } catch (error) {
       console.error("新增失敗：", error.response?.data || error.message);
-      alert(error.response?.data?.message || "新增失敗，請稍後再試！");
     }
   };
 
