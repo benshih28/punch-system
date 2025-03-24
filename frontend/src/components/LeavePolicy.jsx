@@ -49,17 +49,18 @@ const TabItem = styled(Tab)(({ theme }) => ({
     },
 }));
 
-function LeavePolicy() {
+function LeavePolicy({ onClose }) {
     const [tabIndex, setTabIndex] = useState(0);
 
     return (
         <Box
             sx={{
-                maxWidth: "1200px",
+                maxWidth: "800px",
                 margin: "auto",
-                marginTop: "50px", // 設定與上方的距離
+                marginTop: "25px", // 設定與上方的距離
+                marginBottom: "25px", // 設定與上方的距離                
                 padding: 6,
-                height: "760px", // 設定固定高度
+                height: "700px", // 設定固定高度
                 backgroundColor: "#f9f9f9",
                 borderRadius: "12px",
                 boxShadow: 3,
@@ -71,9 +72,9 @@ function LeavePolicy() {
             <img
                 src="/logo.png"
                 alt="Dacall Logo"
-                style={{ width: 90, display: "block", margin: "0 auto 20px"}} // Logo 設定
+                style={{ width: 90, display: "block", margin: "0 auto 20px" }} // Logo 設定
             />
-            <Typography variant="h3" fontWeight="bold" gutterBottom >
+            <Typography variant="h4" fontWeight="bold" gutterBottom >
                 員工請假規則
             </Typography>
 
@@ -95,7 +96,7 @@ function LeavePolicy() {
             {/* 🔥 Tabs 內容 */}
             {tabIndex === 0 && (
                 <Card sx={{ backgroundColor: "rgba(227, 242, 253, 0.7)", marginBottom: 2, padding: 1 }}>
-                    <CardContent sx={{ padding: 3, maxHeight: "450px", overflowY: "auto" }} >
+                    <CardContent sx={{ padding: 3, maxHeight: "380px", overflowY: "auto" }} >
                         <Typography variant="h5" fontWeight="bold" gutterBottom>
                             <EventNote sx={{ verticalAlign: "middle", mr: 1 }} />
                             假別類型 (Leave Types)
@@ -235,7 +236,7 @@ function LeavePolicy() {
 
             {tabIndex === 1 && (
                 <Card sx={{ backgroundColor: "#FFF3E0", marginBottom: 2, padding: 1 }}>
-                    <CardContent sx={{ padding: 3, maxHeight: "450px", overflowY: "auto" }}>
+                    <CardContent sx={{ padding: 3, maxHeight: "380px", overflowY: "auto" }}>
                         <Typography variant="h5" fontWeight="bold" gutterBottom>
                             <FactCheck sx={{ verticalAlign: "middle", mr: 1, fontSize: "25px" }} />
                             請假申請流程 (Leave Application Process)
@@ -322,7 +323,7 @@ function LeavePolicy() {
 
             {tabIndex === 2 && (
                 <Card sx={{ backgroundColor: "#FFEBEE", marginBottom: 2, padding: 1 }}>
-                    <CardContent sx={{ padding: 3, maxHeight: "450px", overflowY: "auto" }}>
+                    <CardContent sx={{ padding: 3, maxHeight: "380px", overflowY: "auto" }}>
                         <Typography variant="h5" fontWeight="bold" gutterBottom>
                             <NearbyError sx={{ verticalAlign: "middle", mr: 1, fontSize: "25px" }} />
                             特殊條件 (Special Conditions)
@@ -425,7 +426,12 @@ function LeavePolicy() {
                     </CardContent>
                 </Card>
             )}
-            <Button variant="contained" color="info" sx={{ width: "150px", height: "40px", fontSize: "16px" }}>
+            <Button
+                variant="contained"
+                color="info"
+                onClick={onClose} // 👉 點擊就呼叫 props 傳進來的 onClose 方法
+                sx={{ width: "150px", height: "40px", fontSize: "16px" }}
+            >
                 返回上一頁
             </Button>
         </Box>

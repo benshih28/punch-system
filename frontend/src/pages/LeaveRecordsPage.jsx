@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm, Controller } from "react-hook-form";
 import dayjs from "dayjs";
 import API from "../api/axios";
+import LeavePolicy from "../components/LeavePolicy";
 import {
   Button,
   Box,
@@ -23,6 +24,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Link
 } from "@mui/material";
 import { Search } from "@mui/icons-material";
 import { LocalizationProvider, DateTimePicker } from "@mui/x-date-pickers";
@@ -168,6 +170,8 @@ function ApproveLeave() {
   const [currentLeaveId, setCurrentLeaveId] = useState(null);
   const watchedStartTime = watch("startTime");
   const watchedEndTime = watch("endTime");
+  const hasInitializedRef = useRef(false);
+  const [policyOpen, setPolicyOpen] = useState(false);
 
   // 🧼 統一初始化表單（根據 mode 決定）
   const initForm = (request, openMode) => {
@@ -225,9 +229,14 @@ function ApproveLeave() {
       initForm(request, openMode);
     }
   };
-  useEffect(() => {  // 如果 formLeaveTypeOptions 是後來才拿到，再次初始化
-    if (open && formLeaveTypeOptions.length) {
-      initForm(selectedRequest, mode);
+  useEffect(() => {
+    if (open) {
+      if (formLeaveTypeOptions.length && !hasInitializedRef.current) {
+        initForm(selectedRequest, mode);
+        hasInitializedRef.current = true;
+      }
+    } else {
+      hasInitializedRef.current = false; // 關閉時重設
     }
   }, [open, formLeaveTypeOptions, selectedRequest, mode]);
 
@@ -933,10 +942,25 @@ function ApproveLeave() {
                         multiline
                         rows={3}
                         disabled={mode === "view"}
+                        error={!!errors.reason}
+                        helperText={errors.reason?.message}
                         sx={{ backgroundColor: "white", borderRadius: "8px" }}
                         margin="dense"
                         fullWidth
                       />
+                      {mode !== "view" && (
+                        <Typography fontSize={13} sx={{ mt: 1 }}>
+                          📌 不確定怎麼請假？&nbsp;
+                          <Link
+                            component="button"
+                            variant="body2"
+                            onClick={() => setPolicyOpen(true)}
+                            underline="hover"
+                          >
+                            查看請假規則
+                          </Link>
+                        </Typography>
+                      )}
                     </Box>
 
                     {/* 第四排：駁回原因（只在 view 模式顯示） */}
@@ -1061,6 +1085,25 @@ function ApproveLeave() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Dialog
+        open={policyOpen}
+        onClose={() => setPolicyOpen(false)}
+        PaperProps={{
+          sx: {
+            width: "1000px", 
+            maxWidth: "95vw",   
+            borderRadius: "16px",
+            minHeight: "90vh",
+            maxHeight: "95vh",
+          },
+        }}
+      >
+        <DialogContent sx={{ p: 0 }}>
+          <LeavePolicy onClose={() => setPolicyOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
     </Box >
   );
 }
