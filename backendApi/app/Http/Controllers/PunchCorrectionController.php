@@ -94,6 +94,124 @@ class PunchCorrectionController extends Controller
         ], 201);
     }
 
+        // 刪除補登申請
+    /**
+     * @OA\Delete(
+     *     path="/api/punch/correction/{id}",
+     *     summary="刪除補登申請",
+     *     description="使用者或管理員刪除補登申請",
+     *     operationId="deletePunchCorrection",
+     *     tags={"Punch Correction"},
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="補登請求 ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="補登申請已刪除",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="補登申請已刪除")
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="未授權"),
+     *     @OA\Response(response=404, description="找不到補登申請")
+     * )
+     */
+    public function destroy($id)
+    {
+        // 確保使用者已登入
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['message' => '未授權的請求'], 401);
+        }
+
+        // 找到補登申請
+        $correction = PunchCorrection::findOrFail($id);
+
+        // 刪除補登申請
+        $correction->delete();
+
+        return response()->json(['message' => '補登申請已刪除'], 200);
+    }
+
+        // 修改補登申請
+    /**
+     * @OA\Put(
+     *     path="/api/punch/correction/{id}",
+     *     summary="修改補登申請",
+     *     description="使用者修改補登申請",
+     *     operationId="updatePunchCorrection",
+     *     tags={"Punch Correction"},
+     *     security={{ "bearerAuth":{} }},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="補登請求 ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"correction_type", "punch_time", "reason"},
+     *             @OA\Property(property="correction_type", type="string", enum={"punch_in", "punch_out"}, example="punch_in"),
+     *             @OA\Property(property="punch_time", type="string", format="date-time", example="2025-03-11 08:00:00"),
+     *             @OA\Property(property="reason", type="string", example="忘記打卡")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="補登申請已修改",
+     *         @OA\JsonContent(ref="#/components/schemas/PunchCorrection")
+     *     ),
+     *     @OA\Response(response=400, description="打卡時間不能是未來時間"),
+     *     @OA\Response(response=401, description="未授權"),
+     *     @OA\Response(response=404, description="找不到補登申請")
+     * )
+     */
+    public function update(Request $request, $id)
+    {
+        // 確保使用者已登入
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['message' => '未授權的請求'], 401);
+        }
+
+        // 找到補登申請
+        $correction = PunchCorrection::findOrFail($id);
+
+        // 驗證輸入
+        $validatedData = $request->validate([
+            'correction_type' => 'required|in:punch_in,punch_out',
+            'punch_time' => 'required|date_format:Y-m-d H:i:s', // 確保格式正確
+            'reason' => 'required|string',
+        ]);
+
+        // 確保 `punch_time` 不在未來
+        $punchTime = Carbon::parse($validatedData['punch_time']);
+        if ($punchTime->isFuture()) {
+            return response()->json(['message' => '打卡時間不能是未來時間'], 400);
+        }
+
+        // 更新補登申請
+        $correction->update([
+            'correction_type' => $validatedData['correction_type'],
+            'punch_time' => $punchTime,
+            'reason' => $validatedData['reason'],
+        ]);
+
+        return response()->json([
+            'message' => '補登申請已修改',
+            'data' => $correction
+        ], 200);
+    }
+
     // 管理員審核（批准）
     /**
      * @OA\Put(
@@ -700,4 +818,5 @@ class PunchCorrectionController extends Controller
             ]
         ], 200);
     }
+
 }

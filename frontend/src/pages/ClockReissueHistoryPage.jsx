@@ -54,11 +54,13 @@ function ClockReissueHistoryPage() {
   // **React Hook Form - 表單管理**
 
   // **Jotai - 全局狀態管理**
-  // const [, setAuth] = useAtom(authAtom); // setAuth 更新 Jotai 全局狀態 (authAtom)
+  const [, setAuth] = useAtom(authAtom); // setAuth 更新 Jotai 全局狀態 (authAtom)
 
   // 設定起始 & 結束日期
-  const [startDate, setStartDate] = useState(new Date());
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [startDate, setStartDate] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), 0, 1);
+  });  
   const [endDate, setEndDate] = useState(new Date());
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
@@ -90,7 +92,7 @@ function ClockReissueHistoryPage() {
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
-        const response = await API.get("/user/details");
+        await API.get("/user/details");
       } catch (error) {
         console.error("載入資料失敗:", error);
       }
@@ -109,9 +111,6 @@ function ClockReissueHistoryPage() {
       await new Promise((resolve) => setTimeout(resolve, 0)); // 🛠 強制等待 React 更新 state
     }
 
-    // 設定 `isInitialLoad` 為 `false`，避免總是取 `2025-01-01`
-    setIsInitialLoad(false);
-
     const pageNum = resetPage ? 0 : isNaN(newPage) ? 0 : Number(newPage);
     const rowsPerPageNum = isNaN(newRowsPerPage) ? 10 : Number(newRowsPerPage);
 
@@ -119,12 +118,14 @@ function ClockReissueHistoryPage() {
     setError(null);
 
     try {
-      // 格式化 `startDate` & `endDate` 為 `YYYY-MM-DD`
-      const formattedStartDate = isInitialLoad
-        ? "2025-01-01"
-        : startDate.toISOString().split("T")[0];
+      const formattedStartDate = startDate.getFullYear() + "-" +
+        String(startDate.getMonth() + 1).padStart(2, "0") + "-" +
+        String(startDate.getDate()).padStart(2, "0");
 
-      const formattedEndDate = endDate.toISOString().split("T")[0];
+      const formattedEndDate = endDate.getFullYear() + "-" +
+        String(endDate.getMonth() + 1).padStart(2, "0") + "-" +
+        String(endDate.getDate()).padStart(2, "0");
+
 
       let query = `/punch/correction?
           start_date=${formattedStartDate}&
@@ -137,19 +138,13 @@ function ClockReissueHistoryPage() {
 
       const corrections = response.data?.data?.data || [];
 
-      const total = response.data.data.data[0].total_records || 0; // 取得總筆數
+      const total = corrections.length > 0 ? response.data.data.data[0].total_records || 0 : 0; // 取得總筆數
 
       if (!Array.isArray(corrections))
         throw new Error("API 回應的 data.data 不是陣列");
 
       // **處理 API 回應資料**
       const formattedCorrections = corrections
-        .filter((item) => {
-          const punchDate = item.punch_time.split(" ")[0]; // 取出 punch_time 的日期
-          return (
-            punchDate >= formattedStartDate && punchDate <= formattedEndDate
-          );
-        })
         .map((item) => {
           return {
             ...item,
@@ -162,8 +157,8 @@ function ClockReissueHistoryPage() {
               item.status === "approved"
                 ? "審核通過"
                 : item.status === "rejected"
-                ? "審核未通過"
-                : "待審核",
+                  ? "審核未通過"
+                  : "待審核",
             review_message: item.review_message || "",
           };
         });
@@ -182,7 +177,11 @@ function ClockReissueHistoryPage() {
 
   useEffect(() => {
     handleSearch(page, rowsPerPage);
-  }, [page, rowsPerPage]);
+    // 如果當前頁數 * 每頁筆數 >= 總筆數，則自動跳回前一頁
+    if (page * rowsPerPage >= totalRecords && page > 0) {
+      setPage((prev) => prev - 1);
+    }
+  }, [totalRecords, rowsPerPage, page]);  
 
   // 新增申請
   const handleAddRecord = async () => {
@@ -237,6 +236,80 @@ function ClockReissueHistoryPage() {
       handleSearch(0, rowsPerPage, true);
     } catch (error) {
       console.error("新增失敗：", error.response?.data || error.message);
+    }
+  };
+
+  // 修改申請
+  const handleEditRecord = async () => {
+    if (!date) {
+      alert("請選擇日期！");
+      return;
+    }
+
+    if (!time) {
+      alert("請選擇時間！");
+      return;
+    }
+
+    if (!reason.trim()) {
+      alert("請輸入原因！");
+      return;
+    }
+
+    // 組合 punch_time（日期 + 時間）
+    const padZero = (num) => String(num).padStart(2, "0");
+    const punchDate = `${date.getFullYear()}-${padZero(
+      date.getMonth() + 1
+    )}-${padZero(date.getDate())}`;
+    const punchTime = time.toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }); // HH:mm:ss
+    const punchDateTime = `${punchDate} ${punchTime}:00`;
+
+    // 對應到後端 API 所需欄位格式
+    const payload = {
+      correction_type: shift === "上班" ? "punch_in" : "punch_out",
+      punch_time: punchDateTime,
+      reason: reason,
+    };
+
+    try {
+      // 發送 PUT 請求修改資料
+      await API.patch(`/punch/correction/${editRow.id}`, payload);
+
+      alert("修改成功！");
+      setOpenEditDialog(false); // 關閉 Dialog
+
+      // 清空欄位
+      setDate(null);
+      setTime(null);
+      setShift("上班");
+      setReason("");
+
+      // 重新查詢以更新列表
+      handleSearch(0, rowsPerPage, true);
+    } catch (error) {
+      console.error("修改失敗：", error.response?.data || error.message);
+    }
+  };
+
+  // 刪除申請
+  const handleDeleteRecord = async (id) => {
+    if (!window.confirm("確定要刪除這筆申請嗎？")) {
+      return;
+    }
+
+    try {
+      // 發送 DELETE 請求刪除資料
+      await API.delete(`/punch/correction/${id}`);
+
+      alert("刪除成功！");
+      // 重新查詢以更新列表
+      handleSearch(0, rowsPerPage, true);
+    } catch (error) {
+      console.error("刪除失敗：", error.response?.data || error.message);
     }
   };
 
@@ -298,6 +371,9 @@ function ClockReissueHistoryPage() {
             textAlign: "center", // 文字置中
             justifyContent: "center", // 水平置中
             gap: 2, // 設定元素之間的間距
+            // RWD設定
+            flexDirection: { xs: "column", md: "row" }, // 小螢幕垂直排列
+            alignItems: { xs: "stretch", md: "center" }, // 小螢幕拉滿寬度
           }}
         >
           {/* 文字 */}
@@ -305,6 +381,8 @@ function ClockReissueHistoryPage() {
           <LocalizationProvider dateAdapter={AdapterDateFns}>
             {/* 起始日期 */}
             <DatePicker
+              fullWidth
+              sx={{ mt: { xs: 1, sm: 0 } }} // 小螢幕上下間距
               value={startDate}
               onChange={(newValue) => setStartDate(newValue)}
               maxDate={new Date()} // 不能選擇未來日期
@@ -327,7 +405,7 @@ function ClockReissueHistoryPage() {
             />
 
             {/* 分隔符號「~」 */}
-            <Typography variant="body1">~</Typography>
+            <Typography variant="body1" sx={{ display: { xs: "none", sm: "block" } }}>~</Typography>
 
             {/* 結束日期 */}
             <DatePicker
@@ -358,6 +436,7 @@ function ClockReissueHistoryPage() {
         <Button
           variant="contained" // 使用實心樣式
           sx={{
+            mt: { xs: 1, sm: 0 },
             backgroundColor: "#AB9681",
             color: "white",
             fontWeight: "bold",
@@ -427,27 +506,56 @@ function ClockReissueHistoryPage() {
                             sx={{ minWidth: column.minWidth }}
                           >
                             {column.id === "actions" ? (
-                              <Button
-                                variant="contained"
-                                sx={{
-                                  backgroundColor: "#D2B48C",
-                                  color: "white",
-                                  opacity: row.status === "待審核" ? 0.5 : 1,
-                                  cursor:
-                                    row.status === "待審核"
-                                      ? "not-allowed"
-                                      : "pointer",
-                                }}
-                                disabled={row.status === "待審核"}
-                                onClick={() => {
-                                  if (row.status !== "待審核") {
-                                    setSelectedRow(row);
-                                    setOpenDetailsDialog(true);
-                                  }
-                                }}
-                              >
-                                查詢
-                              </Button>
+                              <>
+                                {row.status === "待審核" ? (
+                                  <>
+                                    <Button
+                                      variant="contained"
+                                      sx={{
+                                        backgroundColor: "#D2B48C",
+                                        color: "white",
+                                        marginRight: "5px",
+                                      }}
+                                      onClick={() => {
+                                        setEditRow(row); // 將該筆資料存進狀態
+                                        setDate(new Date(row.date)); // 日期欄位
+                                        setTime(new Date(`${row.date}T${row.time}`)); // 時間欄位
+                                        setShift(row.correction_type === "上班打卡" ? "上班" : "下班"); // 班別
+                                        setReason(row.reason || ""); // 原因
+                                        setOpenEditDialog(true); // 開啟「修改」彈窗
+                                      }}
+                                    >
+                                      修改
+                                    </Button>
+                                    <Button
+                                      variant="contained"
+                                      sx={{
+                                        backgroundColor: "#D2B48C",
+                                        color: "white",
+                                      }}
+                                      onClick={() => {
+                                        handleDeleteRecord(row.id);
+                                      }}
+                                    >
+                                      刪除
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <Button
+                                    variant="contained"
+                                    sx={{
+                                      backgroundColor: "#D2B48C",
+                                      color: "white",
+                                    }}
+                                    onClick={() => {
+                                      setSelectedRow(row);
+                                      setOpenDetailsDialog(true);
+                                    }}
+                                  >
+                                    查詢
+                                  </Button>
+                                )}
+                              </>
                             ) : (
                               value
                             )}
@@ -476,6 +584,97 @@ function ClockReissueHistoryPage() {
           />
         </Paper>
       </Paper>
+
+      {/* 修改彈出視窗 */}
+      <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)}>
+        <DialogContent
+          sx={{
+            backgroundColor: "#D2E4F0",
+            padding: "20px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 1,
+          }}
+        >
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <b>選擇日期</b>
+            <DatePicker
+              value={date}
+              onChange={(newValue) => setDate(newValue)}
+              maxDate={new Date()}
+              format="yyyy/MM/dd"
+              slotProps={{
+                textField: {
+                  variant: "outlined",
+                  size: "small",
+                  placeholder: "請選擇日期",
+                  sx: { backgroundColor: "white" },
+                },
+              }}
+            />
+            <b>選擇時間</b>
+            <TimePicker
+              value={time}
+              onChange={(newValue) => setTime(newValue)}
+              ampm={false}
+              format="HH:mm"
+              slotProps={{
+                textField: {
+                  variant: "outlined",
+                  size: "small",
+                  sx: { backgroundColor: "white" },
+                },
+              }}
+            />
+          </LocalizationProvider>
+
+          <b>選擇班別</b>
+          <RadioGroup
+            row
+            value={shift}
+            onChange={(e) => setShift(e.target.value)}
+            sx={{ marginTop: "10px" }}
+          >
+            <FormControlLabel value="上班" control={<Radio />} label="上班" />
+            <FormControlLabel value="下班" control={<Radio />} label="下班" />
+          </RadioGroup>
+
+          <b>原因</b>
+          <TextField
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            fullWidth
+            variant="outlined"
+            margin="dense"
+            sx={{ backgroundColor: "white" }}
+          />
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            justifyContent: "center",
+            backgroundColor: "#D2E4F0",
+            padding: "10px",
+          }}
+        >
+          <Button
+            variant="contained"
+            sx={{
+              backgroundColor: "#AB9681",
+              color: "white",
+              fontWeight: "bold",
+              width: "80%",
+              marginBottom: "5px",
+            }}
+            onClick={() => {
+              handleEditRecord();
+              setOpenEditDialog(false);
+            }}
+          >
+            修改
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* 查詢原因彈出視窗 */}
       <Dialog
@@ -621,10 +820,19 @@ function ClockReissueHistoryPage() {
         <Fab
           sx={{
             position: "fixed",
-            bottom: "5%",
-            right: 20,
+            bottom: { xs: 16, sm: "5%" }, // 小螢幕 bottom 16px，否則 5%
+            right: { xs: 16, sm: 20 }, // 小螢幕取消 right
+            left: { xs: "auto", sm: "auto" }, // 小螢幕改用 left
+            width: { xs: 40, sm: 56 }, // 小螢幕縮小寬度
+            height: { xs: 40, sm: 56 }, // 小螢幕縮小高度
+            minHeight: "unset", // 防止默認 minHeight 影響小尺寸
             backgroundColor: "#4A4A4A",
             color: "white",
+            zIndex: 1300, // 確保浮動在上面
+            "@media (max-width:1000px)": {
+              left: 16,
+              right: "auto",
+            },
           }}
           onClick={() => setOpenAddDialog(true)} // 只開啟新增申請視窗
         >
