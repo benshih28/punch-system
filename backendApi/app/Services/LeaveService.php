@@ -175,9 +175,15 @@ class LeaveService
 
         if ($startDate === $endDate) {
             // 同一天直接算時數
-            return $this->calculateOneDayHours($startTime, $endTime);
+            $hours = $this->calculateOneDayHours($startTime, $endTime);
+            if ($hours < 1) {
+                throw new \Exception("請假時間不在上班時間內，請重新選擇", 400);
+            }
+            return ceil($hours); // ✅ 無條件進位
         }
+
         $totalHours = 0;
+
         // 🧮 第一天：從開始時間到當天18:00
         $firstDayEnd = $startDate . ' 18:00:00';
         $totalHours += $this->calculateOneDayHours($startTime, $firstDayEnd);
@@ -194,11 +200,12 @@ class LeaveService
         // 🧮 最後一天：從 09:00 到實際結束時間
         $lastDayStart = $endDate . ' 09:00:00';
         $totalHours += $this->calculateOneDayHours($lastDayStart, $endTime);
-        
+
         if ($totalHours < 1) {
             throw new \Exception("請假時間不在上班時間內，請重新選擇", 400);
         }
-        return round($totalHours, 2);        
+
+        return ceil($totalHours); // ✅ 最後無條件進位成整數小時
     }
 
     // 6. 計算單天請假時數 (考慮上下班時間)
@@ -234,7 +241,7 @@ class LeaveService
             $hours -= 1;  // 扣掉午休1小時
         }
 
-        return round($hours, 2);
+        return ceil($hours);
     }
 
     // 7. 計算特殊假別剩餘小時數
