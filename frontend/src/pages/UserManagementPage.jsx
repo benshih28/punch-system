@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import { useAtom } from "jotai";
 import { authAtom } from "../state/authAtom";
 import { useMediaQuery } from "@mui/material";
@@ -28,12 +28,119 @@ import {
 } from "@mui/material";
 import ManageSearchIcon from "@mui/icons-material/ManageSearch";
 
+// 提取 EmployeeRow 組件並使用 React.memo 包裝
+const EmployeeRow = memo(
+  ({ emp, isSmallScreen, onReviewOpen, onAssignOpen, onDelete }) => {
+    console.log(`Rendering EmployeeRow for ${emp.employee_name}`); // 調試用，確認渲染次數
+
+    return (
+      <TableRow key={emp.id}>
+        <TableCell sx={{ fontSize: isSmallScreen ? "0.8rem" : "1rem" }}>
+          {emp.department !== "-" ? emp.department : "無部門"}
+        </TableCell>
+        <TableCell sx={{ fontSize: isSmallScreen ? "0.8rem" : "1rem" }}>
+          {emp.position !== "-" ? emp.position : "無職位"}
+        </TableCell>
+        <TableCell sx={{ fontSize: isSmallScreen ? "0.8rem" : "1rem" }}>
+          {emp.employee_name}
+        </TableCell>
+        <TableCell sx={{ fontSize: isSmallScreen ? "0.8rem" : "1rem" }}>
+          {emp.manager_name !== "-" ? emp.manager_name : "無主管"}
+        </TableCell>
+        <TableCell sx={{ fontSize: isSmallScreen ? "0.8rem" : "1rem" }}>
+          {emp.roles !== "-" ? emp.roles : "無角色"}
+        </TableCell>
+        <TableCell sx={{ fontSize: isSmallScreen ? "0.8rem" : "1rem" }}>
+          {emp.status === "pending"
+            ? "待審核"
+            : emp.status === "approved"
+            ? "已批准"
+            : emp.status === "rejected"
+            ? "已拒絕"
+            : "已離職"}
+        </TableCell>
+        <TableCell>
+          {emp.status === "pending" && (
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: "#BCA28C",
+                color: "white",
+                fontWeight: "bold",
+                borderRadius: "10px",
+                mr: 1,
+                px: isSmallScreen ? 1 : 2,
+                fontSize: isSmallScreen ? "0.7rem" : "0.875rem",
+              }}
+              onClick={() => onReviewOpen(emp)}
+            >
+              審核
+            </Button>
+          )}
+          {emp.status === "approved" && (
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: "#BCA28C",
+                color: "white",
+                fontWeight: "bold",
+                borderRadius: "10px",
+                mr: 1,
+                px: isSmallScreen ? 1 : 2,
+                fontSize: isSmallScreen ? "0.7rem" : "0.875rem",
+              }}
+              onClick={() => onAssignOpen(emp)}
+            >
+              指派
+            </Button>
+          )}
+          <Button
+            variant="contained"
+            sx={{
+              backgroundColor: "#BCA28C",
+              color: "white",
+              fontWeight: "bold",
+              borderRadius: "10px",
+              px: isSmallScreen ? 1 : 2,
+              fontSize: isSmallScreen ? "0.7rem" : "0.875rem",
+            }}
+            onClick={() => onDelete(emp.id)}
+          >
+            離職
+          </Button>
+        </TableCell>
+      </TableRow>
+    );
+  },
+  // 自定義比較函數（可選）
+  (prevProps, nextProps) => {
+    // 比較 emp 物件的所有屬性是否相同
+    const isEmpEqual =
+      prevProps.emp.id === nextProps.emp.id &&
+      prevProps.emp.department === nextProps.emp.department &&
+      prevProps.emp.position === nextProps.emp.position &&
+      prevProps.emp.employee_name === nextProps.emp.employee_name &&
+      prevProps.emp.manager_name === nextProps.emp.manager_name &&
+      prevProps.emp.roles === nextProps.emp.roles &&
+      prevProps.emp.status === nextProps.emp.status;
+
+    // 比較其他 props
+    return (
+      isEmpEqual &&
+      prevProps.isSmallScreen === nextProps.isSmallScreen &&
+      prevProps.onReviewOpen === nextProps.onReviewOpen &&
+      prevProps.onAssignOpen === nextProps.onAssignOpen &&
+      prevProps.onDelete === nextProps.onDelete
+    );
+  }
+);
+
 function UserManagementPage() {
   const [authState] = useAtom(authAtom);
   const userPermissions = authState?.roles_permissions?.permissions || [];
-  const hasManageUsersPermission = userPermissions.includes("manage_employees");
+  const hasManageEmployeesPermission = userPermissions.includes("manage_employees");
 
-  if (!hasManageUsersPermission) {
+  if (!hasManageEmployeesPermission) {
     return <Navigate to="/404" replace />;
   }
 
@@ -41,7 +148,6 @@ function UserManagementPage() {
   const [positions, setPositions] = useState([]);
   const [roles, setRoles] = useState([]);
   const [employees, setEmployees] = useState([]);
-  const [managers, setManagers] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
   const [department, setDepartment] = useState("");
@@ -66,18 +172,50 @@ function UserManagementPage() {
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
 
+  const fetchEmployees = () => {
+    setLoading(true);
+    const params = {
+      department_id: departments.find((dept) => dept.name === department)?.id || null,
+      role_id: roles.find((role) => role.name === position)?.id || null,
+      user_id: employeeId || null,
+      page: currentPage,
+      per_page: 10,
+    };
+
+    API.get("/employees", { params })
+      .then((res) => {
+        console.log("Employees data:", res.data.data);
+        const ids = res.data.data.map((emp) => emp.id);
+        const uniqueIds = new Set(ids);
+        if (ids.length !== uniqueIds.size) {
+          console.warn("發現重複的 emp.id:", ids);
+        }
+        setEmployees(res.data.data);
+        setTotalPages(res.data.meta.last_page);
+      })
+      .catch((err) => {
+        console.error("取得員工列表失敗", err);
+        if (err.response?.status === 401) {
+          alert("未授權，請重新登入");
+        } else if (err.response?.status === 403) {
+          alert("您沒有權限執行此操作");
+        } else if (err.response?.status === 500) {
+          alert("伺服器發生錯誤，請聯繫管理員或稍後再試");
+        } else {
+          alert("無法載入員工列表，請稍後再試");
+        }
+      })
+      .finally(() => setLoading(false));
+  };
+
   useEffect(() => {
     Promise.all([
       API.get("/departments").then((res) => setDepartments(res.data.departments || [])),
       API.get("/positions").then((res) => setPositions(res.data.positions || [])),
       API.get("/roles").then((res) => {
-        // 修正：直接檢查 res.data 是否為陣列
         const rolesData = Array.isArray(res.data) ? res.data : [];
         setRoles(rolesData);
       }),
-      API.get("/employees/approved", { params: { per_page: 100 } }).then((res) =>
-        setManagers(res.data.data || [])
-      ),
     ])
       .catch((err) => {
         console.error("載入資料失敗", err);
@@ -91,36 +229,6 @@ function UserManagementPage() {
   }, []);
 
   useEffect(() => {
-    const fetchEmployees = () => {
-      setLoading(true);
-      const params = {
-        department_id: departments.find((dept) => dept.name === department)?.id || null,
-        role_id: roles.find((role) => role.name === position)?.id || null,
-        user_id: employeeId || null,
-        page: currentPage,
-        per_page: 10,
-      };
-
-      API.get("/employees", { params })
-        .then((res) => {
-          setEmployees(res.data.data);
-          setTotalPages(res.data.meta.last_page);
-        })
-        .catch((err) => {
-          console.error("取得員工列表失敗", err);
-          if (err.response?.status === 401) {
-            alert("未授權，請重新登入");
-          } else if (err.response?.status === 403) {
-            alert("您沒有權限執行此操作");
-          } else if (err.response?.status === 500) {
-            alert("伺服器發生錯誤，請聯繫管理員或稍後再試");
-          } else {
-            alert("無法載入員工列表，請稍後再試");
-          }
-        })
-        .finally(() => setLoading(false));
-    };
-
     fetchEmployees();
   }, [currentPage, department, position, employeeId, departments, roles]);
 
@@ -161,6 +269,10 @@ function UserManagementPage() {
       setNewEmployeePassword("");
       setNewEmployeePasswordConfirmation("");
       setNewEmployeeGender("");
+      setDepartment("");
+      setPosition("");
+      setEmployeeId("");
+      fetchEmployees();
     } catch (error) {
       console.error("新增員工失敗：", error);
       if (error.response?.status === 422) {
@@ -173,11 +285,11 @@ function UserManagementPage() {
     }
   };
 
-  const handleReviewOpen = (employee) => {
+  const handleReviewOpen = useCallback((employee) => {
     setReviewEmployee(employee);
     setReviewStatus("");
     setOpenReviewDialog(true);
-  };
+  }, []);
 
   const handleReviewEmployee = async () => {
     if (!reviewStatus) {
@@ -187,34 +299,42 @@ function UserManagementPage() {
 
     try {
       await API.patch(`/employees/${reviewEmployee.id}/review`, { status: reviewStatus });
+      setEmployees((prevEmployees) =>
+        prevEmployees.map((emp) =>
+          emp.id === reviewEmployee.id ? { ...emp, status: reviewStatus } : emp
+        )
+      );
       setOpenReviewDialog(false);
     } catch (error) {
       console.error("審核員工失敗：", error);
       if (error.response?.status === 404) {
         alert("員工不存在，請重新整理頁面");
+        fetchEmployees();
       } else if (error.response?.status === 422) {
         alert("驗證失敗，請檢查輸入資料");
       } else if (error.response?.status === 403) {
         alert("您沒有權限執行此操作");
       } else {
         alert("審核員工失敗，請稍後再試");
+        fetchEmployees();
       }
     }
   };
 
-  const handleAssignOpen = (employee) => {
+  const handleAssignOpen = useCallback((employee) => {
     if (dataLoading) {
       alert("資料正在載入中，請稍後再試");
       return;
     }
     setAssignEmployee(employee);
-    setAssignDepartment(employee.department || "");
-    setAssignPosition(employee.position || "");
+    setAssignDepartment(employee.department !== "-" ? employee.department : "");
+    setAssignPosition(employee.position !== "-" ? employee.position : "");
     setAssignManager(employee.manager_id || "");
-    setAssignRole(employee.roles || "");
+    const firstRole = employee.roles && employee.roles !== "-" ? employee.roles.split(", ")[0] : "";
+    setAssignRole(firstRole);
     setAssignHireDate("");
     setOpenAssignDialog(true);
-  };
+  }, [dataLoading]);
 
   const handleAssignEmployee = async () => {
     if (
@@ -238,6 +358,7 @@ function UserManagementPage() {
       };
       await API.patch(`/employees/${assignEmployee.id}/assign`, payload);
       setOpenAssignDialog(false);
+      fetchEmployees();
     } catch (error) {
       console.error("指派員工詳情失敗：", error);
       if (error.response?.status === 400) {
@@ -254,13 +375,14 @@ function UserManagementPage() {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = useCallback(async (id) => {
     if (!window.confirm("確定要將此員工標記為離職嗎？")) {
       return;
     }
 
     try {
       await API.delete(`/employees/${id}`);
+      fetchEmployees();
     } catch (error) {
       console.error("標記員工為離職失敗：", error);
       if (error.response?.status === 404) {
@@ -271,7 +393,7 @@ function UserManagementPage() {
         alert("標記員工為離職失敗，請稍後再試");
       }
     }
-  };
+  }, []);
 
   const handlePageChange = (event, value) => {
     setCurrentPage(value);
@@ -693,12 +815,14 @@ function UserManagementPage() {
                 displayEmpty
               >
                 <MenuItem value="">請選擇主管</MenuItem>
-                {Array.isArray(managers) &&
-                  managers.map((mgr) => (
-                    <MenuItem key={mgr.id} value={mgr.id}>
-                      {mgr.employee_name} (ID: {mgr.id})
-                    </MenuItem>
-                  ))}
+                {Array.isArray(employees) &&
+                  employees
+                    .filter((emp) => emp.status === "approved")
+                    .map((emp) => (
+                      <MenuItem key={emp.id} value={emp.id}>
+                        {emp.employee_name} (ID: {emp.id})
+                      </MenuItem>
+                    ))}
               </Select>
             </FormControl>
             <Typography variant="body1">角色</Typography>
@@ -827,92 +951,24 @@ function UserManagementPage() {
 
             <TableBody>
               {loading ? (
-                <TableRow>
+                <TableRow key="loading">
                   <TableCell colSpan={7} align="center">
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
               ) : employees.length > 0 ? (
                 employees.map((emp) => (
-                  <TableRow key={emp.id}>
-                    <TableCell sx={{ fontSize: isSmallScreen ? "0.8rem" : "1rem" }}>
-                      {emp.department || "--"}
-                    </TableCell>
-                    <TableCell sx={{ fontSize: isSmallScreen ? "0.8rem" : "1rem" }}>
-                      {emp.position || "--"}
-                    </TableCell>
-                    <TableCell sx={{ fontSize: isSmallScreen ? "0.8rem" : "1rem" }}>
-                      {emp.employee_name}
-                    </TableCell>
-                    <TableCell sx={{ fontSize: isSmallScreen ? "0.8rem" : "1rem" }}>
-                      {managers.find((mgr) => mgr.id === emp.manager_id)?.employee_name || "--"}
-                    </TableCell>
-                    <TableCell sx={{ fontSize: isSmallScreen ? "0.8rem" : "1rem" }}>
-                      {emp.roles || "--"}
-                    </TableCell>
-                    <TableCell sx={{ fontSize: isSmallScreen ? "0.8rem" : "1rem" }}>
-                      {emp.status === "pending"
-                        ? "待審核"
-                        : emp.status === "approved"
-                        ? "已批准"
-                        : emp.status === "rejected"
-                        ? "已拒絕"
-                        : "已離職"}
-                    </TableCell>
-                    <TableCell>
-                      {emp.status === "pending" && (
-                        <Button
-                          variant="contained"
-                          sx={{
-                            backgroundColor: "#BCA28C",
-                            color: "white",
-                            fontWeight: "bold",
-                            borderRadius: "10px",
-                            mr: 1,
-                            px: isSmallScreen ? 1 : 2,
-                            fontSize: isSmallScreen ? "0.7rem" : "0.875rem",
-                          }}
-                          onClick={() => handleReviewOpen(emp)}
-                        >
-                          審核
-                        </Button>
-                      )}
-                      {emp.status === "approved" && (
-                        <Button
-                          variant="contained"
-                          sx={{
-                            backgroundColor: "#BCA28C",
-                            color: "white",
-                            fontWeight: "bold",
-                            borderRadius: "10px",
-                            mr: 1,
-                            px: isSmallScreen ? 1 : 2,
-                            fontSize: isSmallScreen ? "0.7rem" : "0.875rem",
-                          }}
-                          onClick={() => handleAssignOpen(emp)}
-                        >
-                          指派
-                        </Button>
-                      )}
-                      <Button
-                        variant="contained"
-                        sx={{
-                          backgroundColor: "#BCA28C",
-                          color: "white",
-                          fontWeight: "bold",
-                          borderRadius: "10px",
-                          px: isSmallScreen ? 1 : 2,
-                          fontSize: isSmallScreen ? "0.7rem" : "0.875rem",
-                        }}
-                        onClick={() => handleDelete(emp.id)}
-                      >
-                        離職
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                  <EmployeeRow
+                    key={emp.id}
+                    emp={emp}
+                    isSmallScreen={isSmallScreen}
+                    onReviewOpen={handleReviewOpen}
+                    onAssignOpen={handleAssignOpen}
+                    onDelete={handleDelete}
+                  />
                 ))
               ) : (
-                <TableRow>
+                <TableRow key="no-data">
                   <TableCell colSpan={7} align="center">
                     尚無員工資料
                   </TableCell>
