@@ -959,9 +959,14 @@ class LeaveController extends Controller
             // 1️⃣ **取得請假紀錄**
             $leave = Leave::find($id);
 
-            if (!$leave) {
-                Log::warning("刪除請假失敗 - 找不到假單或無權限", ['user_id' => $user->id, 'leave_id' => $id]);
-                return response()->json(['message' => '查無此假單或您無權限刪除'], 403);
+            if (!$leave || $leave->user_id !== $user->id) {
+                // Log::warning("刪除請假失敗 - 找不到假單", ['user_id' => $user->id, 'leave_id' => $id]);
+                return response()->json(['message' => '查無此假單'], 403);
+            }
+
+            // **限制只能刪除「待審核」的假單**
+            if ($leave->status !== 0) {
+                return response()->json(['message' => '僅能刪除尚未審核的假單'], 403);
             }
 
             // 2️⃣ **刪除相關附件**
