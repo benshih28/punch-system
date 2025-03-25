@@ -1,8 +1,11 @@
-import { useState } from "react"; // React Hook 用於管理元件的內部狀態
+import { useState, useEffect } from "react"; // React Hook 用於管理元件的內部狀態和副作用
 import { useAtom } from "jotai"; // 從 Jotai 引入 `useAtom`，用來讀取 `authAtom`
 import { authAtom } from "../state/authAtom"; // Jotai Atom 用於存儲身份驗證狀態
+import { useMediaQuery } from "@mui/material"; // 用於檢查螢幕尺寸，實現 RWD
+import { Navigate } from "react-router-dom"; // 用於權限檢查失敗時跳轉
 import API from "../api/axios"; // Axios 實例，用於發送 API 請求
 import { Link } from "react-router-dom";
+
 // **Material UI 元件**
 import {
   Box, // 佈局容器 (類似 div)
@@ -15,84 +18,112 @@ import {
   TableRow,
   TableCell,
   TableBody,
-  Checkbox,
   TableSortLabel,
   Dialog,
   DialogActions,
   DialogContent,
   TextField,
+  Pagination, // 用於分頁功能
 } from "@mui/material";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle"; // ✅ 圖示
-import AddCircleIcon from "@mui/icons-material/AddCircle"; // √圖示
 
-function DepartmentManagement() {
+function DepartmentManagementPage() {
   // **Jotai - 全局狀態管理**
-  const [, setAuth] = useAtom(authAtom); // 設定全局身份驗證狀態
+  const [authState] = useAtom(authAtom); // 從 Jotai 獲取身份驗證狀態
 
-  const [departments, setDepartments] = useState([
-    {
-      id: 1,
-      name: "人資部",
-      created_at: "2024/01/02",
-      updated_at: "2024/01/02",
-      selected: false,
-    },
-    {
-      id: 2,
-      name: "財務部",
-      created_at: "2024/02/10",
-      updated_at: "2024/02/12",
-      selected: false,
-    },
-    {
-      id: 3,
-      name: "研發部",
-      created_at: "2024/03/15",
-      updated_at: "2024/03/18",
-      selected: false,
-    },
-  ]);
+  // 檢查使用者權限
+  const userPermissions = authState?.roles_permissions?.permissions || [];
+  const hasManageDepartmentsPermission = userPermissions.includes("manage_departments");
 
-  const [openEditDialog, setOpenEditDialog] = useState(false); // 控制 Dialog
-  const [editDepartment, setEditDepartment] = useState(null); // 當前編輯部門
-  const [editName, setEditName] = useState(""); // 編輯名稱
-  const [openAddDialog, setOpenAddDialog] = useState(false); // 控制新增 Dialog
-  const [newDepartmentName, setNewDepartmentName] = useState(""); // 存儲新部門名稱
+  // 如果沒有 manage_departments 權限，跳轉到 404 頁面
+  if (!hasManageDepartmentsPermission) {
+    return <Navigate to="/404" replace />;
+  }
+
+  // **狀態管理**
+  const [departments, setDepartments] = useState([]); // 儲存部門資料
+  const [openEditDialog, setOpenEditDialog] = useState(false); // 控制編輯部門對話框
+  const [editDepartment, setEditDepartment] = useState(null); // 當前編輯的部門
+  const [editName, setEditName] = useState(""); // 編輯部門名稱
+  const [openAddDialog, setOpenAddDialog] = useState(false); // 控制新增部門對話框
+  const [newDepartmentName, setNewDepartmentName] = useState(""); // 新增部門名稱
+  const [orderBy, setOrderBy] = useState("id"); // 排序欄位 (預設為 ID)
+  const [order, setOrder] = useState("asc"); // 排序方式 (asc = 升序, desc = 降序)
+  const [currentPage, setCurrentPage] = useState(1); // 當前頁數（分頁用）
+  const itemsPerPage = 10; // 每頁顯示的資料筆數
+
+  // 分頁計算：計算當前頁的資料範圍和總頁數
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentDepartments = departments.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(departments.length / itemsPerPage);
+
+  // 初始載入部門列表
+  useEffect(() => {
+    API.get("/departments")
+      .then((res) => {
+        setDepartments(res.data.departments); // 直接使用後端返回的部門資料
+      })
+      .catch((err) => {
+        console.error("取得部門列表失敗", err);
+        if (err.response?.status === 401) {
+          alert("未授權，請重新登入");
+        } else {
+          alert("無法載入部門列表，請稍後再試");
+        }
+      });
+  }, []);
 
   // 點擊「編輯」按鈕
   const handleEditOpen = (dept) => {
     setEditDepartment(dept);
     setEditName(dept.name); // 設定預設名稱
-    setOpenEditDialog(true); // 開啟 Dialog
+    setOpenEditDialog(true); // 開啟對話框
   };
 
   // 點擊「保存」，更新部門名稱
-  const handleSave = () => {
-    setDepartments(
-      departments.map((dept) =>
-        dept.id === editDepartment.id
-          ? { ...dept, name: editName, updated_at: formattedDate }
-          : dept
-      )
-    );
-    setOpenEditDialog(false); // 關閉 Dialog
+  const handleSave = async () => {
+    try {
+      await API.patch(`/departments/${editDepartment.id}`, { name: editName });
+
+      // 更新本地部門列表
+      setDepartments(
+        departments.map((dept) =>
+          dept.id === editDepartment.id
+            ? { ...dept, name: editName, updated_at: new Date().toISOString() }
+            : dept
+        )
+      );
+      setOpenEditDialog(false); // 關閉對話框
+    } catch (error) {
+      console.error("編輯部門失敗：", error);
+      if (error.response?.status === 404) {
+        alert("部門不存在，請重新整理頁面");
+      } else if (error.response?.status === 422) {
+        alert("部門名稱已存在，請使用其他名稱");
+      } else if (error.response?.status === 403) {
+        alert("您沒有權限執行此操作");
+      } else {
+        alert("編輯部門失敗，請稍後再試");
+      }
+    }
   };
 
-  // 格式化日期為 yyyy/MM/dd
-  const formattedDate = new Date().toLocaleDateString("zh-TW", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-
-  // 點擊「刪除」，過濾掉該筆資料
-  const handleDelete = (id) => {
-    setDepartments(departments.filter((dept) => dept.id !== id));
+  // 點擊「刪除」，刪除部門
+  const handleDelete = async (id) => {
+    try {
+      await API.delete(`/departments/${id}`);
+      setDepartments(departments.filter((dept) => dept.id !== id)); // 更新本地列表
+    } catch (error) {
+      console.error("刪除部門失敗：", error);
+      if (error.response?.status === 404) {
+        alert("部門不存在，請重新整理頁面");
+      } else if (error.response?.status === 403) {
+        alert("您沒有權限執行此操作");
+      } else {
+        alert("刪除部門失敗，請稍後再試");
+      }
+    }
   };
-
-  const [orderBy, setOrderBy] = useState("id"); // 排序欄位 (預設為 ID)
-  const [order, setOrder] = useState("asc"); // 排序方式 (asc = 升序, desc = 降序)
-  const [selectAll, setSelectAll] = useState(false); // 是否全選
 
   // 排序函式
   const handleSort = (column) => {
@@ -105,7 +136,7 @@ function DepartmentManagement() {
   };
 
   // 根據排序條件處理部門列表
-  const sortedDepartments = [...departments].sort((a, b) => {
+  const sortedDepartments = [...currentDepartments].sort((a, b) => {
     let valA = a[orderBy];
     let valB = b[orderBy];
 
@@ -120,108 +151,141 @@ function DepartmentManagement() {
     return 0;
   });
 
-  // 全選 / 取消全選
-  const handleSelectAll = () => {
-    const newSelectAll = !selectAll;
-    setSelectAll(newSelectAll);
-    setDepartments(
-      departments.map((dept) => ({ ...dept, selected: newSelectAll }))
-    );
-  };
-
-  // 個別選擇
-  const handleSelectOne = (id) => {
-    const updatedDepartments = departments.map((dept) =>
-      dept.id === id ? { ...dept, selected: !dept.selected } : dept
-    );
-    setDepartments(updatedDepartments);
-
-    // 如果有任何一個沒選，就取消 `全選`，如果全部選了就勾選 `全選`
-    const allSelected = updatedDepartments.every((dept) => dept.selected);
-    setSelectAll(allSelected);
-  };
-
-  const handleAddDepartment = () => {
+  // 新增部門
+  const handleAddDepartment = async () => {
     if (!newDepartmentName.trim()) {
       alert("請輸入部門名稱！");
       return;
     }
 
-    // 產生新的 ID（根據最後一筆資料的 ID +1）
-    const newId =
-      departments.length > 0 ? departments[departments.length - 1].id + 1 : 1;
+    try {
+      const payload = {
+        name: newDepartmentName,
+      };
+      await API.post("/departments", payload);
 
-    // 新的部門物件
-    const newDepartment = {
-      id: newId,
-      name: newDepartmentName,
-      created_at: formattedDate, // 設定格式化日期
-      updated_at: formattedDate,
-      selected: false,
-    };
+      // 重新獲取部門列表
+      const res = await API.get("/departments");
+      setDepartments(res.data.departments);
+      setCurrentPage(1); // 新增後回到第一頁
 
-    // 更新 `departments`
-    setDepartments([...departments, newDepartment]);
-
-    // 關閉 Dialog 並清空輸入框
-    setOpenAddDialog(false);
-    setNewDepartmentName("");
+      // 關閉對話框並清空輸入框
+      setOpenAddDialog(false);
+      setNewDepartmentName("");
+    } catch (error) {
+      console.error("新增部門失敗：", error);
+      if (error.response?.status === 422) {
+        alert("部門名稱已存在，請使用其他名稱");
+      } else if (error.response?.status === 403) {
+        alert("您沒有權限執行此操作");
+      } else {
+        alert("新增部門失敗，請稍後再試");
+      }
+    }
   };
+
+  // 處理分頁切換
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value);
+  };
+
+  // RWD 檢查：判斷螢幕尺寸
+  const isSmallScreen = useMediaQuery("(max-width: 600px)");
+  const isMediumScreen = useMediaQuery("(max-width: 960px)");
 
   return (
     <Box
       sx={{
         width: "100%", // 佔滿整個視口寬度
-        height: "100%", // 佔滿整個視口高度
+        minHeight: "100vh", // 至少填滿視窗高度
         display: "flex", // 啟用 Flexbox
         flexDirection: "column", // 讓內容垂直排列
         alignItems: "center",
         backgroundColor: "#ffffff", // 背景顏色
+        p: isSmallScreen ? 1 : 2, // 小螢幕時減少內距
       }}
     >
-      {/* 標題列 */}
+      {/* 標題列 - RWD 調整 */}
       <Box
         sx={{
           display: "flex",
-          margin: "60px 0px 40px",
-          width: "90%",
+          flexDirection: isSmallScreen ? "column" : "row", // 小螢幕時垂直排列
+          margin: isSmallScreen ? "20px 0px" : "60px 0px 40px",
+          width: isSmallScreen ? "100%" : "90%",
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: isSmallScreen ? "center" : "center",
+          gap: isSmallScreen ? 1 : 0,
         }}
       >
         <Typography
-          variant="h4"
+          variant={isSmallScreen ? "h6" : "h4"} // 小螢幕時縮小字體
           fontWeight={900}
           textAlign="center"
-          sx={{ mb: 1 }}
+          sx={{ mb: isSmallScreen ? 1 : 0 }}
         >
-          <Link to="/department/management" style={{ textDecoration: "none", color: "#ba6262", fontWeight: "bold" }}>
+          <Link
+            to="/department/management"
+            style={{
+              textDecoration: "none",
+              color: "#ba6262",
+              fontWeight: "bold",
+              display: isSmallScreen ? "block" : "inline",
+            }}
+          >
             部門管理
           </Link>
-          &nbsp;
-          <Link to="/position/management" style={{ textDecoration: "none", color: "black" }}>
+          {isSmallScreen ? <br /> : " "}
+          <Link
+            to="/position/management"
+            style={{
+              textDecoration: "none",
+              color: "black",
+              display: isSmallScreen ? "block" : "inline",
+            }}
+          >
             職位管理
           </Link>
-          &nbsp;
-          <Link to="/role/permissions" style={{ textDecoration: "none", color: "black" }}>
+          {isSmallScreen ? <br /> : " "}
+          <Link
+            to="/role/permissions"
+            style={{
+              textDecoration: "none",
+              color: "black",
+              display: isSmallScreen ? "block" : "inline",
+            }}
+          >
             權限管理
           </Link>
-          &nbsp;
-          <Link to="/user/management" style={{ textDecoration: "none", color: "black" }}>
+          {isSmallScreen ? <br /> : " "}
+          <Link
+            to="/user/management"
+            style={{
+              textDecoration: "none",
+              color: "black",
+              display: isSmallScreen ? "block" : "inline",
+            }}
+          >
             人員管理
           </Link>
-          &nbsp;
-          <Link to="/employee/history" style={{ textDecoration: "none", color: "black" }}>
+          {isSmallScreen ? <br /> : " "}
+          <Link
+            to="/employee/history"
+            style={{
+              textDecoration: "none",
+              color: "black",
+              display: isSmallScreen ? "block" : "inline",
+            }}
+          >
             人員歷程
           </Link>
         </Typography>
       </Box>
 
-      {/* 表格容器 */}
+      {/* 部門列表容器 */}
       <Paper
         sx={{
-          width: "90%",
-          padding: "20px",
+          width: isSmallScreen ? "100%" : "90%", // 小螢幕時佔滿寬度
+          padding: isSmallScreen ? "10px" : "20px", // 小螢幕時減少內距
           boxShadow: "0px -4px 10px rgba(0, 0, 0, 0.3)", // 上方陰影
           borderRadius: "8px",
         }}
@@ -243,15 +307,23 @@ function DepartmentManagement() {
               backgroundColor: "#4A4A4A",
               color: "white",
               fontWeight: "bold",
-              px: 3,
+              px: isSmallScreen ? 2 : 3, // 小螢幕時減少按鈕內距
               borderRadius: "10px",
+              fontSize: isSmallScreen ? "0.8rem" : "1rem", // 小螢幕時縮小字體
             }}
-            onClick={() => setOpenAddDialog(true)} // 點擊開啟 Dialog
+            onClick={() => setOpenAddDialog(true)} // 點擊開啟對話框
           >
             新增
           </Button>
         </Box>
-        <Dialog open={openAddDialog} onClose={() => setOpenAddDialog(false)}>
+
+        {/* 新增部門對話框 */}
+        <Dialog
+          open={openAddDialog}
+          onClose={() => setOpenAddDialog(false)}
+          fullWidth
+          maxWidth={isSmallScreen ? "xs" : "sm"} // 小螢幕時縮小對話框
+        >
           <DialogContent
             sx={{
               backgroundColor: "#D2E4F0",
@@ -295,91 +367,133 @@ function DepartmentManagement() {
               }}
               onClick={handleAddDepartment}
             >
-              <AddCircleIcon sx={{ mr: 1 }} /> 新增
+              新增
             </Button>
           </DialogActions>
         </Dialog>
 
-        <TableContainer>
-          <Table>
-            {/* 表頭 */}
+        {/* 部門表格 - RWD 調整 */}
+        <TableContainer sx={{ maxHeight: "400px", overflowX: "auto" }}>
+          <Table stickyHeader>
             <TableHead>
               <TableRow>
-                <TableCell>
-                  <Checkbox checked={selectAll} onChange={handleSelectAll} />
-                </TableCell>
                 {["id", "name", "created_at", "updated_at"].map((column) => (
-                  <TableCell key={column} sx={{ fontWeight: "bold" }}>
+                  <TableCell
+                    key={column}
+                    sx={{
+                      fontWeight: "bold",
+                      fontSize: isSmallScreen ? "0.8rem" : "1rem",
+                      minWidth: column === "id" ? "80px" : "120px",
+                    }}
+                  >
                     <TableSortLabel
-                      active={orderBy === column} // 如果是當前排序欄位則顯示排序狀態
-                      direction={orderBy === column ? order : "asc"} // 當前排序方向
-                      onClick={() => handleSort(column)} // 點擊時切換排序
+                      active={orderBy === column}
+                      direction={orderBy === column ? order : "asc"}
+                      onClick={() => handleSort(column)}
                     >
                       {column === "id"
                         ? "部門 ID"
                         : column === "name"
-                          ? "部門"
-                          : column === "created_at"
-                            ? "建立時間"
-                            : "更新時間"}
+                        ? "部門"
+                        : column === "created_at"
+                        ? "建立時間"
+                        : "更新時間"}
                     </TableSortLabel>
                   </TableCell>
                 ))}
-                <TableCell sx={{ fontWeight: "bold" }}>操作</TableCell>
+                <TableCell
+                  sx={{
+                    fontWeight: "bold",
+                    fontSize: isSmallScreen ? "0.8rem" : "1rem",
+                    minWidth: "100px",
+                  }}
+                >
+                  操作
+                </TableCell>
               </TableRow>
             </TableHead>
 
-            {/* 表格內容 */}
             <TableBody>
-              {sortedDepartments.map((dept) => (
-                <TableRow key={dept.id}>
-                  <TableCell>
-                    <Checkbox
-                      checked={dept.selected}
-                      onChange={() => handleSelectOne(dept.id)}
-                    />
-                  </TableCell>
-                  <TableCell>{dept.id}</TableCell>
-                  <TableCell>{dept.name}</TableCell>
-                  <TableCell>{dept.created_at}</TableCell>
-                  <TableCell>{dept.updated_at}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="contained"
-                      sx={{
-                        backgroundColor: "#BCA28C",
-                        color: "white",
-                        fontWeight: "bold",
-                        borderRadius: "10px",
-                        mr: 1,
-                        px: 2,
-                      }}
-                      onClick={() => handleEditOpen(dept)}
-                    >
-                      編輯
-                    </Button>
-                    <Button
-                      variant="contained"
-                      sx={{
-                        backgroundColor: "#BCA28C",
-                        color: "white",
-                        fontWeight: "bold",
-                        borderRadius: "10px",
-                        px: 2,
-                      }}
-                      onClick={() => handleDelete(dept.id)}
-                    >
-                      刪除
-                    </Button>
+              {sortedDepartments.length > 0 ? (
+                sortedDepartments.map((dept) => (
+                  <TableRow key={dept.id}>
+                    <TableCell sx={{ fontSize: isSmallScreen ? "0.8rem" : "1rem" }}>
+                      {dept.id}
+                    </TableCell>
+                    <TableCell sx={{ fontSize: isSmallScreen ? "0.8rem" : "1rem" }}>
+                      {dept.name}
+                    </TableCell>
+                    <TableCell sx={{ fontSize: isSmallScreen ? "0.8rem" : "1rem" }}>
+                      {new Date(dept.created_at).toLocaleDateString("zh-TW")}
+                    </TableCell>
+                    <TableCell sx={{ fontSize: isSmallScreen ? "0.8rem" : "1rem" }}>
+                      {new Date(dept.updated_at).toLocaleDateString("zh-TW")}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="contained"
+                        sx={{
+                          backgroundColor: "#BCA28C",
+                          color: "white",
+                          fontWeight: "bold",
+                          borderRadius: "10px",
+                          mr: 1,
+                          px: isSmallScreen ? 1 : 2, // 小螢幕時減少按鈕內距
+                          fontSize: isSmallScreen ? "0.7rem" : "0.875rem", // 小螢幕時縮小字體
+                        }}
+                        onClick={() => handleEditOpen(dept)}
+                      >
+                        編輯
+                      </Button>
+                      <Button
+                        variant="contained"
+                        sx={{
+                          backgroundColor: "#BCA28C",
+                          color: "white",
+                          fontWeight: "bold",
+                          borderRadius: "10px",
+                          px: isSmallScreen ? 1 : 2,
+                          fontSize: isSmallScreen ? "0.7rem" : "0.875rem",
+                        }}
+                        onClick={() => handleDelete(dept.id)}
+                      >
+                        刪除
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} align="center">
+                    尚無部門資料
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </TableContainer>
+
+        {/* 分頁導航 */}
+        {departments.length > 0 && (
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+            <Pagination
+              count={totalPages}
+              page={currentPage}
+              onChange={handlePageChange}
+              color="primary"
+              size={isSmallScreen ? "small" : "medium"} // 小螢幕時縮小分頁按鈕
+            />
+          </Box>
+        )}
       </Paper>
-      {/* ✅ 編輯 Dialog */}
-      <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)}>
+
+      {/* 編輯部門對話框 */}
+      <Dialog
+        open={openEditDialog}
+        onClose={() => setOpenEditDialog(false)}
+        fullWidth
+        maxWidth={isSmallScreen ? "xs" : "sm"}
+      >
         <DialogContent
           sx={{
             backgroundColor: "#D2E4F0",
@@ -423,7 +537,7 @@ function DepartmentManagement() {
             }}
             onClick={handleSave}
           >
-            <CheckCircleIcon sx={{ mr: 1 }} /> 保存
+            保存
           </Button>
         </DialogActions>
       </Dialog>
@@ -431,4 +545,4 @@ function DepartmentManagement() {
   );
 }
 
-export default DepartmentManagement;
+export default DepartmentManagementPage;
