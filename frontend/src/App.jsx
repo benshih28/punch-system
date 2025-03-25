@@ -24,10 +24,7 @@ import PositionManagementPage from "./pages/PositionManagementPage";
 import ClockHistoryPage from "./pages/ClockHistoryPage";
 import RolePermissionsPage from "./pages/RolePermissionsPage";
 import LeaveRecordsPage from "./pages/LeaveRecordsPage";
-
-// 先預留這些路由
-// const LeaveRecordsPage = () => <div>請假及查詢紀錄頁面 (尚未建立)</div>;
-const UserManagementPage = () => <div>人員管理頁面 (尚未建立)</div>;
+import UserManagementPage from "./pages/UserManagementPage";
 
 /**
  * 受保護頁面的 Layout（包含 Header & Footer）

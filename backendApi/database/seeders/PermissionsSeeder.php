@@ -25,6 +25,7 @@ class PermissionsSeeder extends Seeder
             ['name' => 'approve_leave', 'category' => '請假管理'],
             ['name' => 'delete_leave', 'category' => '請假管理'],
             ['name' => 'view_department_leave_records', 'category' => '請假管理'],
+            ['name' => 'view_company_leave_records', 'category' => '請假管理'],
             ['name' => 'approve_department_leave', 'category' => '請假管理'],
             ['name' => 'update_leave', 'category' => '請假管理'],
     

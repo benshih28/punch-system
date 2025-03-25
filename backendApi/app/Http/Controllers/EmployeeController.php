@@ -468,4 +468,83 @@ class EmployeeController extends Controller
             'user_ids' => $employees
         ]);
     }
+
+    /**
+     * @OA\Get(
+     *     path="/api/employees/approved",
+     *     summary="取得已審核的員工列表（用於主管選項）",
+     *     description="獲取所有狀態為 approved 的員工，作為主管選項使用。",
+     *     tags={"Employees"},
+     *     security={{ "bearerAuth": {} }},
+     *
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="每頁顯示的筆數",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=100)
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="目前頁數",
+     *         required=false,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="成功取得已審核的員工列表",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="成功獲取已審核員工列表"),
+     *             @OA\Property(property="meta", type="object",
+     *                 @OA\Property(property="current_page", type="integer", example=1),
+     *                 @OA\Property(property="per_page", type="integer", example=100),
+     *                 @OA\Property(property="total", type="integer", example=50),
+     *                 @OA\Property(property="last_page", type="integer", example=1)
+     *             ),
+     *             @OA\Property(property="data", type="array",
+     *                 @OA\Items(
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="employee_name", type="string", example="John Doe"),
+     *                     @OA\Property(property="department", type="string", example="IT 部門"),
+     *                     @OA\Property(property="position", type="string", example="軟體工程師"),
+     *                     @OA\Property(property="status", type="string", example="approved")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=401, description="未授權，請提供有效 Token"),
+     *     @OA\Response(response=403, description="沒有權限存取"),
+     *     @OA\Response(response=500, description="伺服器錯誤")
+     * )
+     */
+    public function getApprovedEmployees(Request $request)
+    {
+        $perPage = $request->query('per_page', 100); // 預設每頁 100 筆，足以應付大多數主管選項需求
+        $page = $request->query('page', 1);
+        $offset = ($page - 1) * $perPage;
+
+        // 計算總數
+        $totalQuery = DB::select('CALL GetApprovedEmployeesCount()');
+        $total = $totalQuery[0]->total;
+
+        // 獲取已審核的員工
+        $employees = DB::select('CALL GetApprovedEmployees(?, ?)', [
+            $perPage,
+            $offset
+        ]);
+
+        return response()->json([
+            'message' => '成功獲取已審核員工列表',
+            'meta' => [
+                'current_page' => (int) $page,
+                'per_page' => (int) $perPage,
+                'total' => (int) $total,
+                'last_page' => ceil($total / $perPage),
+            ],
+            'data' => $employees
+        ], 200);
+    }
 }
