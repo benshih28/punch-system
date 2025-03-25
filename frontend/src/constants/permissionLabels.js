@@ -13,6 +13,7 @@ export const permissionLabels = {
     approve_leave: "審核請假",
     delete_leave: "刪除請假",
     view_department_leave_records: "查詢部門請假紀錄",
+    view_company_leave_records: "查詢公司請假紀錄",
     approve_department_leave: "核准/駁回部門請假",
     update_leave: "更新請假資料",
   
