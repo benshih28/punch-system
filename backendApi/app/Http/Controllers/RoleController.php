@@ -150,8 +150,8 @@ class RoleController extends Controller
     /**
      * @OA\Patch(
      *     path="/api/roles/{role}/permissions",
-     *     summary="更新角色的權限",
-     *     description="HR 或 Admin 可為角色指派新權限，並移除原本未包含的權限。",
+     *     summary="更新角色的權限和名稱",
+     *     description="HR 或 Admin 可為角色指派新權限，並移除原本未包含的權限，同時可更新角色名稱。",
      *     operationId="assignPermission",
      *     tags={"Roles & Permissions"},
      *     security={{"bearerAuth":{}}},
@@ -164,7 +164,7 @@ class RoleController extends Controller
      *     ),
      *     @OA\RequestBody(
      *         required=true,
-     *         description="權限名稱列表",
+     *         description="權限名稱列表和新角色名稱",
      *         @OA\JsonContent(
      *             required={"permissions"},
      *             @OA\Property(
@@ -172,15 +172,21 @@ class RoleController extends Controller
      *                 type="array",
      *                 @OA\Items(type="string", example="punch_in"),
      *                 description="新權限列表，舊權限未包含在此清單內的會自動被移除"
+     *             ),
+     *             @OA\Property(
+     *                 property="name",
+     *                 type="string",
+     *                 example="supervisor",
+     *                 description="新角色名稱（可選）"
      *             )
      *         )
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="角色權限更新成功",
+     *         description="角色權限和名稱更新成功",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="角色權限已更新"),
-     *             @OA\Property(property="role", type="string", example="manager"),
+     *             @OA\Property(property="message", type="string", example="角色權限和名稱已更新"),
+     *             @OA\Property(property="role", type="string", example="supervisor"),
      *             @OA\Property(
      *                 property="permissions",
      *                 type="array",
@@ -196,29 +202,37 @@ class RoleController extends Controller
      *     @OA\Response(response=500, description="伺服器錯誤")
      * )
      */
-    // 更新角色的 `permissions` (覆蓋式更新)
     public function assignPermission(Request $request, $roleName)
     {
-        $request->validate([
-            'permissions' => 'required|array',
-            'permissions.*' => 'exists:permissions,name' // 確保權限名稱存在
-        ]);
-
+        // 確保角色存在
         $role = Role::where('name', $roleName)->first();
         if (!$role) {
-            return response()->json(['error' => '找不到角色'], 404);
+            return response()->json(['error' => 'Role not found'], 404);
         }
 
-        // ✅ 直接同步更新 `permissions` (移除舊的，指派新的)
-        $role->syncPermissions($request->permissions);
+        // 驗證請求資料
+        $validated = $request->validate([
+            'permissions' => 'required|array', // 權限列表為必填
+            'permissions.*' => 'string|exists:permissions,name', // 每個權限必須存在於 permissions 表中
+            'name' => 'sometimes|string|unique:roles,name,' . $role->id, // 角色名稱為可選，但必須唯一
+        ]);
 
+        // 更新角色名稱（如果有提供）
+        if ($request->has('name') && $request->name !== $role->name) {
+            $role->name = $request->name;
+            $role->save();
+        }
+
+        // 更新權限：移除舊權限，新增新權限
+        $role->syncPermissions($validated['permissions']);
+
+        // 返回更新後的角色資料
         return response()->json([
-            'message' => '角色權限已更新',
+            'message' => '角色權限和名稱已更新',
             'role' => $role->name,
-            'permissions' => $role->permissions
+            'permissions' => $role->permissions->pluck('name'),
         ]);
     }
-
     /**
      * @OA\Get(
      *     path="/api/roles/{role}/permissions",
