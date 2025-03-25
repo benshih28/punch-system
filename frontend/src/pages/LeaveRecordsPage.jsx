@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useForm, Controller } from "react-hook-form";
+import { useAtom } from "jotai"; // 從 Jotai 引入 `useAtom`，用來讀取 `authAtom`
+import { authAtom } from "../state/authAtom"; // Jotai Atom 用於存儲身份驗證狀態
 import dayjs from "dayjs";
 import API from "../api/axios";
 import LeavePolicy from "../components/LeavePolicy";
@@ -25,13 +27,15 @@ import {
   DialogContent,
   DialogActions,
   Link,
-  CircularProgress
+  CircularProgress,
+  DialogContentText
 } from "@mui/material";
 import { Search } from "@mui/icons-material";
 import { LocalizationProvider, DateTimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 function ApproveLeave() {
+  const [auth] = useAtom(authAtom);
   const [leaveRequests, setLeaveRequests] = useState([]); // 假單資料
   const [permissions, setPermissions] = useState([]);     // 存使用者的權限
   const [startDate, setStartDate] = useState(dayjs());
@@ -357,6 +361,38 @@ function ApproveLeave() {
     handleClose();
   };
 
+  const [deleteId, setDeleteId] = useState(null); // 要刪除的假單 ID
+  const [openConfirm, setOpenConfirm] = useState(false); // 是否開啟確認刪除 Dialog
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false); // 刪除失敗 Dialog
+
+  // 刪除個人待審核假單
+  const handleDelete = (request) => {
+    const currentUserId = auth?.user?.id;
+    if (!permissions.includes("delete_leave")) return;
+    if (request.status !== 0) return;
+    if (request.user_id !== currentUserId) return;
+
+    setDeleteId(request.leave_id);
+    setOpenConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      await API.delete(`/leave/${deleteId}`);
+      setDialogMessage("假單已成功刪除！");
+      setDialogSuccess(true);
+      setDialogOpen(true);
+      fetchLeaveRequests(); // 重新取得假單列表
+    } catch (error) {
+      setDialogMessage("刪除失敗，假單可能已被簽核或不存在");
+      setDialogSuccess(false);
+      setDialogOpen(true);
+    } finally {
+      setOpenConfirm(false);  // 關閉確認 Dialog
+      setDeleteId(null);      // 清空刪除 ID
+    }
+  };
+
   // 切換分頁
   const handleChange = (event, value) => setPage(value);
   const handleNext = () => page < totalPages && setPage(page + 1);  // 下一頁
@@ -593,8 +629,8 @@ function ApproveLeave() {
                       <Box sx={{ ml: 3 }}>{statusMap[request.status]}</Box>
                     </TableCell>
                     <TableCell>
-                      {/* 編輯/查詢按鈕 */}
-                      <Box sx={{ ml: 3.5 }}>
+                      {/* 編輯/查詢/刪除按鈕 */}
+                      <Box sx={{ ml: 3.5, display: "flex", gap: 1 }}>
                         {/* 編輯按鈕（僅待審核可見） */}
                         {request.status === 0 && (
                           <Button
@@ -613,7 +649,7 @@ function ApproveLeave() {
                           </Button>
                         )}
 
-                        {/* 查詢按鈕（其他狀態） */}
+                        {/* 查詢按鈕（status 1~4） */}
                         {[1, 2, 3, 4].includes(request.status) && (
                           <Button
                             variant="outlined"
@@ -633,6 +669,29 @@ function ApproveLeave() {
                             onClick={() => handleOpen(request, "view")}
                           >
                             查詢
+                          </Button>
+                        )}
+
+                        {/* 刪除按鈕（僅待審核可見） */}
+                        {request.status === 0 && (
+                          <Button
+                            variant="outlined"
+                            sx={{
+                              backgroundColor: "#fff",
+                              color: "#D32F2F",
+                              borderColor: "#D32F2F",
+                              borderRadius: "12px",
+                              fontSize: "14px",
+                              padding: "5px 15px",
+                              "&:hover": {
+                                backgroundColor: "#FFEBEE",
+                                borderColor: "#B71C1C",
+                                color: "#B71C1C",
+                              },
+                            }}
+                            onClick={() => handleDelete(request)}
+                          >
+                            刪除
                           </Button>
                         )}
                       </Box>
@@ -785,7 +844,6 @@ function ApproveLeave() {
                           render={({ field, fieldState }) => (
                             <DateTimePicker
                               {...field}
-                              disabled={mode === "view"}
                               value={field.value}
                               onChange={(newValue) => {
                                 field.onChange(newValue);
@@ -796,15 +854,25 @@ function ApproveLeave() {
                                 }
                               }}
                               format="YYYY-MM-DD HH:mm"
+                              minutesStep={60}
                               slotProps={{
                                 textField: {
                                   fullWidth: true,
                                   error: !!fieldState.error,
                                   helperText: fieldState.error?.message,
                                   size: "small",
-                                  sx: {
-                                    backgroundColor: "white",
-                                    borderRadius: "8px",
+                                  InputProps: {
+                                    readOnly: mode === "view", // ✅ 只讀
+                                    sx: mode === "view"
+                                      ? {
+                                        pointerEvents: "none",  // ✅ 阻止點擊
+                                        backgroundColor: "white", // ✅ 維持清晰樣式
+                                        borderRadius: "8px"
+                                      }
+                                      : {
+                                        backgroundColor: "white",
+                                        borderRadius: "8px"
+                                      },
                                   },
                                 },
                               }}
@@ -830,21 +898,30 @@ function ApproveLeave() {
                           render={({ field, fieldState }) => (
                             <DateTimePicker
                               {...field}
-                              disabled={mode === "view"}
                               value={field.value}
                               onChange={(newValue) => {
                                 field.onChange(newValue);
                               }}
                               format="YYYY-MM-DD HH:mm"
+                              minutesStep={60}
                               slotProps={{
                                 textField: {
                                   fullWidth: true,
                                   error: !!fieldState.error,
                                   helperText: fieldState.error?.message,
                                   size: "small",
-                                  sx: {
-                                    backgroundColor: "white",
-                                    borderRadius: "8px",
+                                  InputProps: {
+                                    readOnly: mode === "view",
+                                    sx: mode === "view"
+                                      ? {
+                                        pointerEvents: "none",
+                                        backgroundColor: "white",
+                                        borderRadius: "8px"
+                                      }
+                                      : {
+                                        backgroundColor: "white",
+                                        borderRadius: "8px"
+                                      },
                                   },
                                 },
                               }}
@@ -870,17 +947,41 @@ function ApproveLeave() {
                           defaultValue=""
                           rules={{ required: "請選擇請假類型" }}
                           render={({ field, fieldState }) => (
-                            <FormControl fullWidth error={!!fieldState.error} sx={{ backgroundColor: "white", borderRadius: "8px" }}>
+                            <FormControl
+                              fullWidth
+                              error={!!fieldState.error}
+                              sx={{
+                                backgroundColor: "white",
+                                borderRadius: "8px",
+                              }}
+                            >
                               <Select
                                 {...field}
-                                disabled={mode === "view"}
                                 displayEmpty
                                 size="small"
+                                disabled={mode === "view"}
+                                value={field.value}
                                 onChange={(e) => {
                                   const selectedId = e.target.value;
                                   field.onChange(selectedId);
-                                  const watchedStartTime = watch("startTime"); // ✅ 改用 RHF 的值
+                                  const watchedStartTime = watch("startTime");
                                   fetchRemainingLeaveHours(Number(selectedId), watchedStartTime);
+                                }}
+                                sx={{
+                                  backgroundColor: "white",
+                                  borderRadius: "8px",
+                                  color: "black",
+                                  ".MuiSelect-icon": {
+                                    color: "#888",
+                                  },
+                                  "&.Mui-disabled": {
+                                    color: "#000",              
+                                    WebkitTextFillColor: "#000",       
+                                    backgroundColor: "white",          
+                                    opacity: 1,                       
+                                    borderRadius: "8px",
+                                    pointerEvents: "none",
+                                  },
                                 }}
                               >
                                 <MenuItem value="" disabled>請選擇請假類型</MenuItem>
@@ -959,12 +1060,14 @@ function ApproveLeave() {
                         {...register("reason", { required: "請假原因為必填" })}
                         multiline
                         rows={3}
-                        disabled={mode === "view"}
                         error={!!errors.reason}
                         helperText={errors.reason?.message}
                         sx={{ backgroundColor: "white", borderRadius: "8px" }}
                         margin="dense"
                         fullWidth
+                        InputProps={{
+                          readOnly: mode === "view", // ✅ 改成只讀而非 disabled
+                        }}
                       />
                       {mode !== "view" && (
                         <Typography fontSize={13} sx={{ mt: 1 }}>
@@ -990,10 +1093,12 @@ function ApproveLeave() {
                           value={selectedRequest?.reject_reason ?? "無"}
                           multiline
                           rows={2}
-                          disabled
                           sx={{ backgroundColor: "white", borderRadius: "8px" }}
                           margin="dense"
                           fullWidth
+                          InputProps={{
+                            readOnly: true, // ✅ 不用 disabled 就不會灰
+                          }}
                         />
                       </Box>
                     )}
@@ -1069,38 +1174,56 @@ function ApproveLeave() {
         </Box>
       </Modal>
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+      <Dialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        PaperProps={{
+          sx: {
+            borderRadius: "16px",
+            minWidth: 360,
+            maxWidth: "90%",
+            backgroundColor: "#fffdf9",
+            boxShadow: 6,
+          },
+        }}
+      >
         <DialogTitle
           sx={{
             fontWeight: "bold",
-            fontSize: 20,
-            color: dialogSuccess ? "#388e3c" : "#d32f2f",
+            fontSize: 22,
+            color: "#5D4037",
+            textAlign: "center",
           }}
         >
-          {dialogSuccess ? "假單送出成功" : "假單送出失敗"}
+          {dialogSuccess ? "✅ 操作成功" : "❌ 操作失敗"}
         </DialogTitle>
 
         <DialogContent>
-          <Typography fontSize={16} mt={1}>
+          <Typography
+            fontSize={16}
+            textAlign="center"
+            sx={{ mt: 1, color: "#444" }}
+          >
             {dialogMessage}
           </Typography>
         </DialogContent>
 
-        <DialogActions sx={{ pr: 3, pb: 2 }}>
+        <DialogActions sx={{ justifyContent: "center", pb: 3 }}>
           <Button
             variant="contained"
             onClick={() => setDialogOpen(false)}
             sx={{
-              backgroundColor: dialogSuccess ? "#4caf50" : "#d32f2f",
+              backgroundColor: "#A1887F",
               borderRadius: "30px",
               px: 4,
               fontWeight: "bold",
+              color: "#fff",
               "&:hover": {
-                backgroundColor: dialogSuccess ? "#388e3c" : "#c62828",
+                backgroundColor: "#795548",
               },
             }}
           >
-            確認
+            確定
           </Button>
         </DialogActions>
       </Dialog>
@@ -1123,6 +1246,122 @@ function ApproveLeave() {
         </DialogContent>
       </Dialog>
 
+      <Dialog
+        open={openConfirm}
+        onClose={() => setOpenConfirm(false)}
+        PaperProps={{
+          sx: {
+            borderRadius: "16px",
+            minWidth: 360,
+            maxWidth: "90%",
+            backgroundColor: "#fffdf9",
+            boxShadow: 6,
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            fontWeight: "bold",
+            fontSize: 20,
+            color: "#5D4037",
+            textAlign: "center",
+          }}
+        >
+          確認刪除
+        </DialogTitle>
+
+        <DialogContent>
+          <Typography fontSize={16} textAlign="center" sx={{ mt: 1 }}>
+            確定要刪除這筆假單嗎？
+          </Typography>
+        </DialogContent>
+
+        <DialogActions sx={{ justifyContent: "center", pb: 3, gap: 2 }}>
+          <Button
+            onClick={() => setOpenConfirm(false)}
+            variant="outlined"
+            sx={{
+              borderRadius: "30px",
+              px: 4,
+              color: "#555",
+              borderColor: "#aaa",
+              "&:hover": {
+                backgroundColor: "#f5f5f5",
+                borderColor: "#888",
+              },
+            }}
+          >
+            取消
+          </Button>
+
+          <Button
+            onClick={handleConfirmDelete}
+            variant="contained"
+            sx={{
+              backgroundColor: "#D32F2F",
+              color: "#fff",
+              borderRadius: "30px",
+              px: 4,
+              fontWeight: "bold",
+              "&:hover": {
+                backgroundColor: "#B71C1C",
+              },
+            }}
+          >
+            刪除
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={errorDialogOpen}
+        onClose={() => setErrorDialogOpen(false)}
+        PaperProps={{
+          sx: {
+            borderRadius: "16px",
+            minWidth: 360,
+            maxWidth: "90%",
+            backgroundColor: "#fffdf9",
+            boxShadow: 6,
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            fontWeight: "bold",
+            fontSize: 20,
+            color: "#D32F2F",
+            textAlign: "center",
+          }}
+        >
+          刪除失敗
+        </DialogTitle>
+
+        <DialogContent>
+          <Typography fontSize={16} textAlign="center" sx={{ mt: 1 }}>
+            假單可能已被簽核或不存在，請稍後再試。
+          </Typography>
+        </DialogContent>
+
+        <DialogActions sx={{ justifyContent: "center", pb: 3 }}>
+          <Button
+            onClick={() => setErrorDialogOpen(false)}
+            variant="contained"
+            sx={{
+              backgroundColor: "#EF9A9A",
+              color: "#000",
+              borderRadius: "30px",
+              px: 4,
+              fontWeight: "bold",
+              "&:hover": {
+                backgroundColor: "#E57373",
+              },
+            }}
+          >
+            確定
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box >
   );
 }
