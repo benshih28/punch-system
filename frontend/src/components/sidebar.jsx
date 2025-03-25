@@ -1,8 +1,8 @@
 import { useState } from "react";
 import PropTypes from "prop-types";
 import { Link, useNavigate } from "react-router-dom";
-import { useAtom,useSetAtom  } from "jotai";
-import { authAtom,logoutAtom  } from "../state/authAtom";
+import { useAtom, useSetAtom } from "jotai";
+import { authAtom, logoutAtom } from "../state/authAtom";
 import API from "../api/axios";
 import {
   Drawer,
@@ -24,6 +24,7 @@ import EventNoteIcon from "@mui/icons-material/EventNote"; // 🔹 請假及查�
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import LogoutIcon from "@mui/icons-material/Logout";
+import ArrowRightIcon from "@mui/icons-material/ArrowRight";
 
 function Sidebar({ isOpen, toggleSidebar }) {
   const [auth, setAuth] = useAtom(authAtom); // 讀取全局狀態
@@ -35,6 +36,89 @@ function Sidebar({ isOpen, toggleSidebar }) {
       ...prev,
       [menu]: !prev[menu],
     }));
+  };
+
+  const sidebarItems = [
+    {
+      label: "個人帳戶管理",
+      icon: <AccountCircleIcon />,
+      to: "/user/update/profile",
+      requiredPermissions: [], // 所有人都能用
+    },
+    {
+      label: "打卡",
+      icon: <AccessTimeIcon />,
+      children: [
+        {
+          label: "打卡及補打卡",
+          to: "/punchin",
+          requiredPermissions: ["punch_in"],
+        },
+        {
+          label: "查詢打卡紀錄",
+          to: "/clock/history",
+          requiredPermissions: ["view_attendance"],
+        },
+        {
+          label: "查詢補打卡紀錄",
+          to: "/clock/reissue/history",
+          requiredPermissions: ["view_corrections"],
+        },
+      ],
+    },
+    {
+      label: "請假及紀錄查詢",
+      icon: <EventNoteIcon />,
+      to: "/leave/and/inquiry/records",
+      requiredPermissions: ["view_leave_records"],
+    },
+    {
+      label: "簽核系統",
+      icon: <AssignmentIcon />,
+      children: [
+        {
+          label: "假單審核",
+          to: "/approve/leave",
+          requiredPermissions: ["approve_leave"],
+        },
+        {
+          label: "補打卡審核",
+          to: "/approve/clock/reissue",
+          requiredPermissions: ["approve_correction"],
+        },
+      ],
+    },
+    {
+      label: "權限管理",
+      icon: <PeopleIcon />,
+      children: [
+        {
+          label: "部門管理",
+          to: "/department/management",
+          requiredPermissions: ["manage_departments"],
+        },
+        {
+          label: "職位管理",
+          to: "/position/management",
+          requiredPermissions: ["manage_positions"],
+        },
+        {
+          label: "人員管理",
+          to: "/user/management",
+          requiredPermissions: ["manage_employees"],
+        },
+        {
+          label: "權限修改",
+          to: "/role/permissions",
+          requiredPermissions: ["manage_roles"],
+        },
+      ],
+    },
+  ];
+
+  const hasPermission = (userPermissions, requiredPermissions) => {
+    if (!requiredPermissions || requiredPermissions.length === 0) return true;
+    return requiredPermissions.some((perm) => userPermissions.includes(perm));
   };
 
   // 登出函式
@@ -71,119 +155,62 @@ function Sidebar({ isOpen, toggleSidebar }) {
 
         {/* 選單列表 */}
         <List>
-          {/* 🔹 個人帳戶管理 */}
-          <ListItemButton component={Link} to="/user/update/profile">
-            <ListItemIcon>
-              <AccountCircleIcon />
-            </ListItemIcon>
-            <ListItemText primary="個人帳戶管理" />
-          </ListItemButton>
+          {sidebarItems.map((item, index) => {
+            const hasChild = item.children && item.children.length > 0;
+            const show = hasPermission(auth?.roles_permissions?.permissions || [], item.requiredPermissions);
 
-          {/* 🔹 打卡選單 (可展開) */}
-          <ListItemButton onClick={() => toggleMenu("clock")}>
-            <ListItemIcon>
-              <AccessTimeIcon />
-            </ListItemIcon>
-            <ListItemText primary="打卡" />
-            {openMenus["clock"] ? <ExpandLess /> : <ExpandMore />}
-          </ListItemButton>
-          <Collapse in={openMenus["clock"]} timeout="auto" unmountOnExit>
-            <List component="div" disablePadding>
-              <ListItemButton component={Link} to="/punchin" sx={{ pl: 4 }}>
-                <ListItemText primary="打卡及補打卡" />
-              </ListItemButton>
-              <ListItemButton
-                component={Link}
-                to="/clock/history"
-                sx={{ pl: 4 }}
-              >
-                <ListItemText primary="查詢打卡紀錄" />
-              </ListItemButton>
-              <ListItemButton
-                component={Link}
-                to="/clock/reissue/history"
-                sx={{ pl: 4 }}
-              >
-                <ListItemText primary="查詢補打卡紀錄" />
-              </ListItemButton>
-            </List>
-          </Collapse>
+            if (!show && !hasChild) return null;
 
-          {/* 🔹 請假及查詢紀錄 */}
-          <ListItemButton component={Link} to="/leave/and/inquiry/records">
-            <ListItemIcon>
-              <EventNoteIcon />
-            </ListItemIcon>
-            <ListItemText primary="請假及查詢紀錄" />
-          </ListItemButton>
+            // 有子選單的
+            if (hasChild) {
+              const visibleChildren = item.children.filter((child) =>
+                hasPermission(auth?.roles_permissions?.permissions || [], child.requiredPermissions)
+              );
 
-          {/* 🔹 簽核系統 (可展開) */}
-          <ListItemButton onClick={() => toggleMenu("approval")}>
-            <ListItemIcon>
-              <AssignmentIcon />
-            </ListItemIcon>
-            <ListItemText primary="簽核系統" />
-            {openMenus["approval"] ? <ExpandLess /> : <ExpandMore />}
-          </ListItemButton>
-          <Collapse in={openMenus["approval"]} timeout="auto" unmountOnExit>
-            <List component="div" disablePadding>
-              <ListItemButton
-                component={Link}
-                to="/approve/leave"
-                sx={{ pl: 4 }}
-              >
-                <ListItemText primary="假單審核" />
-              </ListItemButton>
-              <ListItemButton
-                component={Link}
-                to="/approve/clock/reissue"
-                sx={{ pl: 4 }}
-              >
-                <ListItemText primary="補打卡審核" />
-              </ListItemButton>
-            </List>
-          </Collapse>
+              if (visibleChildren.length === 0) return null;
 
-          {/* 🔹 權限管理 (可展開) */}
-          <ListItemButton onClick={() => toggleMenu("permissions")}>
-            <ListItemIcon>
-              <PeopleIcon />
-            </ListItemIcon>
-            <ListItemText primary="權限管理" />
-            {openMenus["permissions"] ? <ExpandLess /> : <ExpandMore />}
-          </ListItemButton>
-          <Collapse in={openMenus["permissions"]} timeout="auto" unmountOnExit>
-            <List component="div" disablePadding>
-              <ListItemButton
-                component={Link}
-                to="/department/management"
-                sx={{ pl: 4 }}
-              >
-                <ListItemText primary="部門管理" />
+              return (
+                <Box key={index}>
+                  {/* 主選單按鈕 */}
+                  <ListItemButton onClick={() => toggleMenu(item.label)}>
+                    <ListItemIcon>{item.icon}</ListItemIcon>
+                    <ListItemText primary={item.label} />
+                    {openMenus[item.label] ? <ExpandLess /> : <ExpandMore />}
+                  </ListItemButton>
+
+                  {/* 子選單 */}
+                  <Collapse in={openMenus[item.label]} timeout="auto" unmountOnExit>
+                    <List component="div" disablePadding>
+                      {visibleChildren.map((child, i) => (
+                        <ListItemButton
+                          key={i}
+                          component={Link}
+                          to={child.to}
+                          onClick={toggleSidebar}
+                          sx={{ pl: 5 }} // 加一點縮排
+                        >
+                          {/* 🔹 子選單小圖示 */}
+                          <ListItemIcon sx={{ minWidth: 30 }}>
+                            <ArrowRightIcon fontSize="small" />
+                          </ListItemIcon>
+
+                          <ListItemText primary={child.label} />
+                        </ListItemButton>
+                      ))}
+                    </List>
+                  </Collapse>
+                </Box>
+              );
+            }
+
+            // 沒子選單的
+            return (
+              <ListItemButton key={index} component={Link} to={item.to}  onClick={toggleSidebar}>
+                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemText primary={item.label} />
               </ListItemButton>
-              <ListItemButton
-                component={Link}
-                to="/position/management"
-                sx={{ pl: 4 }}
-              >
-                <ListItemText primary="職位管理" />
-              </ListItemButton>
-              <ListItemButton
-                component={Link}
-                to="/user/management"
-                sx={{ pl: 4 }}
-              >
-                <ListItemText primary="人員管理" />
-              </ListItemButton>
-              <ListItemButton
-                component={Link}
-                to="/role/permissions"
-                sx={{ pl: 4 }}
-              >
-                <ListItemText primary="權限修改" />
-              </ListItemButton>
-            </List>
-          </Collapse>
+            );
+          })}
 
           <Divider />
 
