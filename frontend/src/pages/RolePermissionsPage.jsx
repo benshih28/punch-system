@@ -19,12 +19,30 @@ import {
   Pagination,
 } from "@mui/material";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { permissionLabels } from "../constants/permissionLabels";
 import API from "../api/axios";
+import { useAtom } from "jotai"; // 引入 useAtom 用於獲取 Jotai 狀態
+import { authAtom } from "../state/authAtom"; // 引入 authAtom
+
 
 // 角色權限管理頁面組件
 function RolePermissionsPage() {
+
+  // 從 Jotai 獲取身份驗證狀態
+  const [authState] = useAtom(authAtom);
+
+  // 檢查使用者權限
+  const userPermissions = authState?.roles_permissions?.permissions || [];
+  const hasManageRolesPermission = userPermissions.includes("manage_roles");
+
+  // 如果沒有 manage_roles 權限，跳轉到 404 頁面
+  if (!hasManageRolesPermission) {
+    return <Navigate to="/404" replace />;
+  }
+
+
+
   // 狀態管理
   const [permissions, setPermissions] = useState([]); // 儲存所有角色資料
   const [permissionGroups, setPermissionGroups] = useState({}); // 儲存權限分組資料
