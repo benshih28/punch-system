@@ -260,7 +260,7 @@ class PositionController extends Controller
     public function update(Request $request, string $id)
     {
         $request->validate([
-            'name' => 'required|string|max:255|unique:positions,name',
+            'name' => "required|string|max:255|unique:positions,name,{$id}",
             'department_id' => 'nullable|exists:departments,id'
         ]);
 
