@@ -92,31 +92,48 @@ class EmployeeController extends Controller
      */
     public function index(Request $request)
     {
-        $departmentId = $request->query('department_id');
-        $positionId = $request->query('position_id'); // 改為 position_id
-        $userId = $request->query('user_id');
-        $perPage = $request->query('per_page', 10);
-        $page = $request->query('page', 1);
+        $departmentId = $request->input('department_id');
+        $positionId = $request->input('position_id');
+        $userId = $request->input('user_id');
+        $page = $request->input('page', 1);
+        $perPage = $request->input('per_page', 10);
         $offset = ($page - 1) * $perPage;
-
-        $employees = DB::select(
+    
+        // 執行預存程序
+        $results = DB::select(
             'CALL GetEmployees(?, ?, ?, ?, ?)',
             [$departmentId, $positionId, $userId, $perPage, $offset]
         );
-
-        $total = DB::select('SELECT FOUND_ROWS() as total')[0]->total;
-        $lastPage = ceil($total / $perPage);
-
+    
+        // 提取資料和元資料
+        $employees = [];
+        $total = 0;
+        $lastPage = 1;
+        if (!empty($results)) {
+            foreach ($results as $result) {
+                $total = $result->total;
+                $lastPage = $result->last_page;
+                // 移除 total 和 last_page 欄位，避免出現在員工資料中
+                unset($result->total);
+                unset($result->last_page);
+                $employees[] = $result;
+            }
+        }
+    
+        // 添加日誌
+        \Log::info('GetEmployees result', [
+            'total' => $total,
+            'last_page' => $lastPage,
+            'employees_count' => count($employees),
+        ]);
+    
         return response()->json([
-            'message' => '成功獲取員工列表',
+            'data' => $employees,
             'meta' => [
-                'current_page' => (int) $page,
-                'per_page' => (int) $perPage,
                 'total' => $total,
                 'last_page' => $lastPage,
             ],
-            'data' => $employees,
-        ], 200);
+        ]);
     }
 
 
