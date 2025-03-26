@@ -18,7 +18,7 @@ class EmployeeController extends Controller
      * @OA\Get(
      *     path="/api/employees",
      *     summary="取得所有員工列表（HR 介面）",
-     *     description="HR 取得所有員工的資訊，包含部門、職位、員工姓名、主管 ID、角色、狀態。",
+     *     description="HR 取得所有員工的資訊，包含部門、職位、員工姓名、主管 ID、主管姓名、角色、狀態、入職日期。",
      *     tags={"Employees"},
      *     security={{ "bearerAuth": {} }},
      *
@@ -27,14 +27,14 @@ class EmployeeController extends Controller
      *         in="query",
      *         description="篩選特定部門 ID 的員工",
      *         required=false,
-     *         @OA\Schema(type="integer", example=2)
+     *         @OA\Schema(type="integer", example=6669)
      *     ),
      *     @OA\Parameter(
-     *         name="role_id",
+     *         name="position_id", 
      *         in="query",
-     *         description="篩選特定角色 ID 的員工",
+     *         description="篩選特定職位 ID 的員工",
      *         required=false,
-     *         @OA\Schema(type="integer", example=3)
+     *         @OA\Schema(type="integer", example=66)
      *     ),
      *     @OA\Parameter(
      *         name="user_id",
@@ -72,12 +72,15 @@ class EmployeeController extends Controller
      *             ),
      *             @OA\Property(property="data", type="array",
      *                 @OA\Items(
-     *                     @OA\Property(property="department", type="string", example="IT 部門"),
-     *                     @OA\Property(property="position", type="string", example="軟體工程師"),
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="manager_id", type="integer", example=2, nullable=true),
+     *                     @OA\Property(property="department", type="string", example="6669"),
+     *                     @OA\Property(property="position", type="string", example="66"),
      *                     @OA\Property(property="employee_name", type="string", example="ben"),
-     *                     @OA\Property(property="manager_id", type="integer", example=3),
-     *                     @OA\Property(property="roles", type="string", example="員工"),
-     *                     @OA\Property(property="status", type="string", enum={"pending", "approved", "rejected", "inactive"}, example="approved")
+     *                     @OA\Property(property="manager_name", type="string", example="John", nullable=true),
+     *                     @OA\Property(property="roles", type="string", example="5551"),
+     *                     @OA\Property(property="status", type="string", enum={"pending", "approved", "rejected", "inactive"}, example="approved"),
+     *                     @OA\Property(property="hire_date", type="string", format="date", example="2025-03-19", nullable=true)
      *                 )
      *             )
      *         )
@@ -87,33 +90,50 @@ class EmployeeController extends Controller
      *     @OA\Response(response=500, description="伺服器錯誤")
      * )
      */
-    public function index(Request $request) // 取得所有員工列表（HR 介面）
+    public function index(Request $request)
     {
-        $departmentId = $request->query('department_id');
-        $roleId = $request->query('role_id');
-        $userId = $request->query('user_id');
-        $perPage = $request->query('per_page', 10);
-        $page = $request->query('page', 1);
+        $departmentId = $request->input('department_id');
+        $positionId = $request->input('position_id');
+        $userId = $request->input('user_id');
+        $page = $request->input('page', 1);
+        $perPage = $request->input('per_page', 10);
         $offset = ($page - 1) * $perPage;
-
-        $employees = DB::select('CALL GetEmployees(?, ?, ?, ?, ?)', [
-            $departmentId ?: null,
-            $roleId ?: null,
-            $userId,
-            $perPage,
-            $offset
+    
+        // 執行預存程序
+        $results = DB::select(
+            'CALL GetEmployees(?, ?, ?, ?, ?)',
+            [$departmentId, $positionId, $userId, $perPage, $offset]
+        );
+    
+        // 提取資料和元資料
+        $employees = [];
+        $total = 0;
+        $lastPage = 1;
+        if (!empty($results)) {
+            foreach ($results as $result) {
+                $total = $result->total;
+                $lastPage = $result->last_page;
+                // 移除 total 和 last_page 欄位，避免出現在員工資料中
+                unset($result->total);
+                unset($result->last_page);
+                $employees[] = $result;
+            }
+        }
+    
+        // 添加日誌
+        \Log::info('GetEmployees result', [
+            'total' => $total,
+            'last_page' => $lastPage,
+            'employees_count' => count($employees),
         ]);
-
+    
         return response()->json([
-            'message' => '成功獲取員工列表',
+            'data' => $employees,
             'meta' => [
-                'current_page' => $page,
-                'per_page' => $perPage,
-                'total' => count($employees), // 這裡需要額外查詢總數
-                'last_page' => ceil(count($employees) / $perPage),
+                'total' => $total,
+                'last_page' => $lastPage,
             ],
-            'data' => $employees
-        ], 200);
+        ]);
     }
 
 

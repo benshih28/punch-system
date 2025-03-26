@@ -141,7 +141,7 @@ Route::middleware('auth:api')->group(function () {
             // 取得所有職位
             Route::get('/', [PositionController::class, 'index']);
             // 根據部門篩選職位
-            Route::get('/by/department/{name}', [PositionController::class, 'getByDepartment']);
+            Route::get('/by/department/{id}', [PositionController::class, 'getByDepartmentId']);
             // 為部門指派職位
             Route::post('/by/department/{name}', [PositionController::class, 'assignPositionToDepartment']);
             // 新增職位
