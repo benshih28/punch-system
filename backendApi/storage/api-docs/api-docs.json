@@ -573,7 +573,7 @@
                     "Employees"
                 ],
                 "summary": "取得所有員工列表（HR 介面）",
-                "description": "HR 取得所有員工的資訊，包含部門、職位、員工姓名、主管 ID、角色、狀態。",
+                "description": "HR 取得所有員工的資訊，包含部門、職位、員工姓名、主管 ID、主管姓名、角色、狀態、入職日期。",
                 "operationId": "7fc06f144c1cd7925c5c391a6609f02d",
                 "parameters": [
                     {
@@ -583,17 +583,17 @@
                         "required": false,
                         "schema": {
                             "type": "integer",
-                            "example": 2
+                            "example": 6669
                         }
                     },
                     {
-                        "name": "role_id",
+                        "name": "position_id",
                         "in": "query",
-                        "description": "篩選特定角色 ID 的員工",
+                        "description": "篩選特定職位 ID 的員工",
                         "required": false,
                         "schema": {
                             "type": "integer",
-                            "example": 3
+                            "example": 66
                         }
                     },
                     {
@@ -663,25 +663,35 @@
                                             "type": "array",
                                             "items": {
                                                 "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "manager_id": {
+                                                        "type": "integer",
+                                                        "example": 2,
+                                                        "nullable": true
+                                                    },
                                                     "department": {
                                                         "type": "string",
-                                                        "example": "IT 部門"
+                                                        "example": "6669"
                                                     },
                                                     "position": {
                                                         "type": "string",
-                                                        "example": "軟體工程師"
+                                                        "example": "66"
                                                     },
                                                     "employee_name": {
                                                         "type": "string",
                                                         "example": "ben"
                                                     },
-                                                    "manager_id": {
-                                                        "type": "integer",
-                                                        "example": 3
+                                                    "manager_name": {
+                                                        "type": "string",
+                                                        "example": "John",
+                                                        "nullable": true
                                                     },
                                                     "roles": {
                                                         "type": "string",
-                                                        "example": "員工"
+                                                        "example": "5551"
                                                     },
                                                     "status": {
                                                         "type": "string",
@@ -692,6 +702,12 @@
                                                             "inactive"
                                                         ],
                                                         "example": "approved"
+                                                    },
+                                                    "hire_date": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2025-03-19",
+                                                        "nullable": true
                                                     }
                                                 },
                                                 "type": "object"
@@ -912,8 +928,8 @@
                 "tags": [
                     "Employees"
                 ],
-                "summary": "HR 分配部門、職位、主管、角色",
-                "description": "HR 指派員工的部門、職位、主管和角色。員工必須已通過審核 (approved) 才能指派。",
+                "summary": "HR 分配部門、職位、主管、角色，並設定入職日期",
+                "description": "HR 指派員工的部門、職位、主管和角色，並記錄入職日期。員工必須已通過審核 (approved) 才能指派。",
                 "operationId": "assignEmployeeDetails",
                 "parameters": [
                     {
@@ -928,7 +944,7 @@
                     }
                 ],
                 "requestBody": {
-                    "description": "需要指派的部門、職位、主管、角色 ID",
+                    "description": "需要指派的部門、職位、主管、角色 ID 和入職日期",
                     "required": true,
                     "content": {
                         "application/json": {
@@ -937,7 +953,8 @@
                                     "department_id",
                                     "position_id",
                                     "manager_id",
-                                    "role_id"
+                                    "role_id",
+                                    "hire_date"
                                 ],
                                 "properties": {
                                     "department_id": {
@@ -959,6 +976,12 @@
                                         "description": "角色 ID",
                                         "type": "integer",
                                         "example": 3
+                                    },
+                                    "hire_date": {
+                                        "description": "員工入職日期 (YYYY-MM-DD)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2023-05-15"
                                     }
                                 },
                                 "type": "object"
@@ -968,14 +991,19 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "員工部門、職位、主管、角色已更新",
+                        "description": "員工部門、職位、主管、角色已更新，並設定入職日期",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "員工部門、職位、主管、角色已更新"
+                                            "example": "員工部門、職位、主管、角色已更新，並設定入職日期"
+                                        },
+                                        "hire_date": {
+                                            "type": "string",
+                                            "format": "date",
+                                            "example": "2023-05-15"
                                         }
                                     },
                                     "type": "object"
@@ -1154,6 +1182,119 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/employees/approved": {
+            "get": {
+                "tags": [
+                    "Employees"
+                ],
+                "summary": "取得已審核的員工列表（用於主管選項）",
+                "description": "獲取所有狀態為 approved 的員工，作為主管選項使用。",
+                "operationId": "cd99eb7feeacc357576e20dd63a315a6",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "每頁顯示的筆數",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 100
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "目前頁數",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功取得已審核的員工列表",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "成功獲取已審核員工列表"
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 100
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 50
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "employee_name": {
+                                                        "type": "string",
+                                                        "example": "John Doe"
+                                                    },
+                                                    "department": {
+                                                        "type": "string",
+                                                        "example": "IT 部門"
+                                                    },
+                                                    "position": {
+                                                        "type": "string",
+                                                        "example": "軟體工程師"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "approved"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "未授權，請提供有效 Token"
+                    },
+                    "403": {
+                        "description": "沒有權限存取"
+                    },
+                    "500": {
+                        "description": "伺服器錯誤"
                     }
                 },
                 "security": [
@@ -3523,23 +3664,23 @@
                 ]
             }
         },
-        "/api/positions/by/department/{name}": {
+        "/api/positions/by/department/{id}": {
             "get": {
                 "tags": [
                     "Position"
                 ],
-                "summary": "根據部門篩選職位",
-                "description": "根據部門名稱篩選職位",
-                "operationId": "getPositionsByDepartment",
+                "summary": "根據部門 ID 篩選職位",
+                "description": "根據部門 ID 篩選職位",
+                "operationId": "getPositionsByDepartmentId",
                 "parameters": [
                     {
-                        "name": "name",
+                        "name": "id",
                         "in": "path",
-                        "description": "部門名稱",
+                        "description": "部門 ID",
                         "required": true,
                         "schema": {
-                            "type": "string",
-                            "example": "資訊部"
+                            "type": "integer",
+                            "example": 6669
                         }
                     }
                 ],
@@ -3552,7 +3693,7 @@
                                     "properties": {
                                         "department": {
                                             "type": "string",
-                                            "example": "資訊部"
+                                            "example": "6669"
                                         },
                                         "positions": {
                                             "type": "array",
@@ -3588,7 +3729,9 @@
                         "bearerAuth": []
                     }
                 ]
-            },
+            }
+        },
+        "/api/positions/by/department/{name}": {
             "post": {
                 "tags": [
                     "Position"
@@ -4845,8 +4988,8 @@
                 "tags": [
                     "Roles & Permissions"
                 ],
-                "summary": "更新角色的權限",
-                "description": "HR 或 Admin 可為角色指派新權限，並移除原本未包含的權限。",
+                "summary": "更新角色的權限和名稱",
+                "description": "HR 或 Admin 可為角色指派新權限，並移除原本未包含的權限，同時可更新角色名稱。",
                 "operationId": "assignPermission",
                 "parameters": [
                     {
@@ -4861,7 +5004,7 @@
                     }
                 ],
                 "requestBody": {
-                    "description": "權限名稱列表",
+                    "description": "權限名稱列表和新角色名稱",
                     "required": true,
                     "content": {
                         "application/json": {
@@ -4877,6 +5020,11 @@
                                             "type": "string",
                                             "example": "punch_in"
                                         }
+                                    },
+                                    "name": {
+                                        "description": "新角色名稱（可選）",
+                                        "type": "string",
+                                        "example": "supervisor"
                                     }
                                 },
                                 "type": "object"
@@ -4886,18 +5034,18 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "角色權限更新成功",
+                        "description": "角色權限和名稱更新成功",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "角色權限已更新"
+                                            "example": "角色權限和名稱已更新"
                                         },
                                         "role": {
                                             "type": "string",
-                                            "example": "manager"
+                                            "example": "supervisor"
                                         },
                                         "permissions": {
                                             "description": "角色擁有的最新權限",
