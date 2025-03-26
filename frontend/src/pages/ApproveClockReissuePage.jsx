@@ -108,7 +108,6 @@ function ApproveClockReissuePage() {
         }
       } catch (error) {
         console.error("錯誤詳情:", error.message);
-        alert(errorMessage);
       }
     };
     fetchUserInfo();
@@ -347,13 +346,11 @@ function ApproveClockReissuePage() {
             padding: "10px",
             borderRadius: "8px", // 圓角邊框
             display: "flex",
-            alignItems: "center", // 垂直置中
-            textAlign: "center", // 文字置中
-            justifyContent: "center", // 水平置中
             gap: 2, // 設定元素之間的間距
             // RWD設定
             flexDirection: "column", // 小螢幕垂直排列
             "@media (min-width:601px) and (max-width:1051px)": {
+              flexDirection: "row",
               flexWrap: "wrap",     // ✅ 允許自動換行（讓兩行排列）
               justifyContent: "center",
             },
