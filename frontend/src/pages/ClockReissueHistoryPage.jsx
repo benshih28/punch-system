@@ -236,6 +236,7 @@ function ClockReissueHistoryPage() {
       handleSearch(0, rowsPerPage, true);
     } catch (error) {
       console.error("新增失敗：", error.response?.data || error.message);
+      alert(error.response?.data.message);
     }
   };
 
@@ -367,7 +368,6 @@ function ClockReissueHistoryPage() {
             padding: "10px",
             borderRadius: "8px", // 圓角邊框
             display: "flex",
-            alignItems: "center", // 垂直置中
             textAlign: "center", // 文字置中
             justifyContent: "center", // 水平置中
             gap: 2, // 設定元素之間的間距
