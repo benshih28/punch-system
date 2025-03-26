@@ -348,124 +348,133 @@ function ApproveClockReissuePage() {
             display: "flex",
             gap: 2, // 設定元素之間的間距
             // RWD設定
-            flexDirection: "column", // 小螢幕垂直排列
-            "@media (min-width:601px) and (max-width:1051px)": {
-              flexDirection: "row",
-              flexWrap: "wrap",     // ✅ 允許自動換行（讓兩行排列）
-              justifyContent: "center",
+            flexDirection: {
+              xs: "column",
+              md: "column",
+              lg: "row",
             },
-            "@media (min-width:1051px)": {
-              flexDirection: "row", // 1051px 以上仍為 row，但可能可以只佔一行
-              flexWrap: "nowrap",
-              justifyContent: "center",
-            },
+            alignItems: "center",
           }}
         >
-          <Box sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: 1,
-          }}>
-            {/* 文字 */}
-            <Typography variant="body1">選擇部門</Typography>
-            {/* 部門輸入框 */}
-            <TextField
-              variant="outlined"
-              size="small"
-              value={selectedDepartment ?? ""}
-              onChange={handleDepartmentChange}
-              select
-              sx={{ backgroundColor: "white", minWidth: "180px" }} // 白底，寬度限制
-            >
-              <MenuItem value="" disabled>
-                請選擇部門
-              </MenuItem>
-              {departments.length > 0 &&
-                departments.map((dept) => (
-                  <MenuItem key={dept.id} value={dept.id}>
-                    {dept.name}
-                  </MenuItem>
-                ))}
-            </TextField>
-            {/* 文字 */}
-            <Typography variant="body1">員工編號</Typography>
-            {/* 員工編號輸入框 */}
-            <TextField
-              variant="outlined"
-              size="small"
-              value={employeeId}
-              onChange={(e) => setEmployeeId(e.target.value)}
-              sx={{ backgroundColor: "white", minWidth: "180px" }}
-            />
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: {
+                xs: "column",
+                sm: "row",
+              },
+              gap: 2,
+            }}
+          >
+            <Box sx={{ display: "flex", gap: 2, alignItems: "center", width: "220px" }}>
+              <Typography variant="body1">選擇部門</Typography>
+              {/* 文字 */}
+              {/* 部門輸入框 */}
+              <TextField
+                variant="outlined"
+                size="small"
+                value={selectedDepartment ?? ""}
+                onChange={handleDepartmentChange}
+                select
+                fullWidth
+                sx={{ backgroundColor: "white" }} // 白底，寬度限制
+              >
+                <MenuItem value="" disabled>
+                  請選擇部門
+                </MenuItem>
+                {departments.length > 0 &&
+                  departments.map((dept) => (
+                    <MenuItem key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </MenuItem>
+                  ))}
+              </TextField>
+            </Box>
+            <Box sx={{ display: "flex", gap: 2, alignItems: "center", width: "220px" }}>
+              <Typography variant="body1">員工編號</Typography>
+              {/* 文字 */}
+              {/* 員工編號輸入框 */}
+              <TextField
+                variant="outlined"
+                size="small"
+                value={employeeId}
+                onChange={(e) => setEmployeeId(e.target.value)}
+                fullWidth
+                sx={{ backgroundColor: "white" }}
+              />
+            </Box>
           </Box>
 
-          <Box sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: 1,
-          }}>
-            {/* 文字 */}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: {
+                xs: "column",
+                sm: "row",
+              },
+              gap: 2,
+              alignItems: "center",
+            }}
+          >
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
             <Typography variant="body1">選擇日期區間</Typography>
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              {/* 起始日期 */}
-              <DatePicker
-                value={startDate}
-                onChange={(newValue) => {
-                  if (newValue) {
-                    setStartDate(new Date(newValue)); // 確保 `startDate` 被正確更新
-                  }
-                }}
-                maxDate={new Date()} // 不能選擇未來日期
-                format="yyyy/MM/dd" // 確保格式正確
-                slotProps={{
-                  textField: {
-                    variant: "outlined",
-                    size: "small",
-                    placeholder: "請選擇日期",
-                    sx: { backgroundColor: "white" }, // ✅ 確保輸入框為白色
-                  },
-                  input: {
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <CalendarTodayIcon sx={{ fontSize: "18px" }} />
-                      </InputAdornment>
-                    ),
-                  },
-                }}
-              />
+            {/* 起始日期 */}
+            <DatePicker
+              value={startDate}
+              onChange={(newValue) => {
+                if (newValue) {
+                  setStartDate(new Date(newValue)); // 確保 `startDate` 被正確更新
+                }
+              }}
+              maxDate={new Date()} // 不能選擇未來日期
+              format="yyyy/MM/dd" // 確保格式正確
+              slotProps={{
+                textField: {
+                  variant: "outlined",
+                  size: "small",
+                  placeholder: "請選擇日期",
+                  sx: { backgroundColor: "white" }, // ✅ 確保輸入框為白色
+                },
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <CalendarTodayIcon sx={{ fontSize: "18px" }} />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
 
-              {/* 分隔符號「~」 */}
-              <Typography variant="body1" sx={{ display: { xs: "none", sm: "block" } }}>~</Typography>
+            {/* 分隔符號「~」 */}
+            <Typography variant="body1" sx={{ display: { xs: "none", sm: "block" } }}>~</Typography>
 
-              {/* 結束日期 */}
-              <DatePicker
-                value={endDate}
-                onChange={(newValue) => {
-                  if (newValue) {
-                    setEndDate(new Date(newValue));
-                  }
-                }}
-                maxDate={new Date()} // 不能選擇未來日期
-                format="yyyy/MM/dd"
-                slotProps={{
-                  textField: {
-                    variant: "outlined",
-                    size: "small",
-                    placeholder: "請選擇日期",
-                    sx: { backgroundColor: "white" }, // ✅ 確保輸入框為白色
-                  },
-                  input: {
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <CalendarTodayIcon sx={{ fontSize: "18px" }} />
-                      </InputAdornment>
-                    ),
-                  },
-                }}
-              />
-            </LocalizationProvider>
+            {/* 結束日期 */}
+            <DatePicker
+              value={endDate}
+              onChange={(newValue) => {
+                if (newValue) {
+                  setEndDate(new Date(newValue));
+                }
+              }}
+              maxDate={new Date()} // 不能選擇未來日期
+              format="yyyy/MM/dd"
+              slotProps={{
+                textField: {
+                  variant: "outlined",
+                  size: "small",
+                  placeholder: "請選擇日期",
+                  sx: { backgroundColor: "white" }, // ✅ 確保輸入框為白色
+                },
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <CalendarTodayIcon sx={{ fontSize: "18px" }} />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+          </LocalizationProvider>
           </Box>
         </Box>
 
@@ -753,8 +762,8 @@ function ApproveClockReissuePage() {
             </Button>
           </DialogActions>
         </Dialog>
-      </Paper>
-    </Box>
+      </Paper >
+    </Box >
   );
 }
 
