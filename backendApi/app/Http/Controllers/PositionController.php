@@ -102,25 +102,25 @@ class PositionController extends Controller
     // 根據部門篩選職位
     /**
      * @OA\Get(
-     *     path="/api/positions/by/department/{name}",
-     *     summary="根據部門篩選職位",
-     *     description="根據部門名稱篩選職位",
-     *     operationId="getPositionsByDepartment",
+     *     path="/api/positions/by/department/{id}",
+     *     summary="根據部門 ID 篩選職位",
+     *     description="根據部門 ID 篩選職位",
+     *     operationId="getPositionsByDepartmentId",
      *     tags={"Position"},
      *     security={{ "bearerAuth":{} }},
      *     @OA\Parameter(
-     *         name="name",
+     *         name="id",
      *         in="path",
      *         required=true,
-     *         description="部門名稱",
-     *         @OA\Schema(type="string", example="資訊部")
+     *         description="部門 ID",
+     *         @OA\Schema(type="integer", example=6669)
      *     ),
      *     @OA\Response(
      *         response=200,
      *         description="成功獲取職位",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="department", type="string", example="資訊部"),
+     *             @OA\Property(property="department", type="string", example="6669"),
      *             @OA\Property(
      *                 property="positions",
      *                 type="array",
@@ -135,10 +135,10 @@ class PositionController extends Controller
      *     )
      * )
      */
-    public function getByDepartment($name)
+    public function getByDepartmentId($id)
     {
-        // 先找到部門
-        $department = Department::where('name', $name)->first();
+        // 直接根據部門 ID 查找
+        $department = Department::find($id);
 
         if (!$department) {
             return response()->json([

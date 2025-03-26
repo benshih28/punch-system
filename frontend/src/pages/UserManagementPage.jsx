@@ -28,10 +28,19 @@ import {
 } from "@mui/material";
 import ManageSearchIcon from "@mui/icons-material/ManageSearch";
 
-// 提取 EmployeeRow 組件並使用 React.memo 包裝
+// 格式化日期的輔助函數：將 ISO 8601 格式轉為 yyyy-MM-dd
+const formatDateToYYYYMMDD = (isoDate) => {
+  if (!isoDate) return ""; // 如果日期為空，返回空字符串
+  const date = new Date(isoDate);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0"); // 月份從 0 開始，需加 1
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 const EmployeeRow = memo(
   ({ emp, isSmallScreen, onReviewOpen, onAssignOpen, onDelete }) => {
-    console.log(`Rendering EmployeeRow for ${emp.employee_name}`); // 調試用，確認渲染次數
+    console.log(`Rendering EmployeeRow for ${emp.employee_name}`);
 
     return (
       <TableRow key={emp.id}>
@@ -54,10 +63,10 @@ const EmployeeRow = memo(
           {emp.status === "pending"
             ? "待審核"
             : emp.status === "approved"
-            ? "已批准"
-            : emp.status === "rejected"
-            ? "已拒絕"
-            : "已離職"}
+              ? "已批准"
+              : emp.status === "rejected"
+                ? "已拒絕"
+                : "已離職"}
         </TableCell>
         <TableCell>
           {emp.status === "pending" && (
@@ -112,9 +121,7 @@ const EmployeeRow = memo(
       </TableRow>
     );
   },
-  // 自定義比較函數（可選）
   (prevProps, nextProps) => {
-    // 比較 emp 物件的所有屬性是否相同
     const isEmpEqual =
       prevProps.emp.id === nextProps.emp.id &&
       prevProps.emp.department === nextProps.emp.department &&
@@ -122,9 +129,9 @@ const EmployeeRow = memo(
       prevProps.emp.employee_name === nextProps.emp.employee_name &&
       prevProps.emp.manager_name === nextProps.emp.manager_name &&
       prevProps.emp.roles === nextProps.emp.roles &&
-      prevProps.emp.status === nextProps.emp.status;
+      prevProps.emp.status === nextProps.emp.status &&
+      prevProps.emp.hire_date === nextProps.emp.hire_date;
 
-    // 比較其他 props
     return (
       isEmpEqual &&
       prevProps.isSmallScreen === nextProps.isSmallScreen &&
@@ -145,7 +152,6 @@ function UserManagementPage() {
   }
 
   const [departments, setDepartments] = useState([]);
-  const [positions, setPositions] = useState([]);
   const [roles, setRoles] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -171,6 +177,8 @@ function UserManagementPage() {
   const [assignHireDate, setAssignHireDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
+  const [filteredPositions, setFilteredPositions] = useState([]);
+  const [filteredPositionsForDialog, setFilteredPositionsForDialog] = useState([]);
 
   const fetchEmployees = () => {
     setLoading(true);
@@ -211,7 +219,6 @@ function UserManagementPage() {
   useEffect(() => {
     Promise.all([
       API.get("/departments").then((res) => setDepartments(res.data.departments || [])),
-      API.get("/positions").then((res) => setPositions(res.data.positions || [])),
       API.get("/roles").then((res) => {
         const rolesData = Array.isArray(res.data) ? res.data : [];
         setRoles(rolesData);
@@ -227,10 +234,59 @@ function UserManagementPage() {
       })
       .finally(() => setDataLoading(false));
   }, []);
+  useEffect(() => {
+    if (department) {
+      const dept = departments.find((d) => d.name === department);
+      if (dept) {
+        API.get(`/positions/by/department/${dept.id}`)
+          .then((res) => {
+            console.log("Filtered positions for query:", res.data.positions);
+            setFilteredPositions(res.data.positions || []);
+            if (position && !res.data.positions.some((p) => p.name === position)) {
+              setPosition("");
+            }
+          })
+          .catch((err) => {
+            console.error("載入職位失敗", err);
+            setFilteredPositions([]);
+            setPosition("");
+          });
+      }
+    } else {
+      setFilteredPositions([]);
+      setPosition("");
+    }
+  }, [department, departments]);
 
   useEffect(() => {
-    fetchEmployees();
-  }, [currentPage, department, position, employeeId, departments, roles]);
+    if (assignDepartment) {
+      const dept = departments.find((d) => d.name === assignDepartment);
+      if (dept) {
+        API.get(`/positions/by/department/${dept.id}`)
+          .then((res) => {
+            console.log("Filtered positions for dialog:", res.data.positions);
+            setFilteredPositionsForDialog(res.data.positions || []);
+            if (assignPosition && !res.data.positions.some((p) => p.name === assignPosition)) {
+              setAssignPosition("");
+            }
+          })
+          .catch((err) => {
+            console.error("載入職位失敗", err);
+            setFilteredPositionsForDialog([]);
+            setAssignPosition("");
+          });
+      }
+    } else {
+      setFilteredPositionsForDialog([]);
+      setAssignPosition("");
+    }
+  }, [assignDepartment, departments]);
+
+  useEffect(() => {
+    if (!dataLoading) {
+      fetchEmployees();
+    }
+  }, [currentPage, department, position, employeeId, departments, roles, dataLoading]);
 
   const handleSearch = () => {
     setCurrentPage(1);
@@ -326,15 +382,68 @@ function UserManagementPage() {
       alert("資料正在載入中，請稍後再試");
       return;
     }
+
     setAssignEmployee(employee);
-    setAssignDepartment(employee.department !== "-" ? employee.department : "");
-    setAssignPosition(employee.position !== "-" ? employee.position : "");
-    setAssignManager(employee.manager_id || "");
-    const firstRole = employee.roles && employee.roles !== "-" ? employee.roles.split(", ")[0] : "";
-    setAssignRole(firstRole);
-    setAssignHireDate("");
+
+    const deptValue =
+      employee.department && employee.department !== "-" && departments.find((dept) => dept.name === employee.department)
+        ? employee.department
+        : "";
+    setAssignDepartment(deptValue);
+    console.log("assignDepartment:", deptValue, "Available departments:", departments.map((d) => d.name));
+
+    // 根據部門動態獲取職位
+    if (deptValue) {
+      const dept = departments.find((d) => d.name === deptValue);
+      if (dept) {
+        API.get(`/positions/by/department/${dept.id}`)
+          .then((res) => {
+            console.log("Filtered positions for dialog (on open):", res.data.positions);
+            setFilteredPositionsForDialog(res.data.positions || []);
+            const posValue =
+              employee.position && employee.position !== "-" && res.data.positions.find((pos) => pos.name === employee.position)
+                ? employee.position
+                : "";
+            setAssignPosition(posValue);
+          })
+          .catch((err) => {
+            console.error("載入職位失敗", err);
+            setFilteredPositionsForDialog([]);
+            setAssignPosition("");
+          });
+      }
+    } else {
+      setFilteredPositionsForDialog([]);
+      setAssignPosition("");
+    }
+
+    const managerValue =
+      employee.manager_id && employees.find((emp) => emp.id === employee.manager_id && emp.status === "approved")
+        ? employee.manager_id
+        : "";
+    setAssignManager(managerValue);
+    console.log(
+      "assignManager:",
+      managerValue,
+      "Available managers:",
+      employees.filter((emp) => emp.status === "approved").map((emp) => emp.id)
+    );
+
+    const firstRole =
+      employee.roles && employee.roles !== "-" ? employee.roles.split(", ")[0] : "";
+    const roleValue = firstRole && roles.find((role) => role.name.toLowerCase() === firstRole.toLowerCase())
+      ? roles.find((role) => role.name.toLowerCase() === firstRole.toLowerCase()).name
+      : "";
+    setAssignRole(roleValue);
+    console.log("assignRole:", roleValue, "Available roles:", roles.map((r) => r.name));
+
+    // 格式化 hire_date 為 yyyy-MM-dd
+    const formattedHireDate = formatDateToYYYYMMDD(employee.hire_date);
+    setAssignHireDate(formattedHireDate);
+    console.log("assignHireDate:", formattedHireDate);
+
     setOpenAssignDialog(true);
-  }, [dataLoading]);
+  }, [dataLoading, departments, roles, employees]);
 
   const handleAssignEmployee = async () => {
     if (
@@ -351,26 +460,55 @@ function UserManagementPage() {
     try {
       const payload = {
         department_id: departments.find((dept) => dept.name === assignDepartment).id,
-        position_id: positions.find((pos) => pos.name === assignPosition).id,
+        position_id: filteredPositionsForDialog.find((pos) => pos.name === assignPosition)?.id || null,
         manager_id: assignManager,
         role_id: roles.find((role) => role.name === assignRole).id,
-        hire_date: assignHireDate,
+        hire_date: assignHireDate, // 已經是 yyyy-MM-dd 格式
       };
-      await API.patch(`/employees/${assignEmployee.id}/assign`, payload);
+      const response = await API.patch(`/employees/${assignEmployee.id}/assign`, payload);
+
+      // 假設後端回應中包含更新後的員工資料，例如 response.data
+      const updatedEmployee = response.data; // 根據實際後端回應調整
+      if (updatedEmployee) {
+        setEmployees((prevEmployees) =>
+          prevEmployees.map((emp) =>
+            emp.id === assignEmployee.id ? { ...emp, ...updatedEmployee } : emp
+          )
+        );
+      } else {
+        // 如果後端沒有返回完整資料，手動更新必要的欄位
+        setEmployees((prevEmployees) =>
+          prevEmployees.map((emp) =>
+            emp.id === assignEmployee.id
+              ? {
+                ...emp,
+                department: assignDepartment,
+                position: assignPosition,
+                manager_id: assignManager,
+                manager_name: employees.find((e) => e.id === assignManager)?.employee_name || "-",
+                roles: assignRole,
+                hire_date: assignHireDate, // 更新 hire_date
+              }
+              : emp
+          )
+        );
+      }
+
       setOpenAssignDialog(false);
-      fetchEmployees();
     } catch (error) {
       console.error("指派員工詳情失敗：", error);
       if (error.response?.status === 400) {
         alert("無法指派，員工尚未通過審核");
       } else if (error.response?.status === 404) {
         alert("員工不存在，請重新整理頁面");
+        fetchEmployees();
       } else if (error.response?.status === 422) {
         alert("驗證失敗，請檢查輸入資料");
       } else if (error.response?.status === 403) {
         alert("您沒有權限執行此操作");
       } else {
         alert("指派員工詳情失敗，請稍後再試");
+        fetchEmployees();
       }
     }
   };
@@ -532,11 +670,12 @@ function UserManagementPage() {
           displayEmpty
           variant="outlined"
           size="small"
+          disabled={!department} // 如果未選擇部門，則禁用
           sx={{ backgroundColor: "white", width: "130px" }}
         >
-          <MenuItem value="">請選擇職位</MenuItem>
-          {Array.isArray(positions) &&
-            positions.map((pos) => (
+          <MenuItem value="">{department ? "請選擇職位" : "請先選擇部門"}</MenuItem>
+          {Array.isArray(filteredPositions) &&
+            filteredPositions.map((pos) => (
               <MenuItem key={pos.id} value={pos.name}>
                 {pos.name}
               </MenuItem>
@@ -797,14 +936,14 @@ function UserManagementPage() {
                 value={assignPosition}
                 onChange={(e) => setAssignPosition(e.target.value)}
                 displayEmpty
+                disabled={!assignDepartment}
               >
-                <MenuItem value="">請選擇職位</MenuItem>
-                {Array.isArray(positions) &&
-                  positions.map((pos) => (
-                    <MenuItem key={pos.id} value={pos.name}>
-                      {pos.name}
-                    </MenuItem>
-                  ))}
+                <MenuItem value="">{assignDepartment ? "請選擇職位" : "請先選擇部門"}</MenuItem>
+                {filteredPositionsForDialog.map((pos) => (
+                  <MenuItem key={pos.id} value={pos.name}>
+                    {pos.name}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
             <Typography variant="body1">主管</Typography>
