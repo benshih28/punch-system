@@ -184,22 +184,25 @@ function UserManagementPage() {
     setLoading(true);
     const params = {
       department_id: departments.find((dept) => dept.name === department)?.id || null,
-      role_id: roles.find((role) => role.name === position)?.id || null,
+      position_id: filteredPositions.find((pos) => pos.name === position)?.id || null, // 修正為 position_id
       user_id: employeeId || null,
       page: currentPage,
       per_page: 10,
     };
 
+    console.log("Fetching employees with params:", params);
+
     API.get("/employees", { params })
       .then((res) => {
         console.log("Employees data:", res.data.data);
+        console.log("Total pages:", res.data.meta.last_page);
         const ids = res.data.data.map((emp) => emp.id);
         const uniqueIds = new Set(ids);
         if (ids.length !== uniqueIds.size) {
           console.warn("發現重複的 emp.id:", ids);
         }
         setEmployees(res.data.data);
-        setTotalPages(res.data.meta.last_page);
+        setTotalPages(res.data.meta.last_page || 1); // 確保 totalPages 有預設值
       })
       .catch((err) => {
         console.error("取得員工列表失敗", err);
@@ -382,7 +385,6 @@ function UserManagementPage() {
       alert("資料正在載入中，請稍後再試");
       return;
     }
-
     setAssignEmployee(employee);
 
     const deptValue =
@@ -459,35 +461,69 @@ function UserManagementPage() {
 
     try {
       const payload = {
-        department_id: departments.find((dept) => dept.name === assignDepartment).id,
+        department_id: departments.find((dept) => dept.name === assignDepartment)?.id || null,
         position_id: filteredPositionsForDialog.find((pos) => pos.name === assignPosition)?.id || null,
         manager_id: assignManager,
-        role_id: roles.find((role) => role.name === assignRole).id,
-        hire_date: assignHireDate, // 已經是 yyyy-MM-dd 格式
+        role_id: roles.find((role) => role.name === assignRole)?.id || null,
+        hire_date: assignHireDate,
       };
-      const response = await API.patch(`/employees/${assignEmployee.id}/assign`, payload);
+      console.log("Assign payload:", payload); // 確認發送的資料
 
-      // 假設後端回應中包含更新後的員工資料，例如 response.data
-      const updatedEmployee = response.data; // 根據實際後端回應調整
-      if (updatedEmployee) {
+      const response = await API.patch(`/employees/${assignEmployee.id}/assign`, payload);
+      console.log("API response:", response.data); // 確認後端回應
+
+      const updatedEmployee = response.data;
+      if (updatedEmployee && updatedEmployee.id) {
+        // 如果後端返回了完整的員工資料，直接使用
         setEmployees((prevEmployees) =>
           prevEmployees.map((emp) =>
             emp.id === assignEmployee.id ? { ...emp, ...updatedEmployee } : emp
           )
         );
       } else {
-        // 如果後端沒有返回完整資料，手動更新必要的欄位
+        // 手動更新所有欄位
+        const newManager = employees.find((e) => e.id === assignManager);
+        const newDepartment = departments.find((dept) => dept.id === payload.department_id);
+        const newPosition = filteredPositionsForDialog.find((pos) => pos.id === payload.position_id);
+        const newRole = roles.find((role) => role.id === payload.role_id);
+
+        console.log("New manager:", newManager);
+        console.log("New department:", newDepartment);
+        console.log("New position:", newPosition);
+        console.log("New role:", newRole);
+
+        if (!newManager) {
+          console.error("Cannot find manager with ID:", assignManager);
+          alert("找不到選擇的主管，請重新整理頁面");
+          return;
+        }
+        if (!newDepartment) {
+          console.error("Cannot find department with ID:", payload.department_id);
+          alert("找不到選擇的部門，請重新整理頁面");
+          return;
+        }
+        if (!newPosition) {
+          console.error("Cannot find position with ID:", payload.position_id);
+          alert("找不到選擇的職位，請重新整理頁面");
+          return;
+        }
+        if (!newRole) {
+          console.error("Cannot find role with ID:", payload.role_id);
+          alert("找不到選擇的角色，請重新整理頁面");
+          return;
+        }
+
         setEmployees((prevEmployees) =>
           prevEmployees.map((emp) =>
             emp.id === assignEmployee.id
               ? {
                 ...emp,
-                department: assignDepartment,
-                position: assignPosition,
+                department: newDepartment.name || "-",
+                position: newPosition.name || "-",
                 manager_id: assignManager,
-                manager_name: employees.find((e) => e.id === assignManager)?.employee_name || "-",
-                roles: assignRole,
-                hire_date: assignHireDate, // 更新 hire_date
+                manager_name: newManager.employee_name || "-",
+                roles: newRole.name || "-",
+                hire_date: assignHireDate,
               }
               : emp
           )
@@ -898,7 +934,9 @@ function UserManagementPage() {
 
         <Dialog
           open={openAssignDialog}
-          onClose={() => setOpenAssignDialog(false)}
+          onClose={() => {
+            setOpenAssignDialog(false);
+          }}
           fullWidth
           maxWidth={isSmallScreen ? "xs" : "sm"}
         >
@@ -1087,7 +1125,6 @@ function UserManagementPage() {
                 </TableCell>
               </TableRow>
             </TableHead>
-
             <TableBody>
               {loading ? (
                 <TableRow key="loading">
