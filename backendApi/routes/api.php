@@ -65,6 +65,10 @@ Route::middleware('auth:api')->group(function () {
             Route::post('/out', [PunchController::class, 'punchOut'])->middleware('can:punch_out');
             // 打卡補登請求 (需要 `request_correction` 權限)
             Route::post('/correction', [PunchCorrectionController::class, 'store'])->middleware('can:request_correction');
+            // 刪除補登打卡請求
+            Route::delete('/correction/{id}', [PunchCorrectionController::class, 'destroy'])->middleware('can:request_correction');
+            // 更新補登打卡請求
+            Route::patch('/correction/{id}', [PunchCorrectionController::class, 'update'])->middleware('can:request_correction');
             // 個人的補登打卡紀錄表單(可以選擇查看日期範圍) (需要 `view_corrections` 權限)
             Route::get('/correction', [PunchCorrectionController::class, 'getUserCorrections'])->middleware('can:view_corrections');
         });

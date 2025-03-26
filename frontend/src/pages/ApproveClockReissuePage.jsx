@@ -1,6 +1,8 @@
 import { useState } from "react"; // React Hook 用於管理元件的內部狀態
 import { useAtom } from "jotai"; // 從 Jotai 引入 `useAtom`，用來讀取 `authAtom`
 import { authAtom } from "../state/authAtom"; // Jotai Atom 用於存儲身份驗證狀態
+import { errorAtom } from "../state/errorAtom"; // Jotai Atom 用於存儲錯誤訊息
+import { logoutAtom } from "../state/authAtom"; // Jotai Atom 用於登出
 import { useEffect } from "react"; // 用於獲取API
 import API from "../api/axios"; // Axios 實例，用於發送 API 請求
 
@@ -44,11 +46,14 @@ const columns = [
 
 function ApproveClockReissuePage() {
   // **Jotai - 全局狀態管理**
-  // const [, setAuth] = useAtom(authAtom); // setAuth 更新 Jotai 全局狀態 (authAtom)
+  const [, setAuth] = useAtom(authAtom); // setAuth 更新 Jotai 全局狀態 (authAtom)
 
   // 設定起始 & 結束日期 & 頁數 & 限制筆數
-  const [startDate, setStartDate] = useState(new Date());
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [startDate, setStartDate] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), 0, 1);
+  });
+  // 起始日期
   const [endDate, setEndDate] = useState(new Date());
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -67,6 +72,8 @@ function ApproveClockReissuePage() {
   const [rejectionError, setRejectionError] = useState("");
   // 新增無權限狀態
   const [unauthorized, setUnauthorized] = useState(false);
+  // 取得錯誤訊息
+  const [errorMessage] = useAtom(errorAtom);
 
   // 開啟 & 關閉 Dialog
   const [openDetailsDialog, setOpenDetailsDialog] = useState(false); // 審核詳情視窗
@@ -100,7 +107,7 @@ function ApproveClockReissuePage() {
           setDepartments(departmentResponse.data.departments);
         }
       } catch (error) {
-        console.error("錯誤詳情:", error.response?.data || error.message);
+        console.error("錯誤詳情:", error.message);
       }
     };
     fetchUserInfo();
@@ -117,9 +124,6 @@ function ApproveClockReissuePage() {
       await new Promise((resolve) => setTimeout(resolve, 0)); // 🛠 強制等待 React 更新 state
     }
 
-    // 設定 `isInitialLoad` 為 `false`，避免總是取 `2025-01-01`
-    setIsInitialLoad(false);
-
     const pageNum = resetPage ? 0 : isNaN(newPage) ? 0 : Number(newPage);
     const rowsPerPageNum = isNaN(newRowsPerPage) ? 10 : Number(newRowsPerPage);
 
@@ -128,12 +132,14 @@ function ApproveClockReissuePage() {
     setUnauthorized(false);
 
     try {
-      // 格式化 `startDate` & `endDate` 為 `YYYY-MM-DD`
-      const formattedStartDate = isInitialLoad
-        ? "2025-01-01"
-        : startDate.toISOString().split("T")[0];
+      const formattedStartDate = startDate.getFullYear() + "-" +
+        String(startDate.getMonth() + 1).padStart(2, "0") + "-" +
+        String(startDate.getDate()).padStart(2, "0");
 
-      const formattedEndDate = endDate.toISOString().split("T")[0];
+      const formattedEndDate = endDate.getFullYear() + "-" +
+        String(endDate.getMonth() + 1).padStart(2, "0") + "-" +
+        String(endDate.getDate()).padStart(2, "0");
+
 
       let query = `/corrections?
           start_date=${formattedStartDate}&
@@ -153,7 +159,7 @@ function ApproveClockReissuePage() {
       console.log("URL", query);
 
       const corrections = response.data?.data?.data || [];
-      const total = response.data.data.data[0].total_records || 0; // 取得總筆數
+      const total = corrections.length > 0 ? response.data.data.data[0].total_records || 0 : 0; // 取得總筆數
 
       if (!Array.isArray(corrections))
         throw new Error("API 回應的 data.data 不是陣列");
@@ -178,8 +184,8 @@ function ApproveClockReissuePage() {
               item.status === "approved"
                 ? "審核通過"
                 : item.status === "rejected"
-                ? "審核未通過"
-                : "待審核",
+                  ? "審核未通過"
+                  : "待審核",
           };
         });
 
@@ -218,9 +224,7 @@ function ApproveClockReissuePage() {
     setSelectedDepartmentName(selectedDept ? selectedDept.name : "");
 
     setDepartmentId(newDepartment); // 同步更新 `departmentId`
-    setUnauthorized(false); // 清除無權限狀態
-    setPage(0); // 重置分頁
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    setUnauthorized(false); // 重置無權限狀態
   };
 
   useEffect(() => {
@@ -285,10 +289,10 @@ function ApproveClockReissuePage() {
         const updatedRows = rows.map((row) =>
           row.id === selectedRow.id
             ? {
-                ...row,
-                status: selectedRow.status,
-                rejectionReason: selectedRow.rejectionReason,
-              }
+              ...row,
+              status: selectedRow.status,
+              rejectionReason: selectedRow.rejectionReason,
+            }
             : row
         );
 
@@ -342,55 +346,84 @@ function ApproveClockReissuePage() {
             padding: "10px",
             borderRadius: "8px", // 圓角邊框
             display: "flex",
-            alignItems: "center", // 垂直置中
-            textAlign: "center", // 文字置中
-            justifyContent: "center", // 水平置中
             gap: 2, // 設定元素之間的間距
-            flexWrap: "wrap", // 讓內容在小螢幕自動換行
+            // RWD設定
+            flexDirection: {
+              xs: "column",
+              md: "column",
+              lg: "row",
+            },
+            alignItems: "center",
           }}
         >
-          {/* 文字 */}
-          <Typography variant="body1">選擇部門</Typography>
-          {/* 部門輸入框 */}
-          <TextField
-            variant="outlined"
-            size="small"
-            value={selectedDepartment ?? ""}
-            onChange={handleDepartmentChange}
-            select
-            sx={{ backgroundColor: "white", minWidth: "180px" }} // 白底，寬度限制
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: {
+                xs: "column",
+                sm: "row",
+              },
+              gap: 2,
+            }}
           >
-            <MenuItem value="" disabled>
-              請選擇部門
-            </MenuItem>
-            {departments.length > 0 &&
-              departments.map((dept) => (
-                <MenuItem key={dept.id} value={dept.id}>
-                  {dept.name}
+            <Box sx={{ display: "flex", gap: 2, alignItems: "center", width: "220px" }}>
+              <Typography variant="body1">選擇部門</Typography>
+              {/* 文字 */}
+              {/* 部門輸入框 */}
+              <TextField
+                variant="outlined"
+                size="small"
+                value={selectedDepartment ?? ""}
+                onChange={handleDepartmentChange}
+                select
+                fullWidth
+                sx={{ backgroundColor: "white" }} // 白底，寬度限制
+              >
+                <MenuItem value="" disabled>
+                  請選擇部門
                 </MenuItem>
-              ))}
-          </TextField>
-          {/* 文字 */}
-          <Typography variant="body1">員工編號</Typography>
-          {/* 員工編號輸入框 */}
-          <TextField
-            variant="outlined"
-            size="small"
-            value={employeeId}
-            onChange={(e) => setEmployeeId(e.target.value)}
-            sx={{ backgroundColor: "white", minWidth: "180px" }}
-          />
+                {departments.length > 0 &&
+                  departments.map((dept) => (
+                    <MenuItem key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </MenuItem>
+                  ))}
+              </TextField>
+            </Box>
+            <Box sx={{ display: "flex", gap: 2, alignItems: "center", width: "220px" }}>
+              <Typography variant="body1">員工編號</Typography>
+              {/* 文字 */}
+              {/* 員工編號輸入框 */}
+              <TextField
+                variant="outlined"
+                size="small"
+                value={employeeId}
+                onChange={(e) => setEmployeeId(e.target.value)}
+                fullWidth
+                sx={{ backgroundColor: "white" }}
+              />
+            </Box>
+          </Box>
 
-          {/* 文字 */}
-          <Typography variant="body1">選擇日期區間</Typography>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: {
+                xs: "column",
+                sm: "row",
+              },
+              gap: 2,
+              alignItems: "center",
+            }}
+          >
           <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <Typography variant="body1">選擇日期區間</Typography>
             {/* 起始日期 */}
             <DatePicker
               value={startDate}
               onChange={(newValue) => {
                 if (newValue) {
                   setStartDate(new Date(newValue)); // 確保 `startDate` 被正確更新
-                  setIsInitialLoad(false); // 避免 `2025-01-01` 被預設值影響
                 }
               }}
               maxDate={new Date()} // 不能選擇未來日期
@@ -413,7 +446,7 @@ function ApproveClockReissuePage() {
             />
 
             {/* 分隔符號「~」 */}
-            <Typography variant="body1">~</Typography>
+            <Typography variant="body1" sx={{ display: { xs: "none", sm: "block" } }}>~</Typography>
 
             {/* 結束日期 */}
             <DatePicker
@@ -421,7 +454,6 @@ function ApproveClockReissuePage() {
               onChange={(newValue) => {
                 if (newValue) {
                   setEndDate(new Date(newValue));
-                  setIsInitialLoad(false);
                 }
               }}
               maxDate={new Date()} // 不能選擇未來日期
@@ -443,6 +475,7 @@ function ApproveClockReissuePage() {
               }}
             />
           </LocalizationProvider>
+          </Box>
         </Box>
 
         {/* **查詢按鈕** */}
@@ -492,17 +525,17 @@ function ApproveClockReissuePage() {
                           column.id === "id"
                             ? 50
                             : [
-                                "user_name",
-                                "date",
-                                "time",
-                                "correction_type",
-                                "created_at",
-                                "status",
-                              ].includes(column.id)
-                            ? 150
-                            : column.id === "actions"
-                            ? 100
-                            : "auto",
+                              "user_name",
+                              "date",
+                              "time",
+                              "correction_type",
+                              "created_at",
+                              "status",
+                            ].includes(column.id)
+                              ? 150
+                              : column.id === "actions"
+                                ? 100
+                                : "auto",
                         backgroundColor: "#f5f5f5",
                         fontWeight: "bold",
                         textAlign: "center",
@@ -729,8 +762,8 @@ function ApproveClockReissuePage() {
             </Button>
           </DialogActions>
         </Dialog>
-      </Paper>
-    </Box>
+      </Paper >
+    </Box >
   );
 }
 
