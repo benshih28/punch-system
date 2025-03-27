@@ -18,6 +18,9 @@ use App\Models\File;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
+use App\Models\Notification;
+use Illuminate\Support\Facades\Http;
+
 
 class LeaveController extends Controller
 {
@@ -191,6 +194,28 @@ class LeaveController extends Controller
 
             // 4️⃣ **呼叫 Service 層處理請假**
             $leave = $this->leaveService->applyLeave($data);
+
+            // 取得請假人員的主管 ID（透過 Employee 關聯）
+            $employee = Employee::where('user_id', $user->id)->first();
+            $managerId = $employee?->manager_id;
+
+            if ($managerId) {
+                $notification = Notification::create([
+                    'user_id' => $managerId,
+                    'title' => '部屬請假申請通知',
+                    'message' => "{$user->name} 提出一筆請假申請，請前往審核",
+                    'link' => '/approve/leave',
+                    'archived' => false, // 明確指定未封存
+                ]);
+
+                Http::post('http://localhost:6001/notify', [
+                    'id' => $notification->id,
+                    'userId' => $managerId,
+                    'title' => $notification->title,
+                    'message' => $notification->message,
+                    'link' => $notification->link,
+                ]);
+            }
 
             // 5️⃣ **如果有附件，更新 `leave_id` 到 `File` 表**
             if ($fileRecord) {
@@ -1060,7 +1085,7 @@ class LeaveController extends Controller
                 return response()->json([
                     'message' => '請假類型無效',
                 ], 400);
-            }            
+            }
             // ✅ **直接使用 Service 層的 getRemainingLeaveHours()**
             $remainingHours = $this->leaveService->getRemainingLeaveHours($leave_type_id, $user->id, $startTime, $excludeId);
 
@@ -1198,6 +1223,44 @@ class LeaveController extends Controller
         $leave->approved_by = $user->id;
         $leave->save();
 
+        // 建立通知並取得資料（通知員工）
+        $notification = Notification::create([
+            'user_id' => $leave->user_id,
+            'title' => '請假單已審核',
+            'message' => '主管已通過你的請假單，等待 HR 審核',
+            'link' => '/leave/and/inquiry/records',
+            'archived' => false,
+        ]);
+
+        Http::post('http://localhost:6001/notify', [
+            'id' => $notification->id,
+            'userId' => $leave->user_id,
+            'title' => $notification->title,
+            'message' => $notification->message,
+            'link' => $notification->link,
+        ]);
+
+        // 通知 HR 群組
+        $hrUsers = \App\Models\User::role('HR')->get();
+
+        foreach ($hrUsers as $hr) {
+            $hrNotification = Notification::create([
+                'user_id' => $hr->id,
+                'title' => '請假單待 HR 審核',
+                'message' => "部門主管 {$user->name} 已核准 {$leave->user->name} 的請假單，請 HR 審核",
+                'link' => '/approve/leave',
+                'archived' => false,
+            ]);
+
+            Http::post('http://localhost:6001/notify', [
+                'id' => $hrNotification->id,
+                'userId' => $hr->id,
+                'title' => $hrNotification->title,
+                'message' => $hrNotification->message,
+                'link' => $hrNotification->link,
+            ]);
+        }
+
         return response()->json(['message' => '假單已被主管審核，等待 HR 審核'], 200);
     }
 
@@ -1319,6 +1382,24 @@ class LeaveController extends Controller
         $leave->approved_by = $user->id;
         $leave->save();
 
+        // 建立通知並取得資料
+        $notification = Notification::create([
+            'user_id' => $leave->user_id,
+            'title' => '請假單已被駁回',
+            'message' => '主管已駁回你的請假單，請重新申請',
+            'link' => '/leave/and/inquiry/records',
+            'archived' => false,
+        ]);
+
+        // 發送 WebSocket 通知
+        Http::post('http://localhost:6001/notify', [
+            'id' => $notification->id,
+            'userId' => $leave->user_id,
+            'title' => $notification->title,
+            'message' => $notification->message,
+            'link' => $notification->link,
+        ]);
+
         return response()->json(['message' => '假單已被主管拒絕'], 200);
     }
 
@@ -1412,6 +1493,24 @@ class LeaveController extends Controller
         $leave->status = 3;
         $leave->approved_by = $user->id;
         $leave->save();
+
+        // 建立通知並取得資料
+        $notification = Notification::create([
+            'user_id' => $leave->user_id,
+            'title' => '請假單已批准',
+            'message' => '人資已批准你的請假單,請到假單查詢頁面查看。',
+            'link' => '/leave/and/inquiry/records',
+            'archived' => false,
+        ]);
+
+        // 發送 WebSocket 通知
+        Http::post('http://localhost:6001/notify', [
+            'id' => $notification->id,
+            'userId' => $leave->user_id,
+            'title' => $notification->title,
+            'message' => $notification->message,
+            'link' => $notification->link,
+        ]);
 
         return response()->json(['message' => '假單已最終批准'], 200);
     }
@@ -1528,6 +1627,24 @@ class LeaveController extends Controller
         $leave->reject_reason = $rejectReason;
         $leave->approved_by = $user->id;
         $leave->save();
+
+        // 建立通知並取得資料
+        $notification = Notification::create([
+            'user_id' => $leave->user_id,
+            'title' => '請假單已被駁回',
+            'message' => '人資已駁回你的請假單,請重新申請。',
+            'link' => '/leave/and/inquiry/records',
+            'archived' => false,
+        ]);
+
+        // 發送 WebSocket 通知
+        Http::post('http://localhost:6001/notify', [
+            'id' => $notification->id,
+            'userId' => $leave->user_id,
+            'title' => $notification->title,
+            'message' => $notification->message,
+            'link' => $notification->link,
+        ]);
 
         return response()->json(['message' => '假單已被 HR 拒絕'], 200);
     }
