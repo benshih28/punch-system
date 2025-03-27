@@ -1,0 +1,15 @@
+# 忽略依賴
+node_modules/
+
+# 忽略環境設定檔（儲存 JWT_SECRET 等敏感資訊）
+.env
+
+# 忽略日誌檔案
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 忽略作業系統或編輯器產生的檔案
+.DS_Store
+Thumbs.db
+.vscode/
