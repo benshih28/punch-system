@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form"; // React Hook Form 用於表單管理
 import { useAtom } from "jotai"; // Jotai 狀態管理
 import { authAtom } from "../state/authAtom"; // Jotai Atom 用於存儲身份驗證狀態
 import API from "../api/axios"; // Axios 實例，用於發送 API 請求
+import { GoogleLogin } from '@react-oauth/google'; // Google 登入元件
 
 // **Material UI 元件**
 import {
@@ -56,8 +57,8 @@ function LoginPage() {
 
       // **更新 Jotai（這會自動存入 localStorage）**
       setAuth({
-        access_token: token, 
-        user: userDetails.user, 
+        access_token: token,
+        user: userDetails.user,
         punch_records: userDetails.punch_records,
         roles_permissions: userDetails.roles_permissions,
         recent_leaves: userDetails.recent_leaves,
@@ -211,6 +212,53 @@ function LoginPage() {
             註冊
           </Button>
         </form>
+
+
+        <Typography variant="h6" sx={{ mt: 2 }}>
+          或使用 Google 登入
+        </Typography>
+
+        <GoogleLogin
+          onSuccess={async (credentialResponse) => {
+            try {
+              const googleToken = credentialResponse.credential;
+
+              const res = await API.post("/login/google", {
+                access_token: googleToken,
+              });
+
+              const token = res.data.token;
+              const user = res.data.user;
+
+              if (!token) throw new Error("未收到 token");
+
+              // 🔄 取得使用者詳細資料（如果你有 /user/details API）
+              const userDetailsResponse = await API.get("/user/details", {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+
+              const userDetails = userDetailsResponse.data;
+
+              setAuth({
+                access_token: token,
+                user: userDetails.user,
+                punch_records: userDetails.punch_records,
+                roles_permissions: userDetails.roles_permissions,
+                recent_leaves: userDetails.recent_leaves,
+              });
+
+              navigate("/punchin");
+            } catch (error) {
+              console.error("Google 登入失敗", error);
+              setError("email", { message: "Google 登入失敗，請再試一次" });
+            }
+          }}
+          onError={() => {
+            console.log("Google 登入失敗");
+            setError("email", { message: "Google 登入失敗，請再試一次" });
+          }}
+        />
+
       </Paper>
     </Box>
   );
