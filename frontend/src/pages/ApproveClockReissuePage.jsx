@@ -92,12 +92,10 @@ function ApproveClockReissuePage() {
     // async（非同步）函數，用來向後端 API 發送請求並獲取數據
     const fetchUserInfo = async () => {
       try {
-        if (departmentId !== undefined) {
           if (departmentId !== 1) {
             setUnauthorized(true); // 不是人資則標記為無權限
             return;
           }
-        }
 
         API.get("/departments")
           .then((response) => {
