@@ -1,5 +1,4 @@
-import { useState } from "react"; // React Hook 用於管理元件的內部狀態
-import { useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react"; // React Hook 用於管理元件的內部狀態
 import { useAtom } from "jotai"; // 從 Jotai 引入 `useAtom`，用來讀取 `authAtom`
 import { authAtom } from "../state/authAtom"; // Jotai Atom 用於存儲身份驗證狀態
 import API from "../api/axios"; // Axios 實例，用於發送 API 請求
@@ -51,16 +50,15 @@ const columns = [
 ];
 
 function ClockReissueHistoryPage() {
-  // **React Hook Form - 表單管理**
 
   // **Jotai - 全局狀態管理**
-  const [, setAuth] = useAtom(authAtom); // setAuth 更新 Jotai 全局狀態 (authAtom)
+  const [authState] = useAtom(authAtom); // setAuth 更新 Jotai 全局狀態 (authAtom)
 
   // 設定起始 & 結束日期
   const [startDate, setStartDate] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), 0, 1);
-  });  
+  });
   const [endDate, setEndDate] = useState(new Date());
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
@@ -86,29 +84,18 @@ function ClockReissueHistoryPage() {
   const [shift, setShift] = useState("上班"); // 預設為 "上班"
   const [reason, setReason] = useState("忘記打卡");
 
-  // 使用 useEffect 在畫面載入時請求 API
-  // useEffect是React Hook，初次渲染時自動執行一次
-  // 取得使用者資訊
   useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        await API.get("/user/details");
-      } catch (error) {
-        console.error("載入資料失敗:", error);
-      }
-    };
-    fetchUserInfo();
-  }, []);
+    handleSearch(page, rowsPerPage);
+  }, [rowsPerPage, page]);
 
   // 依照查詢條件篩選
-  const handleSearch = async (
+  const handleSearch = useCallback(async (
     newPage = page,
     newRowsPerPage = rowsPerPage,
     resetPage = false
   ) => {
     if (resetPage) {
       setPage(0); // 先重設頁碼
-      await new Promise((resolve) => setTimeout(resolve, 0)); // 🛠 強制等待 React 更新 state
     }
 
     const pageNum = resetPage ? 0 : isNaN(newPage) ? 0 : Number(newPage);
@@ -138,50 +125,173 @@ function ClockReissueHistoryPage() {
 
       const corrections = response.data?.data?.data || [];
 
-      const total = corrections.length > 0 ? response.data.data.data[0].total_records || 0 : 0; // 取得總筆數
-
       if (!Array.isArray(corrections))
         throw new Error("API 回應的 data.data 不是陣列");
 
       // **處理 API 回應資料**
-      const formattedCorrections = corrections
-        .map((item) => {
-          return {
-            ...item,
-            date: item.punch_time.split(" ")[0],
-            time: item.punch_time.split(" ")[1],
-            created_at: item.created_at.split(" ")[0],
-            correction_type:
-              item.correction_type === "punch_in" ? "上班打卡" : "下班打卡",
-            status:
-              item.status === "approved"
-                ? "審核通過"
-                : item.status === "rejected"
-                  ? "審核未通過"
-                  : "待審核",
-            review_message: item.review_message || "",
-          };
-        });
+      setRows(corrections.map((item) => ({
+        ...item,
+        date: item.punch_time.split(" ")[0],
+        time: item.punch_time.split(" ")[1],
+        created_at: item.created_at.split(" ")[0],
+        correction_type:
+          item.correction_type === "punch_in" ? "上班打卡" : "下班打卡",
+        status:
+          item.status === "approved"
+            ? "審核通過"
+            : item.status === "rejected"
+              ? "審核未通過"
+              : "待審核",
+        review_message: item.review_message || "",
+      })));
 
-      setRows(formattedCorrections);
-      setTotalRecords(total); // 設定總筆數
+      setTotalRecords(corrections.length > 0 ? response.data.data.data[0].total_records || 0 : 0); // 設定總筆數
     } catch (error) {
       setRows([]);
       setTotalRecords(0); // 避免 totalRecords 遺留錯誤值
-
       console.error("錯誤詳情:", error.response?.data || error.message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [startDate, endDate, page, rowsPerPage]);
 
-  useEffect(() => {
-    handleSearch(page, rowsPerPage);
-    // 如果當前頁數 * 每頁筆數 >= 總筆數，則自動跳回前一頁
-    if (page * rowsPerPage >= totalRecords && page > 0) {
-      setPage((prev) => prev - 1);
-    }
-  }, [totalRecords, rowsPerPage, page]);  
+  const memoizedRows = useMemo(() => rows, [rows]);
+
+  const memoizedTable = useMemo(() => (
+    <Paper
+      sx={{
+        height: "100%",
+        width: "100%",
+        overflow: "hidden",
+        borderRadius: "8px",
+        margin: "20px 0 0",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      {/* 表格 */}
+      <TableContainer sx={{ flex: 1, overflow: "auto" }}>
+        {/* stickyHeader 讓表頭固定，不受滾動影響 */}
+        <Table stickyHeader>
+          <TableHead>
+            <TableRow>
+              {columns.map((column) => (
+                <TableCell
+                  key={column.id}
+                  align={column.align || "left"}
+                  sx={{
+                    minWidth: column.minWidth,
+                    backgroundColor: "#f5f5f5",
+                    fontWeight: "bold",
+                    textAlign: "center",
+                  }}
+                >
+                  {column.label}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          {/* 表格內容 */}
+          <TableBody>
+            {memoizedRows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} align="center">
+                  無符合條件的資料
+                </TableCell>
+              </TableRow>
+            ) : (
+              memoizedRows.map((row) => (
+                <TableRow key={row.id} hover>
+                  {columns.map((column) => {
+                    const value = row[column.id];
+                    return (
+                      <TableCell
+                        key={column.id}
+                        align={column.align || "center"}
+                        sx={{ minWidth: column.minWidth }}
+                      >
+                        {column.id === "actions" ? (
+                          <>
+                            {row.status === "待審核" ? (
+                              <>
+                                <Button
+                                  variant="contained"
+                                  sx={{
+                                    backgroundColor: "#D2B48C",
+                                    color: "white",
+                                    marginRight: "5px",
+                                  }}
+                                  onClick={() => {
+                                    setEditRow(row); // 將該筆資料存進狀態
+                                    setDate(new Date(row.date)); // 日期欄位
+                                    setTime(new Date(`${row.date}T${row.time}`)); // 時間欄位
+                                    setShift(row.correction_type === "上班打卡" ? "上班" : "下班"); // 班別
+                                    setReason(row.reason || ""); // 原因
+                                    setOpenEditDialog(true); // 開啟「修改」彈窗
+                                  }}
+                                >
+                                  修改
+                                </Button>
+                                <Button
+                                  variant="contained"
+                                  sx={{
+                                    backgroundColor: "#D2B48C",
+                                    color: "white",
+                                  }}
+                                  onClick={() => {
+                                    handleDeleteRecord(row.id);
+                                  }}
+                                >
+                                  刪除
+                                </Button>
+                              </>
+                            ) : (
+                              <Button
+                                variant="contained"
+                                sx={{
+                                  backgroundColor: "#D2B48C",
+                                  color: "white",
+                                }}
+                                onClick={() => {
+                                  setSelectedRow(row);
+                                  setOpenDetailsDialog(true);
+                                }}
+                              >
+                                查詢
+                              </Button>
+                            )}
+                          </>
+                        ) : (
+                          value
+                        )}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      {/* 分頁功能 */}
+      <TablePagination
+        rowsPerPageOptions={[10, 25, 50]} // 可選擇的每頁筆數
+        component="div" // 告訴MUI這是一個div容器
+        count={totalRecords} // 總資料筆數
+        rowsPerPage={rowsPerPage} // 當前每頁顯示筆數
+        page={page} // 當前頁碼(從0開始)
+        onPageChange={(_, newPage) => setPage(newPage)} // 換頁時觸發的函式
+        onRowsPerPageChange={(e) => {
+          setRowsPerPage(parseInt(e.target.value, 10));
+          setPage(0);
+        }} // 改變每頁顯示筆數時觸發
+        sx={{
+          borderTop: "1px solid #ddd", // 增加分隔線
+          backgroundColor: "#fff", // 確保背景與表格一致
+        }}
+      />
+    </Paper>
+  ), [memoizedRows, page, rowsPerPage, totalRecords]);
 
   // 新增申請
   const handleAddRecord = async () => {
@@ -236,6 +346,7 @@ function ClockReissueHistoryPage() {
       handleSearch(0, rowsPerPage, true);
     } catch (error) {
       console.error("新增失敗：", error.response?.data || error.message);
+      alert(error.response?.data.message);
     }
   };
 
@@ -313,17 +424,6 @@ function ClockReissueHistoryPage() {
     }
   };
 
-  // 換頁
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage); // 更新當前頁面索引
-  };
-
-  // 更改每頁顯示筆數
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10)); // 解析數字並更新
-    setPage(0); // 回到第一頁，避免超出頁碼範圍
-  };
-
   // 處理載入與錯誤
   if (loading) return <Typography>Loading...</Typography>;
   if (error) return <Typography color="error">{error}</Typography>;
@@ -367,7 +467,6 @@ function ClockReissueHistoryPage() {
             padding: "10px",
             borderRadius: "8px", // 圓角邊框
             display: "flex",
-            alignItems: "center", // 垂直置中
             textAlign: "center", // 文字置中
             justifyContent: "center", // 水平置中
             gap: 2, // 設定元素之間的間距
@@ -436,7 +535,6 @@ function ClockReissueHistoryPage() {
         <Button
           variant="contained" // 使用實心樣式
           sx={{
-            mt: { xs: 1, sm: 0 },
             backgroundColor: "#AB9681",
             color: "white",
             fontWeight: "bold",
@@ -444,7 +542,7 @@ function ClockReissueHistoryPage() {
             borderRadius: "20px",
             padding: "2px 40px",
             justifyContent: "flex-start", // 讓圖示靠左
-            marginTop: "15px",
+            marginTop: "20px",
           }}
           startIcon={<ManageSearchIcon />} //讓放大鏡圖是在左邊
           onClick={handleSearch} // ✅ 點選後篩選日期範圍內的資料
@@ -452,137 +550,8 @@ function ClockReissueHistoryPage() {
           查詢
         </Button>
 
-        {/* overflow: "hidden" 防止滾動條溢出 */}
-        <Paper
-          sx={{
-            height: "100%",
-            width: "100%",
-            overflow: "hidden",
-            borderRadius: "8px",
-            margin: "20px 0 0",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          {/* 表格 */}
-          <TableContainer sx={{ flex: 1, overflow: "auto" }}>
-            {/* stickyHeader 讓表頭固定，不受滾動影響 */}
-            <Table stickyHeader>
-              <TableHead>
-                <TableRow>
-                  {columns.map((column) => (
-                    <TableCell
-                      key={column.id}
-                      align={column.align || "left"}
-                      sx={{
-                        minWidth: column.minWidth,
-                        backgroundColor: "#f5f5f5",
-                        fontWeight: "bold",
-                        textAlign: "center",
-                      }}
-                    >
-                      {column.label}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              {/* 表格內容 */}
-              <TableBody>
-                {rows.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} align="center">
-                      無符合條件的資料
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  rows.map((row) => (
-                    <TableRow key={row.id} hover>
-                      {columns.map((column) => {
-                        const value = row[column.id];
-                        return (
-                          <TableCell
-                            key={column.id}
-                            align={column.align || "center"}
-                            sx={{ minWidth: column.minWidth }}
-                          >
-                            {column.id === "actions" ? (
-                              <>
-                                {row.status === "待審核" ? (
-                                  <>
-                                    <Button
-                                      variant="contained"
-                                      sx={{
-                                        backgroundColor: "#D2B48C",
-                                        color: "white",
-                                        marginRight: "5px",
-                                      }}
-                                      onClick={() => {
-                                        setEditRow(row); // 將該筆資料存進狀態
-                                        setDate(new Date(row.date)); // 日期欄位
-                                        setTime(new Date(`${row.date}T${row.time}`)); // 時間欄位
-                                        setShift(row.correction_type === "上班打卡" ? "上班" : "下班"); // 班別
-                                        setReason(row.reason || ""); // 原因
-                                        setOpenEditDialog(true); // 開啟「修改」彈窗
-                                      }}
-                                    >
-                                      修改
-                                    </Button>
-                                    <Button
-                                      variant="contained"
-                                      sx={{
-                                        backgroundColor: "#D2B48C",
-                                        color: "white",
-                                      }}
-                                      onClick={() => {
-                                        handleDeleteRecord(row.id);
-                                      }}
-                                    >
-                                      刪除
-                                    </Button>
-                                  </>
-                                ) : (
-                                  <Button
-                                    variant="contained"
-                                    sx={{
-                                      backgroundColor: "#D2B48C",
-                                      color: "white",
-                                    }}
-                                    onClick={() => {
-                                      setSelectedRow(row);
-                                      setOpenDetailsDialog(true);
-                                    }}
-                                  >
-                                    查詢
-                                  </Button>
-                                )}
-                              </>
-                            ) : (
-                              value
-                            )}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          {/* 分頁功能 */}
-          <TablePagination
-            rowsPerPageOptions={[10, 25, 50]} // 可選擇的每頁筆數
-            component="div" // 告訴MUI這是一個div容器
-            count={totalRecords} // 總資料筆數
-            rowsPerPage={rowsPerPage} // 當前每頁顯示筆數
-            page={page} // 當前頁碼(從0開始)
-            onPageChange={handleChangePage} // 換頁時觸發的函式
-            onRowsPerPageChange={handleChangeRowsPerPage} // 改變每頁顯示筆數時觸發
-            sx={{
-              borderTop: "1px solid #ddd", // 增加分隔線
-              backgroundColor: "#fff", // 確保背景與表格一致
-            }}
-          />
-        </Paper>
+        {/* **顯示資料表格** */}
+        {memoizedTable}
       </Paper>
 
       {/* 修改彈出視窗 */}
