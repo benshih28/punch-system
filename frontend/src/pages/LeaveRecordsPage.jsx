@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { useAtom } from "jotai"; // 從 Jotai 引入 `useAtom`，用來讀取 `authAtom`
-import { authAtom } from "../state/authAtom"; // Jotai Atom 用於存儲身份驗證狀態
+import { useAtom } from "jotai";
+import { authAtom } from "../state/authAtom";
 import dayjs from "dayjs";
 import API from "../api/axios";
 import LeavePolicy from "../components/LeavePolicy";
@@ -28,7 +28,6 @@ import {
   DialogActions,
   Link,
   CircularProgress,
-  DialogContentText
 } from "@mui/material";
 import { Search } from "@mui/icons-material";
 import { LocalizationProvider, DateTimePicker } from "@mui/x-date-pickers";
@@ -48,9 +47,9 @@ function ApproveLeave() {
   const leaveTypesWithLimit = [4, 5, 6, 7, 8, 9, 10];   // 可限制查詢剩餘時數的假別 ID（例如：生理假、特休等）
   const [leaveHours, setLeaveHours] = useState(null);   // 剩餘時數
   const [totalPages, setTotalPages] = useState(1);      // 總頁數
-  const [dialogOpen, setDialogOpen] = useState(false);          // 控制 Dialog 開關
-  const [dialogMessage, setDialogMessage] = useState("");        // Dialog 內容
-  const [dialogSuccess, setDialogSuccess] = useState(true);      // 是成功 or 失敗
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
+  const [dialogSuccess, setDialogSuccess] = useState(true);
   const [status, setStatus] = useState("");  // 選中的狀態
   const [loading, setLoading] = useState(false); // 資料載入
   const statusMap = {       // 審核狀態
@@ -60,7 +59,14 @@ function ApproveLeave() {
     3: "人資通過",
     4: "人資駁回",
   };
-
+  const statusColorMap = {
+    0: { color: "#E65100" },
+    1: { color: "#2E7D32" },
+    2: { color: "#C62828" },
+    3: { color: "#1565C0" },
+    4: { color: "#AD1457" },
+  };
+  
   // 請假列表Title
   const columns = [
     { id: "applicant", label: "申請人" },
@@ -75,8 +81,8 @@ function ApproveLeave() {
 
   // 設定當月時間範圍
   useEffect(() => {
-    const start = dayjs().startOf("month"); // 本月第一天
-    const end = dayjs().endOf("month");     // 本月最後一秒
+    const start = dayjs().startOf("year");
+    const end = dayjs().endOf("month");
     setStartDate(start);
     setEndDate(end);
   }, []);
@@ -118,13 +124,13 @@ function ApproveLeave() {
         setSearchLeaveTypeOptions(searchOptions);
         setFormLeaveTypeOptions(allTypes);
       } catch (error) {
-        console.error("❌ 取得 leave types 失敗", error);
+        // console.error("❌ 取得 leave types 失敗", error);
       }
     };
     fetchLeaveTypes();
   }, []);
 
-  const [page, setPage] = useState(1);   // 分頁狀態
+  const [page, setPage] = useState(1);
   const pageSize = 10;
 
   // 獲取請假列表
@@ -153,10 +159,10 @@ function ApproveLeave() {
     } catch (error) {
       // console.error("取得請假資料失敗", error);
       setLeaveRequests([]);
-      setTotalPages(1); // 失敗時也要歸 1，避免卡住
+      setTotalPages(1);
     }
     finally {
-      setLoading(false); // ✅ 載入完成
+      setLoading(false);
     }
   };
   useEffect(() => {
@@ -176,7 +182,7 @@ function ApproveLeave() {
     formState: { errors },
   } = useForm();
 
-  const [open, setOpen] = useState(false); // 彈窗開啟
+  const [open, setOpen] = useState(false);
   const [mode, setMode] = useState("create"); // 彈窗可為 'create' | 'edit' | 'view'
   const [currentLeaveId, setCurrentLeaveId] = useState(null);
   const watchedStartTime = watch("startTime");
@@ -187,21 +193,22 @@ function ApproveLeave() {
   // 🧼 統一初始化表單（根據 mode 決定）
   const initForm = (request, openMode) => {
     if (openMode === "create") {
-      const defaultStart = dayjs();
-      const defaultEnd = dayjs().add(1, "hour");
+      const now = dayjs();
+      const roundedStart = now.minute(0).second(0).millisecond(0);
+      const roundedEnd = roundedStart.add(1, "hour");
       const typeId = "";
 
       setLeaveHours(null);
       reset({
-        startTime: defaultStart,
-        endTime: defaultEnd,
+        startTime: roundedStart,
+        endTime: roundedEnd,
         leave_type_id: typeId,
         status: "",
         reject_reason: "",
         reason: "",
       });
 
-      // 🪄 預設請假類型查詢剩餘時數（目前應該不會觸發）
+      // 預設請假類型查詢剩餘時數
       if (leaveTypesWithLimit.includes(Number(typeId))) {
         fetchRemainingLeaveHours(typeId, defaultStart);
       }
@@ -221,7 +228,7 @@ function ApproveLeave() {
         reason: request.reason ?? "",
       });
 
-      // 🪄 如果是編輯模式就查詢剩餘時數
+      // 如果是編輯模式就查詢剩餘時數
       if (openMode !== "view" && leaveTypesWithLimit.includes(Number(typeId))) {
         fetchRemainingLeaveHours(typeId, start);
       }
@@ -257,7 +264,7 @@ function ApproveLeave() {
   // 切換請假類型時，自動查詢特殊假別剩餘時數
   const fetchRemainingLeaveHours = async (
     leaveTypeId,
-    dateFromForm = watch("startTime") // ✅ 直接呼叫 watch 時值是最新的
+    dateFromForm = watch("startTime")
   ) => {
     const typeId = Number(leaveTypeId);
     const dateObj = dayjs(dateFromForm);
@@ -300,10 +307,9 @@ function ApproveLeave() {
     };
 
     if (!permissions.includes(permissionMap[mode])) {
-      return console.warn("⚠️ 權限不足");
+      // console.warn("⚠️ 權限不足");
+      return;
     }
-
-    if (mode === "edit" && !leaveId) return console.warn("⚠️ 編輯模式下缺少 leaveId！");
 
     const routeMap = {
       create: "/leave/request",
@@ -342,7 +348,6 @@ function ApproveLeave() {
     if (mode === "view") return;
 
     if (leaveHours !== null && leaveHours <= 0) {
-      alert("⛔ 請假時間區間無效，請重新選擇有效的請假時段");
       return;
     }
 
@@ -382,47 +387,59 @@ function ApproveLeave() {
       setDialogMessage("假單已成功刪除！");
       setDialogSuccess(true);
       setDialogOpen(true);
-      fetchLeaveRequests(); // 重新取得假單列表
+      fetchLeaveRequests();
     } catch (error) {
       setDialogMessage("刪除失敗，假單可能已被簽核或不存在");
       setDialogSuccess(false);
       setDialogOpen(true);
     } finally {
-      setOpenConfirm(false);  // 關閉確認 Dialog
-      setDeleteId(null);      // 清空刪除 ID
+      setOpenConfirm(false);
+      setDeleteId(null);
     }
   };
 
   // 切換分頁
   const handleChange = (event, value) => setPage(value);
-  const handleNext = () => page < totalPages && setPage(page + 1);  // 下一頁
-  const handleBack = () => page > 1 && setPage(page - 1);           // 上一頁
+  const handleNext = () => page < totalPages && setPage(page + 1);
+  const handleBack = () => page > 1 && setPage(page - 1);
 
 
   return (
     <Box sx={{ padding: "100px", textAlign: "center" }}>
-      <Typography variant="h4" fontWeight="bold" mb={1}>
+      <Typography variant="h4" fontWeight="bold" mb={1}
+      sx={{
+      display: "inline-block",
+      maxWidth: "100%",
+    }}>
         查詢個人請假紀錄
       </Typography>
 
       {/* 搜尋欄位 */}
       <Box
         sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          justifyContent: "center",
+          gap: 4,
+          maxWidth: "1200px",
+          width: "100%",
+          margin: "auto",
           backgroundColor: "#cfe2f3",
           padding: "25px",
           borderRadius: "12px",
-          maxWidth: "1100px",
-          width: "100%",
-          margin: "auto",
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 4,
-          alignItems: "center",
-          justifyContent: "space-between", // 讓間距自然分散
         }}
       >
         {/* 請假類型 */}
-        <Box sx={{ flex: 1, minWidth: 130, display: "flex", alignItems: "center", gap: 2 }}>
+        <Box sx={{
+          flex: "1 1 240px",
+          minWidth: "240px",
+          maxWidth: "260px",
+          display: "flex",
+          flexDirection: "row",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 1,
+        }}>
           <Typography sx={{ fontWeight: "bold", fontSize: "14px", minWidth: "60px" }}>
             請假類型
           </Typography>
@@ -447,7 +464,16 @@ function ApproveLeave() {
         </Box>
 
         {/* 審核狀態 */}
-        <Box sx={{ flex: 1, minWidth: 130, display: "flex", alignItems: "center", gap: 1 }}>
+        <Box sx={{
+          flex: "1 1 240px",
+          minWidth: "240px",
+          maxWidth: "260px",
+          display: "flex",
+          flexDirection: "row",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 1,
+        }}>
           <Typography sx={{ fontWeight: "bold", fontSize: "14px", minWidth: "60px" }}>
             審核狀態
           </Typography>
@@ -475,14 +501,13 @@ function ApproveLeave() {
         {/* 開始日期 */}
         <Box
           sx={{
-            flex: 1,
-            minWidth: 550,
             display: "flex",
             alignItems: "center",
+            flexWrap: "wrap",
             gap: 1,
           }}
         >
-          <Typography sx={{ fontWeight: "bold", fontSize: "14px", whiteSpace: "nowrap" }}>
+          <Typography sx={{ fontWeight: "bold", fontSize: "14px", minWidth: "60px" }}>
             選擇日期範圍
           </Typography>
 
@@ -493,14 +518,11 @@ function ApproveLeave() {
               value={dayjs(startDate).format("YYYY-MM-DD")}
               onChange={(e) => setStartDate(dayjs(e.target.value))}
               sx={{
-                width: 190,
+                width: 140,
                 backgroundColor: "#fff",
                 borderRadius: "8px",
                 fontSize: "14px",
-                "& .MuiInputBase-root": {
-                  height: "35px",
-                  fontSize: "14px",
-                },
+                "& .MuiInputBase-root": { height: "35px", fontSize: "14px" },
               }}
             />
 
@@ -511,7 +533,7 @@ function ApproveLeave() {
               value={dayjs(endDate).format("YYYY-MM-DD")}
               onChange={(e) => setEndDate(dayjs(e.target.value))}
               sx={{
-                width: 190,
+                width: 140,
                 backgroundColor: "#fff",
                 borderRadius: "8px",
                 fontSize: "14px",
@@ -529,9 +551,9 @@ function ApproveLeave() {
       <Button
         variant="contained"
         onClick={() => {
-          setPage(1);              // 先把頁碼設回第一頁
-          fetchLeaveRequests();    // 再呼叫查詢 API
-        }}   // 這裡綁儲存篩選資料後的變數(searchFilters)
+          setPage(1);
+          fetchLeaveRequests();
+        }}
         sx={{
           backgroundColor: "#A1887F",
           width: "200px",
@@ -539,7 +561,7 @@ function ApproveLeave() {
           borderRadius: "30px",
           fontSize: "16px",
           marginTop: "30px",
-          marginBottom: "30px", // 增加與下方表格的間距
+          marginBottom: "30px",
           "&:hover": { backgroundColor: "#795548" },
         }}
         startIcon={<Search />}
@@ -601,21 +623,21 @@ function ApproveLeave() {
                 if (fullDays > 0) days += `${fullDays} 天`;
                 if (remainingHours > 0) days += `${fullDays > 0 ? ' ' : ''}${remainingHours} 小時`;
                 if (!days) days = "0 小時";
-                const applyDate = request.created_at?.split("T")[0] ?? "-";  // 申請日期
+                const applyDate = request.created_at?.split("T")[0] ?? "-";
                 return (
                   <TableRow key={request.leave_id}>
                     <TableCell>
-                      <Box sx={{ ml: 3 }}>{request.user_name}</Box>
+                      <Box sx={{ ml: 3.5 }}>{request.user_name}</Box>
                     </TableCell>
                     <TableCell>
-                      <Box sx={{ ml: 3.5 }}>{request.leave_type_name}</Box>
+                      <Box sx={{ ml: 3.5, fontWeight: "bold" }}>{request.leave_type_name}</Box>
                     </TableCell>
                     <TableCell>
                       <Box sx={{ ml: 3.5 }}>{request.reason}</Box>
                     </TableCell>
                     <TableCell>
-                      <Box sx={{ ml: 10 }}>
-                        {request.start_time.split(":").slice(0, 2).join(":")} -{" "}
+                      <Box sx={{ ml: 6 }}>
+                        {request.start_time.split(":").slice(0, 2).join(":")} ~{" "}
                         {request.end_time.split(":").slice(0, 2).join(":")}
                       </Box>
                     </TableCell>
@@ -626,12 +648,18 @@ function ApproveLeave() {
                       <Box sx={{ ml: 3.5 }}>{applyDate}</Box>
                     </TableCell>
                     <TableCell>
-                      <Box sx={{ ml: 3 }}>{statusMap[request.status]}</Box>
+                      <Box sx={{
+                        ml: 0.5, 
+                        color: statusColorMap[request.status]?.color || "#444",
+                        borderRadius: "12px",
+                        fontWeight: "bold",
+                        textAlign: "center",
+                      }}>{statusMap[request.status]}</Box>
                     </TableCell>
-                    <TableCell>
+                    <TableCell align="center">
                       {/* 編輯/查詢/刪除按鈕 */}
-                      <Box sx={{ ml: 3.5, display: "flex", gap: 1 }}>
-                        {/* 編輯按鈕（僅待審核可見） */}
+                      <Box sx={{ ml: "3.5", display: "flex", gap: 1.5, justifyContent: request.status === 0 ? "flex-start" : "center", }}>
+                        {/* 編輯按鈕 */}
                         {request.status === 0 && (
                           <Button
                             variant="contained"
@@ -649,7 +677,7 @@ function ApproveLeave() {
                           </Button>
                         )}
 
-                        {/* 查詢按鈕（status 1~4） */}
+                        {/* 查詢按鈕 */}
                         {[1, 2, 3, 4].includes(request.status) && (
                           <Button
                             variant="outlined"
@@ -672,7 +700,7 @@ function ApproveLeave() {
                           </Button>
                         )}
 
-                        {/* 刪除按鈕（僅待審核可見） */}
+                        {/* 刪除按鈕*/}
                         {request.status === 0 && (
                           <Button
                             variant="outlined"
@@ -714,17 +742,24 @@ function ApproveLeave() {
       <Box
         sx={{
           display: "flex",
+          flexWrap: "nowrap",
+          gap: 1.5,
           justifyContent: "center",
           alignItems: "center",
-          gap: 2,
-          mt: 3,
+          mt: 2,
+          whiteSpace: "nowrap",
+          minWidth: 0,
         }}
       >
         <Button
           onClick={handleBack}
           disabled={page === 1}
+          variant="contained"
+          size="small"
           sx={{
-            backgroundColor: "#B0BEC5",
+            minWidth: "70px",
+            backgroundColor: "#BCAAA4",
+            color: "white",
             "&:hover": { backgroundColor: "#78909C" },
           }}
         >
@@ -734,14 +769,35 @@ function ApproveLeave() {
           count={totalPages}
           page={page}
           onChange={handleChange}
-          color="primary"
+          size="small"
+          siblingCount={1}
+          boundaryCount={1}
+          sx={{
+            flexShrink: 0,
+            "& .MuiPaginationItem-root": {
+              color: "#5D4037",
+              borderRadius: "8px",
+            },
+            "& .Mui-selected": {
+              backgroundColor: "#D7CCC8",
+              color: "#3E2723",
+              fontWeight: "bold",
+              "&:hover": {
+                backgroundColor: "#BCAAA4",
+              },
+            },
+          }}
         />
         <Button
           onClick={handleNext}
           disabled={page === totalPages}
+          variant="contained"
+          size="small"
           sx={{
-            backgroundColor: "#90CAF9",
-            "&:hover": { backgroundColor: "#64B5F6" },
+            minWidth: "70px",
+            backgroundColor: "#BCAAA4",
+            color: "white",
+            "&:hover": { backgroundColor: "#A1887F" },
           }}
         >
           下一頁
@@ -767,7 +823,9 @@ function ApproveLeave() {
             minWidth: "unset",
             boxShadow: 3,
             marginBottom: 3,
-            "&:hover": { backgroundColor: "#1976d2" },
+            backgroundColor: "#90CAF9",
+            color: "white",
+            "&:hover": { backgroundColor: "#64B5F6" },
           }}
           onClick={() => handleOpen(null, "create")}
         >
@@ -783,14 +841,14 @@ function ApproveLeave() {
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
-            width: "90%", // 讓彈窗在小螢幕時適應
-            maxWidth: "600px", // 限制最大寬度
+            width: "90%",
+            maxWidth: "600px",
             bgcolor: "#cfe2f3",
             boxShadow: 24,
             p: 4,
             borderRadius: "12px",
-            maxHeight: "80vh", // 設置最大高度
-            overflowY: "auto", // 啟用垂直滾動
+            maxHeight: "80vh",
+            overflowY: "auto",
           }}
         >
           {(mode === "create" || selectedRequest) && (
@@ -819,9 +877,8 @@ function ApproveLeave() {
                       padding: 6,
                       gap: 3,
                       ...(mode === "view" && {
-                        backgroundColor: "#fefefe", // 或可用 white
+                        backgroundColor: "#fefefe",
                         boxShadow: "0 4px 20px rgba(0, 0, 0, 0.15)",
-                        // padding: 3,
                       }),
                     }}
                   >
@@ -854,7 +911,7 @@ function ApproveLeave() {
                                 }
                               }}
                               format="YYYY-MM-DD HH:mm"
-                              minutesStep={60}
+                              minutesStep={30}
                               slotProps={{
                                 textField: {
                                   fullWidth: true,
@@ -862,11 +919,11 @@ function ApproveLeave() {
                                   helperText: fieldState.error?.message,
                                   size: "small",
                                   InputProps: {
-                                    readOnly: mode === "view", // ✅ 只讀
+                                    readOnly: mode === "view",
                                     sx: mode === "view"
                                       ? {
-                                        pointerEvents: "none",  // ✅ 阻止點擊
-                                        backgroundColor: "white", // ✅ 維持清晰樣式
+                                        pointerEvents: "none",
+                                        backgroundColor: "white",
                                         borderRadius: "8px"
                                       }
                                       : {
@@ -891,7 +948,7 @@ function ApproveLeave() {
                           rules={{
                             required: "請選擇結束時間",
                             validate: (value) => {
-                              if (!watch("startTime")) return true; // 避免 startTime 還沒選時報錯
+                              if (!watch("startTime")) return true;
                               return dayjs(value).isAfter(watch("startTime")) || "結束時間需晚於開始時間";
                             },
                           }}
@@ -903,7 +960,7 @@ function ApproveLeave() {
                                 field.onChange(newValue);
                               }}
                               format="YYYY-MM-DD HH:mm"
-                              minutesStep={60}
+                              minutesStep={30}
                               slotProps={{
                                 textField: {
                                   fullWidth: true,
@@ -975,10 +1032,10 @@ function ApproveLeave() {
                                     color: "#888",
                                   },
                                   "&.Mui-disabled": {
-                                    color: "#000",              
-                                    WebkitTextFillColor: "#000",       
-                                    backgroundColor: "white",          
-                                    opacity: 1,                       
+                                    color: "#000",
+                                    WebkitTextFillColor: "#000",
+                                    backgroundColor: "white",
+                                    opacity: 1,
                                     borderRadius: "8px",
                                     pointerEvents: "none",
                                   },
@@ -991,7 +1048,7 @@ function ApproveLeave() {
                                   </MenuItem>
                                 ))}
                               </Select>
-                              {/* ✅ 顯示錯誤訊息 */}
+                              {/* 顯示錯誤訊息 */}
                               {fieldState.error && (
                                 <Typography fontSize={12} color="error" sx={{ mt: 0.5, ml: 1 }}>
                                   {fieldState.error.message}
@@ -1014,7 +1071,7 @@ function ApproveLeave() {
                     <Box>
                       <Typography fontSize={14}>附件</Typography>
 
-                      {/* 新檔案上傳區域（只在 create / edit 模式可用） */}
+                      {/* 新檔案上傳區域 */}
                       {mode !== "view" && (
                         <TextField
                           type="file"
@@ -1066,7 +1123,7 @@ function ApproveLeave() {
                         margin="dense"
                         fullWidth
                         InputProps={{
-                          readOnly: mode === "view", // ✅ 改成只讀而非 disabled
+                          readOnly: mode === "view",
                         }}
                       />
                       {mode !== "view" && (
@@ -1085,7 +1142,7 @@ function ApproveLeave() {
                       )}
                     </Box>
 
-                    {/* 第四排：駁回原因（只在 view 模式顯示） */}
+                    {/* 第四排：駁回原因 */}
                     {mode === "view" && (
                       <Box>
                         <Typography fontSize={14}>駁回原因</Typography>
@@ -1097,7 +1154,7 @@ function ApproveLeave() {
                           margin="dense"
                           fullWidth
                           InputProps={{
-                            readOnly: true, // ✅ 不用 disabled 就不會灰
+                            readOnly: true,
                           }}
                         />
                       </Box>
@@ -1128,7 +1185,7 @@ function ApproveLeave() {
                       </Button>
                     ) : (
                       <>
-                        {/* ✅ 送出放左邊 */}
+                        {/* 送出 */}
                         <Button
                           variant="contained"
                           type="submit"
@@ -1144,7 +1201,7 @@ function ApproveLeave() {
                           送出
                         </Button>
 
-                        {/* ❌ 取消放右邊 */}
+                        {/* 取消 */}
                         <Button
                           variant="outlined"
                           onClick={handleClose}
@@ -1190,19 +1247,24 @@ function ApproveLeave() {
         <DialogTitle
           sx={{
             fontWeight: "bold",
-            fontSize: 22,
-            color: "#5D4037",
+            fontSize: 20,
+            color: "#fff",
             textAlign: "center",
+            backgroundColor: dialogSuccess ? "#81C784" : "#EF9A9A",
+            borderTopLeftRadius: "10px",
+            borderTopRightRadius: "10px",
+            py: 1.5,
           }}
         >
-          {dialogSuccess ? "✅ 操作成功" : "❌ 操作失敗"}
+          {dialogSuccess ? "操作成功" : "操作失敗"}
         </DialogTitle>
 
         <DialogContent>
           <Typography
-            fontSize={16}
+            fontSize={20}
+            fontWeight="bold"
             textAlign="center"
-            sx={{ mt: 1, color: "#444" }}
+            sx={{ mt: 3, color: "#444" }}
           >
             {dialogMessage}
           </Typography>
@@ -1265,13 +1327,17 @@ function ApproveLeave() {
             fontSize: 20,
             color: "#5D4037",
             textAlign: "center",
+            backgroundColor: "#EFEBE9",
+            borderTopLeftRadius: "16px",
+            borderTopRightRadius: "16px",
+            py: 1.5,
           }}
         >
           確認刪除
         </DialogTitle>
 
         <DialogContent>
-          <Typography fontSize={16} textAlign="center" sx={{ mt: 1 }}>
+          <Typography fontSize={20} fontWeight="bold" textAlign="center" sx={{ mt: 3 }}>
             確定要刪除這筆假單嗎？
           </Typography>
         </DialogContent>
