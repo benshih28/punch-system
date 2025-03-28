@@ -351,6 +351,7 @@ function ApproveClockReissuePage() {
               lg: "row",
             },
             alignItems: "center",
+            justifyContent: "center",
           }}
         >
           <Box
