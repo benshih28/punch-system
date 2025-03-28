@@ -25,84 +25,100 @@ import { useState, useEffect } from "react";
  import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 
  function ClockHistoryPage() {
+  const [auth] = useAtom(authAtom);
    // 查詢輸入框
-   // const [departments, setDepartments] = useState([]); //確保departments 初始值為空陣列
-   const [departments, setDepartments] = useState([
-     { id: 1, name: "人資部" },
-     { id: 2, name: "行銷部" },
-   ]);
+    const [departments, setDepartments] = useState([]); //確保departments 初始值為空陣列
+    //  { id: 1, name: "人資部" },
+    //  { id: 2, name: "行銷部" },
+
    const [department, setDepartment] = useState("");
    const [employeeId, setEmployeeId] = useState("");
    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
    const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+   const [attendanceRecords, setAttendanceRecords] = useState([]);
    // 分頁控制
    const [page, setPage] = useState(0); //預設第0頁
    const [rowsPerPage, setRowsPerPage] = useState(10); //每頁顯示的資料筆數，預設 10 筆
    // const [filteredRows, setFilteredRows] = useState([]);
+   
+   const [rows, setRows] = useState([]);
+    // 測試的假資料
+    //  {
+    //    applicant: "黃冬天",
+    //    employeeId: "002",
+    //    department: "行銷部",
+    //    records: {
+    //      1: { punchIn: "08:59", punchOut: "18:05" },
+    //      2: { punchIn: "08:58", punchOut: "18:00" },
+    //      13: { punchIn: "09:14", punchOut: "17:30" },
+    //    },
+    //  },
+    //  {
+    //    applicant: "何夏天",
+    //    employeeId: "003",
+    //    department: "行銷部",
+    //    records: {
+    //      1: { punchIn: "08:55", punchOut: "18:03" },
+    //      4: { punchIn: "09:00", punchOut: "17:30" },
+    //      16: { punchIn: "09:00", punchOut: "17:30" },
+    //    },
+    //  },
 
-   const [rows, setRows] = useState([
-     {
-       applicant: "王小明",
-       employeeId: "001",
-       department: "人資部",
-       records: {
-         1: { punchIn: "08:00", punchOut: "18:00" },
-         3: { punchIn: "09:00", punchOut: "17:30" },
-       },
-     },
-     {
-       applicant: "黃冬天",
-       employeeId: "002",
-       department: "行銷部",
-       records: {
-         1: { punchIn: "08:59", punchOut: "18:05" },
-         2: { punchIn: "08:58", punchOut: "18:00" },
-         5: { punchIn: "09:00", punchOut: "17:30" },
-         6: { punchIn: "09:00", punchOut: "17:30" },
-         13: { punchIn: "09:14", punchOut: "17:30" },
-       },
-     },
-     {
-       applicant: "何夏天",
-       employeeId: "003",
-       department: "行銷部",
-       records: {
-         1: { punchIn: "08:55", punchOut: "18:03" },
-         2: { punchIn: "08:55", punchOut: "18:04" },
-         4: { punchIn: "09:00", punchOut: "17:30" },
-         16: { punchIn: "09:00", punchOut: "17:30" },
-       },
-     },
-   ]);
+  //  const filteredRows = rows.filter((row) => {
+  //    return (
+  //      (department === "" || row.department === department) && // 如果 `department` 為空，顯示所有部門；否則只顯示該部門的員工
+  //      (employeeId === "" || row.employeeId.includes(employeeId)) // 如果 `employeeId` 為空，顯示所有員工；否則只顯示符合的員工
+  //    );
+  //  });
+     
+  const user = auth?.user;// 拿登入者資訊
+  const roles = auth?.roles_permissions?.roles || [];
+  const permissions = auth?.roles_permissions?.permissions || [];
+  const userRole = roles[0] || "";
 
-   const filteredRows = rows.filter((row) => {
-     return (
-       (department === "" || row.department === department) && // 如果 `department` 為空，顯示所有部門；否則只顯示該部門的員工
-       (employeeId === "" || row.employeeId.includes(employeeId)) // 如果 `employeeId` 為空，顯示所有員工；否則只顯示符合的員工
-     );
-   });
+  const departmentName = user?.department_name || ""; // 這就是你要顯示的部門名稱
 
-   // 1. 取得所有部門（用於下拉選單）
-   // useEffect(() => {
-   //   API.get("/departments/")
-   //     .then((response) => {
-   //       setDepartments(response.data);//將 API 回應存入 departments
-   //     })
-   //     .catch((error) => console.error("獲取部門失敗", error));
-   // }, []);
-
+   // 1. 取得所有部門
    useEffect(() => {
-     console.log("部門清單:", departments);
-   }, [departments]); // 當 `departments` 改變時，執行 log
+   if (permissions.includes("manage_departments")) {
+    // HR 或有權限的使用者 → 撈全部部門
+     API.get("/departments/")
+       .then((response) => {
+         setDepartments(response.data.departments);//從 JSON 物件中取出departments陣列
+       })
+       .catch((error) => console.error("獲取部門失敗", error));
+   }else if (user?.department_id && user?.department_name) {
+    // 沒有權限 → 用登入者的部門
+    setDepartments([{ id: user.department_id, name: user.department_name }]);
+    setDepartment(user.department_name);
+  }
+}, [permissions, user]);
 
-   // 2. 取得個人的補登打卡紀錄
-   // useEffect(() => {
-   //   API.get("/punch/correction")
-   //     .then((response) => {
-   //       setUserCorrections(response.data);
-   //     })
-   //     .catch((error) => console.error("獲取個人補登打卡紀錄失敗", error));
-   // }, []);
+   // 2. 取得個人的打卡紀錄
+   useEffect(() => {
+     API.get(`/attendance/record?year=${selectedYear}&month=${selectedMonth}`)
+       .then((response) => {
+        const data = response.data.data.data;
+      // console.log("獲取的打卡紀錄（完整）:", data);
+      // console.log("user_id 為 4 的資料:", data.find(item => item.user_id === 4));
+      // console.log("獲取的打卡紀錄:", response.data.data.data); 
+
+        const formattedRecords = response.data.data.data.map(user => ({
+          userId: user.user_id,
+          userName: user.user_name,
+          records: user.records.reduce((acc, record) => {
+            acc[record.date] = {
+              punchIn: record.punch_in ? record.punch_in.split(" ")[1] : "",  // 只取時間部分
+              punchOut: record.punch_out ? record.punch_out.split(" ")[1] : "",
+            };
+            return acc;
+          }, {})
+        }));
+        console.log("轉換後的打卡資料:", formattedRecords); // Debug 確保格式正確
+        setAttendanceRecords(formattedRecords);
+      })
+      .catch((error) => console.error("獲取個人打卡紀錄失敗", error));
+   }, []);
 
    // 3. 取得所有人的打卡紀錄（HR 使用）
    // useEffect(() => {
@@ -113,27 +129,88 @@ import { useState, useEffect } from "react";
    //     .catch((error) => console.error("獲取所有人的打卡紀錄失敗", error));
    // }, []);
 
+   const fetchAllAttendanceRecords = async ({
+    year,
+    month,
+    page = 1,
+    perPage = 10,
+    departmentId = null,
+    userId = null,
+  }) => {
+    try {
+      const params = {
+        year,
+        month,
+        page,
+        per_page: perPage,
+      };
+      if (departmentId) params.department_id = departmentId;
+      if (userId) params.user_id = userId;
+
+      const response = await API.get("/attendancerecords", { params });
+      return response.data.data; // 取出真正的資料
+    } catch (error) {
+      console.error("獲取所有人打卡紀錄失敗", error);
+      return null;
+    }
+  };
 
    const handleSearch = async () => {
      try {
-       const response = await API.get(
-         `/attendance?year=${selectedYear}&month=${selectedMonth}`
-       );
-       const attendanceData = response.data;
+      // 判斷是否為 HR（部門 id = 1）
+      const isHR = auth?.user?.department_id === 1;
 
-       const formattedData = attendanceData.map((record) => ({
-         applicant: record.employeeName, //員工名稱
-         records: record.days.reduce((acc, day) => { //每一天的上班和下班時間
-           acc[day.date] = {
-             punchIn: day.punchInTime,
-             punchOut: day.punchOutTime,
-           };
-           return acc;
-         }, {}),
-       }));
+    if (isHR) {
+      // 如果是 HR，查詢所有人的紀錄
+      const params = {
+        year: selectedYear,
+        month: selectedMonth,
+        page: page + 1, // 分頁從 1 開始
+        per_page: rowsPerPage,
+      };
+      if (department !== "") params.department_id = department;
+      if (employeeId) params.user_id = employeeId;
 
-       setRows(formattedData); //更新rows
-     } catch (error) {
+      const response = await API.get("/attendancerecords", { params });
+
+      //  const attendanceData = response.data;
+      
+      const formattedData = response.data.data.data.map((user) => ({
+        userId: user.user_id,
+        userName: user.user_name,
+        department: user.department_name || "",
+        records: user.records.reduce((acc, record) => { //每一天的上班和下班時間
+          acc[record.date] = {
+            punchIn: record.punch_in ? record.punch_in.split(" ")[1] : "",
+            punchOut: record.punch_out ? record.punch_out.split(" ")[1] : "",
+          };
+          return acc;
+        }, {}),
+      }));
+      setAttendanceRecords(formattedData);
+    } else {
+      //  如果不是 HR，查詢自己的紀錄
+      const response = await API.get(
+        `/attendance/record?year=${selectedYear}&month=${selectedMonth}`
+      );
+      const formattedData = response.data.data.data.map((user) => ({
+        userId: user.user_id,
+        userName: user.user_name,
+        department: user.department_name || "",
+        records: user.records.reduce((acc, record) => {
+          acc[record.date] = {
+            punchIn: record.punch_in ? record.punch_in.split(" ")[1] : "",
+            punchOut: record.punch_out ? record.punch_out.split(" ")[1] : "",
+          };
+          return acc;
+        }, {}),
+      }));
+
+      // setRows(formattedData); //更新rows
+      setAttendanceRecords(formattedData);
+     } 
+    }
+     catch (error) {
        console.error("查詢失敗", error);
      }
    };
@@ -183,23 +260,39 @@ import { useState, useEffect } from "react";
 
            {/* 選擇部門 */}
            <Typography variant="body1" sx={{ whiteSpace: "nowrap" }}>請選擇部門</Typography>
-           <Select
-             // label="選擇部門" variant="outlined" size="small"
-             value={department}
-             onChange={(e) => setDepartment(e.target.value)}
-             displayEmpty
-             variant="outlined"
-             size="small"
-             sx={{ backgroundColor: "white", width: "130px" }}
-           >
-             <MenuItem value="">請選擇部門</MenuItem>
-             {Array.isArray(departments) &&  //確保departments 是陣列
-             departments.map((dept) => (
-               <MenuItem key={dept.id} value={dept.name}>
-                 {dept.name}
-               </MenuItem>
-             ))}
-           </Select>
+           {permissions.includes("manage_departments") ? (
+            <Select
+              // label="選擇部門" variant="outlined" size="small"
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
+              displayEmpty
+              variant="outlined"
+              size="small"
+              sx={{ backgroundColor: "white", width: "130px" }}
+            >
+              <MenuItem value="">請選擇部門</MenuItem>
+              {/* {Array.isArray(departments) &&  //確保departments 是陣列 */
+              departments.map((dept) => (
+                <MenuItem key={dept.id} value={dept.id}>
+                  {dept.name}
+                </MenuItem>
+              ))}
+            </Select>
+            ) : (
+              <Typography
+                variant="body1"
+                sx={{
+                  backgroundColor: "white",
+                  padding: "6px 12px",
+                  borderRadius: "4px",
+                  border: "1px solid #ccc",
+                  minWidth: "130px",
+                  textAlign: "center",
+                }}
+              >
+                {departmentName || "尚未設定部門"}
+              </Typography>
+            )}
 
            {/* 員工編號 */}
            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -287,7 +380,7 @@ import { useState, useEffect } from "react";
              flexDirection: "column",
            }}
          >
-           <TableContainer sx={{ flex: 1, overflow: "auto" }}>
+           <TableContainer component={Paper} sx={{ flex: 1, overflow: "auto" }}>
              <Table stickyHeader>
                <TableHead>
                  <TableRow>
@@ -300,13 +393,14 @@ import { useState, useEffect } from "react";
                  </TableRow>
                </TableHead>
                <TableBody>
-                 {filteredRows.map((row) => (
-                   <TableRow key={row.applicant}>
-                     <TableCell align="center">{row.applicant}</TableCell>
+                 {attendanceRecords.map((row) => (
+                   <TableRow key={row.userId}>
+                     <TableCell align="center">{row.userName}</TableCell>
                      {[...Array(31)].map((_, index) => {
-                       const day = index + 1;
-                       const punchIn = row.records?.[day]?.punchIn || "";
-                       const punchOut = row.records?.[day]?.punchOut || "";
+                       const day = (index + 1).toString().padStart(2, "0");;
+                       const dateKey = `${selectedYear}-${selectedMonth.toString().padStart(2, "0")}-${day}`;
+                       const punchIn = row.records?.[dateKey]?.punchIn || "";
+                       const punchOut = row.records?.[dateKey]?.punchOut || "";
                        return (
                          <TableCell key={index} align="center">
                            {punchIn && <div>{punchIn}</div>}
@@ -324,7 +418,7 @@ import { useState, useEffect } from "react";
            <TablePagination
              rowsPerPageOptions={[10, 25, 50]}
              component="div"
-             count={rows.length}
+             count={attendanceRecords.length}
              rowsPerPage={rowsPerPage}
              page={page}
              onPageChange={(event, newPage) => setPage(newPage)}
