@@ -46,7 +46,8 @@ const columns = [
 
 function ApproveClockReissuePage() {
   // **Jotai - 全局狀態管理**
-  const [, setAuth] = useAtom(authAtom); // setAuth 更新 Jotai 全局狀態 (authAtom)
+  const [authState] = useAtom(authAtom); // 取得使用者狀態
+  const departmentId = authState?.user?.department_id;
 
   // 設定起始 & 結束日期 & 頁數 & 限制筆數
   const [startDate, setStartDate] = useState(() => {
@@ -91,21 +92,17 @@ function ApproveClockReissuePage() {
     // async（非同步）函數，用來向後端 API 發送請求並獲取數據
     const fetchUserInfo = async () => {
       try {
-        const response = await API.get("/user/details");
-        const userData = response.data.user;
+          if (departmentId !== 1) {
+            setUnauthorized(true); // 不是人資則標記為無權限
+            return;
+          }
 
-        setDepartmentId(userData.department_id);
-
-        // 只有人資 (department_id === 1) 可以取得所有部門列表
-        if (userData.department_id !== 1) {
-          setUnauthorized(true); // 不是人資則標記為無權限
-          return;
-        }
-
-        const departmentResponse = await API.get("/departments");
-        if (Array.isArray(departmentResponse.data.departments)) {
-          setDepartments(departmentResponse.data.departments);
-        }
+        API.get("/departments")
+          .then((response) => {
+            if (Array.isArray(response.data.departments)) {
+              setDepartments(response.data.departments);
+            }
+          })
       } catch (error) {
         console.error("錯誤詳情:", error.message);
       }
@@ -354,6 +351,7 @@ function ApproveClockReissuePage() {
               lg: "row",
             },
             alignItems: "center",
+            justifyContent: "center",
           }}
         >
           <Box
@@ -416,65 +414,65 @@ function ApproveClockReissuePage() {
               alignItems: "center",
             }}
           >
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <Typography variant="body1">選擇日期區間</Typography>
-            {/* 起始日期 */}
-            <DatePicker
-              value={startDate}
-              onChange={(newValue) => {
-                if (newValue) {
-                  setStartDate(new Date(newValue)); // 確保 `startDate` 被正確更新
-                }
-              }}
-              maxDate={new Date()} // 不能選擇未來日期
-              format="yyyy/MM/dd" // 確保格式正確
-              slotProps={{
-                textField: {
-                  variant: "outlined",
-                  size: "small",
-                  placeholder: "請選擇日期",
-                  sx: { backgroundColor: "white" }, // ✅ 確保輸入框為白色
-                },
-                input: {
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <CalendarTodayIcon sx={{ fontSize: "18px" }} />
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <Typography variant="body1">選擇日期區間</Typography>
+              {/* 起始日期 */}
+              <DatePicker
+                value={startDate}
+                onChange={(newValue) => {
+                  if (newValue) {
+                    setStartDate(new Date(newValue)); // 確保 `startDate` 被正確更新
+                  }
+                }}
+                maxDate={new Date()} // 不能選擇未來日期
+                format="yyyy/MM/dd" // 確保格式正確
+                slotProps={{
+                  textField: {
+                    variant: "outlined",
+                    size: "small",
+                    placeholder: "請選擇日期",
+                    sx: { backgroundColor: "white" }, // ✅ 確保輸入框為白色
+                  },
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <CalendarTodayIcon sx={{ fontSize: "18px" }} />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
 
-            {/* 分隔符號「~」 */}
-            <Typography variant="body1" sx={{ display: { xs: "none", sm: "block" } }}>~</Typography>
+              {/* 分隔符號「~」 */}
+              <Typography variant="body1" sx={{ display: { xs: "none", sm: "block" } }}>~</Typography>
 
-            {/* 結束日期 */}
-            <DatePicker
-              value={endDate}
-              onChange={(newValue) => {
-                if (newValue) {
-                  setEndDate(new Date(newValue));
-                }
-              }}
-              maxDate={new Date()} // 不能選擇未來日期
-              format="yyyy/MM/dd"
-              slotProps={{
-                textField: {
-                  variant: "outlined",
-                  size: "small",
-                  placeholder: "請選擇日期",
-                  sx: { backgroundColor: "white" }, // ✅ 確保輸入框為白色
-                },
-                input: {
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <CalendarTodayIcon sx={{ fontSize: "18px" }} />
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
-          </LocalizationProvider>
+              {/* 結束日期 */}
+              <DatePicker
+                value={endDate}
+                onChange={(newValue) => {
+                  if (newValue) {
+                    setEndDate(new Date(newValue));
+                  }
+                }}
+                maxDate={new Date()} // 不能選擇未來日期
+                format="yyyy/MM/dd"
+                slotProps={{
+                  textField: {
+                    variant: "outlined",
+                    size: "small",
+                    placeholder: "請選擇日期",
+                    sx: { backgroundColor: "white" }, // ✅ 確保輸入框為白色
+                  },
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <CalendarTodayIcon sx={{ fontSize: "18px" }} />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
+            </LocalizationProvider>
           </Box>
         </Box>
 
