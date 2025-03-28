@@ -38,6 +38,23 @@ function ApproveLeave() {
     4: "人資駁回",
   };
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 0:
+        return "orange"; // 待審核
+      case 1:
+        return "green"; // 主管通過
+      case 2:
+        return "red"; // 主管駁回
+      case 3:
+        return "blue"; // 人資通過
+      case 4:
+        return "darkred"; // 人資駁回
+      default:
+        return "black";
+    }
+  };
+
   // **獲取假單列表**
   const fetchLeaveRequests = async () => {
     try {
@@ -510,7 +527,9 @@ function ApproveLeave() {
                       day: "2-digit",
                     })}
                   </TableCell>
-                  <TableCell>{G_LEAVE_STATUS[request.status]}</TableCell>
+                  <TableCell sx={{ color: getStatusColor(request.status) }}>
+                    {G_LEAVE_STATUS[request.status]}
+                  </TableCell>
                   <TableCell>
                     {/* HR 人資審核 (status == 1) */}
                     {permissions === "HR" && request.status === 1 ? (
