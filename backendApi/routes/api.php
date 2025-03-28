@@ -19,6 +19,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\LeaveTypeController;
 use App\Http\Controllers\LeaveResetRuleController;
 use App\Http\Controllers\LeaveController;
+use App\Http\Controllers\Auth\SocialLoginController;
 
 use App\Http\Controllers\QuestionFeedbackController;
 use App\Models\Notification;
@@ -33,6 +34,8 @@ Route::post('/register', [RegisteredUserController::class, 'store']);
 Route::post('/forgot/password', [ForgotPasswordController::class, 'forgotPassword']);
 // 登入
 Route::post('/login', [AuthenticatedSessionController::class, 'store']);
+Route::post('/login/google', [SocialLoginController::class, 'handleGoogleLogin']);
+
 
 // 需要登入 (`auth:api`) 的 API
 Route::middleware('auth:api')->group(function () {

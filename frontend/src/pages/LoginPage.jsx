@@ -2,8 +2,9 @@ import { useState } from "react"; // React Hook 用於管理元件的內部狀�
 import { useNavigate, Link } from "react-router-dom"; // React Router 用於導航
 import { useForm } from "react-hook-form"; // React Hook Form 用於表單管理
 import { useAtom } from "jotai"; // Jotai 狀態管理
-import { authAtom } from "../state/authAtom"; // Jotai Atom 用於存儲身份驗證狀態
+import { authAtom, logoutAtom } from "../state/authAtom"; // Jotai Atom 用於存儲身份驗證狀態
 import API from "../api/axios"; // Axios 實例，用於發送 API 請求
+import { GoogleLogin } from '@react-oauth/google'; // Google 登入元件
 
 // **Material UI 元件**
 import {
@@ -56,8 +57,8 @@ function LoginPage() {
 
       // **更新 Jotai（這會自動存入 localStorage）**
       setAuth({
-        access_token: token, 
-        user: userDetails.user, 
+        access_token: token,
+        user: userDetails.user,
         punch_records: userDetails.punch_records,
         roles_permissions: userDetails.roles_permissions,
         recent_leaves: userDetails.recent_leaves,
@@ -211,6 +212,61 @@ function LoginPage() {
             註冊
           </Button>
         </form>
+
+
+        <Typography variant="h6" sx={{ mt: 2 }}>
+          或使用 Google 登入
+        </Typography>
+
+        <GoogleLogin
+          onSuccess={async (credentialResponse) => {
+            console.log("credentialResponse", credentialResponse);
+
+            const googleToken = credentialResponse?.credential;
+
+            if (!googleToken) {
+              console.error("Google 登入失敗：未收到 credential token");
+              setError("email", { message: "Google 登入失敗，請再試一次" });
+              return;
+            }
+
+            try {
+              const res = await API.post("/login/google", {
+                access_token: googleToken,
+              });
+
+              const token = res.data.access_token ?? res.data.token; // ✅ 確保兼容
+              if (!token) throw new Error("未收到 token");
+
+              const userDetailsResponse = await API.get("/user/details", {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+
+              const userDetails = userDetailsResponse.data;
+
+              setAuth({
+                access_token: token,
+                user: userDetails.user,
+                punch_records: userDetails.punch_records,
+                roles_permissions: userDetails.roles_permissions,
+                recent_leaves: userDetails.recent_leaves,
+              });
+
+              navigate("/punchin");
+            } catch (error) {
+              console.error("Google 登入失敗", error);
+              setError("email", {
+                message: "Google 登入失敗，請再試一次",
+              });
+            }
+          }}
+          onError={() => {
+            console.error("Google 登入發生錯誤");
+            setError("email", { message: "Google 登入失敗，請再試一次" });
+          }}
+        />
+
+
       </Paper>
     </Box>
   );
