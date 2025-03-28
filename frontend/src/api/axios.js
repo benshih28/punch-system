@@ -1,6 +1,6 @@
 import axios from "axios"; // 引入 Axios，用於發送 HTTP 請求
 import { getDefaultStore } from "jotai"; // 從 Jotai 引入 getDefaultStore，以便獲取全局狀態
-import { authAtom } from "../state/authAtom"; // 引入 authAtom，用於存儲身份驗證狀態
+import { authAtom,logoutAtom } from "../state/authAtom"; // 引入 authAtom，用於存儲身份驗證狀態
 import { errorAtom } from "../state/errorAtom";
 // 取得 Jotai 的全局 Store，讓我們可以在全域範圍內存取和管理狀態
 const store = getDefaultStore();
