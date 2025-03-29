@@ -347,10 +347,6 @@ function ApproveLeave() {
   const onSubmit = (formValues) => {
     if (mode === "view") return;
 
-    if (leaveHours !== null && leaveHours <= 0) {
-      return;
-    }
-
     const leaveData = new FormData();
     leaveData.append("start_time", dayjs(watchedStartTime).format("YYYY-MM-DD HH:mm"));
     leaveData.append("end_time", dayjs(watchedEndTime).format("YYYY-MM-DD HH:mm"));
