@@ -21,6 +21,7 @@ use App\Http\Controllers\LeaveResetRuleController;
 use App\Http\Controllers\LeaveController;
 
 use App\Http\Controllers\QuestionFeedbackController;
+use App\Models\Notification;
 
 // 公開 API（不需要登入）
 // 問題反饋
@@ -35,6 +36,31 @@ Route::post('/login', [AuthenticatedSessionController::class, 'store']);
 
 // 需要登入 (`auth:api`) 的 API
 Route::middleware('auth:api')->group(function () {
+
+    // ✅ 取得使用者通知（排除封存）
+    Route::get('/notifications', function () {
+        return Notification::where('user_id', auth()->id())
+            ->where('archived', false) // ✅ 排除已封存
+            ->orderBy('created_at', 'desc')
+            ->get();
+    });
+
+    // ✅ 單筆標記為已讀
+    Route::post('/notifications/{id}/read', function ($id) {
+        $notif = Notification::where('user_id', auth()->id())->findOrFail($id);
+        $notif->update(['read' => true]);
+        return response()->json(['status' => 'read']);
+    });
+
+    // ✅ 封存通知（多筆）
+    Route::post('/notifications/archive', function (Request $request) {
+        $ids = $request->input('ids', []);
+        Notification::where('user_id', auth()->id())
+            ->whereIn('id', $ids)
+            ->update(['archived' => true]);
+
+        return response()->json(['status' => 'archived']);
+    });
 
     // 登出
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy']);
