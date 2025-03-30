@@ -385,11 +385,22 @@ import { useState, useEffect } from "react";
                <TableHead>
                  <TableRow>
                    <TableCell align="center">姓名</TableCell>
-                   {[...Array(31)].map((_, index) => (
-                     <TableCell key={index} align="center">
+                   {[...Array(31)].map((_, index) => {
+                    // 判斷是否是假日
+                    const day = (index + 1).toString().padStart(2, "0");
+                    const dateKey = `${selectedYear}-${selectedMonth.toString().padStart(2, "0")}-${day}`;
+                    const date = new Date(dateKey);
+                    const isWeekend = date.getDay() === 0 || date.getDay() === 6; // Sunday or Saturday
+                    return (
+                     <TableCell key={index} align="center"
+                     sx={{
+                      color: isWeekend ? "#d35724" : "inherit",
+                      fontWeight: isWeekend ? "bold" : "normal",
+                    }}>
                        {index + 1}
                      </TableCell>
-                   ))}
+                    );
+                  })}
                  </TableRow>
                </TableHead>
                <TableBody>
