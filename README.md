@@ -294,7 +294,7 @@ erDiagram
 - roles / permissions / pivots：權限與角色（Spatie）
 - notifications：站內通知
 
-## 關聯（重點）
+## 關聯
 - users 1:N employees（manager_id）
 - users 1:1 employees（employees.user_id）
 - departments 1:N positions / employees
@@ -309,7 +309,7 @@ erDiagram
 - roles N:M users（model_has_roles，polymorphic）
 - permissions N:M users（model_has_permissions，polymorphic）
 
-## 索引/唯一約束（重點）
+## 索引/唯一約束
 - users.email UNIQUE
 - departments.name UNIQUE
 - leave_types.name UNIQUE, leave_types.description UNIQUE
