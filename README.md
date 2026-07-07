@@ -37,7 +37,7 @@ React 前端專案，負責使用者介面開發，包括：
 - 管理員後台（請假審核、補登打卡審核等）
 - API 介接（使用後端 Laravel JWT Token API）
 
-### `frontend-vue3/`（可選）
+### `frontend-vue3/`（轉換中）
 Vue 3 + Vite 前端專案，提供與 React 相同功能的替代 UI。
 
 ### `websocket-server/`
